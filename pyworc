@@ -1,0 +1,85 @@
+[KEYS]
+top-left = KP_7
+top = KP_8
+top-right = KP_9
+left = KP_4
+middle = KP_5
+right = KP_6
+bottom-right = KP_3
+bottom = KP_2
+bottom-left = KP_1
+
+hover = Alt
+expand = Shift
+shrink = Alt-Shift
+put = Alt-Ctrl
+grid_width = Ctrl
+grid_height = Ctrl-Shift
+
+info = Shift-Alt-A
+exit = Shift-Alt-Q
+reload = Shift-Alt-R
+
+[top-left]
+direction = TOP_LEFT
+position = TOP_LEFT
+gravity = TOP_LEFT
+widths = THIRD, HALF, THIRD*2
+heights = THIRD, HALF, THIRD*2
+
+[top]
+direction = TOP
+position = TOP
+gravity = TOP
+widths = THIRD, THIRD*2, FULL
+heights = THIRD, HALF, THIRD*2
+
+[top-right]
+direction = TOP_RIGHT
+position = TOP_RIGHT
+gravity = TOP_RIGHT
+widths = THIRD, HALF, THIRD*2
+heights = THIRD, HALF, THIRD*2
+
+[left]
+direction = LEFT
+position = LEFT
+gravity = LEFT
+widths = THIRD, HALF, THIRD*2
+heights = THIRD, FULL
+
+[middle]
+direction = MIDDLE
+position = MIDDLE
+gravity = MIDDLE
+widths = THIRD, THIRD*2, FULL
+heights = THIRD, FULL
+
+[right]
+direction = RIGHT
+position = RIGHT
+gravity = RIGHT
+widths = THIRD, HALF, THIRD*2
+heights = THIRD, FULL
+
+[bottom-left]
+direction = BOTTOM_LEFT
+position = BOTTOM_LEFT
+gravity = BOTTOM_LEFT
+widths = THIRD, HALF, THIRD*2
+heights = THIRD, HALF
+
+[bottom]
+direction = BOTTOM
+position = BOTTOM
+gravity = BOTTOM
+widths = THIRD, THIRD*2, FULL
+heights = THIRD, HALF
+
+[bottom-right]
+direction = BOTTOM_RIGHT
+position = BOTTOM_RIGHT
+gravity = BOTTOM_RIGHT
+widths = THIRD, HALF, THIRD*2
+heights = THIRD, HALF
+

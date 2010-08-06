@@ -16,6 +16,7 @@ logging.basicConfig(level=logging.DEBUG, format=format)
 logging.getLogger().setLevel(logging.DEBUG)
 
 
+#TODO: Move repositioning code to another module?
 class RepositionerResizer(object):
 
     """RepositionerResizer finds new geometry for window when resizing, moving.
@@ -126,13 +127,15 @@ class RepositionerResizer(object):
              sticky=False, insideout=False, vertical_first=True):
         """Return new geometry for the window."""
         #TODO: add limit? and use limit geometry instead of workarea?
-        order = {True: [self.__vertical, self.__horizontal],
-                 False: [self.__horizontal, self.__vertical]}
         current = win.geometry
         workarea = wm.workarea_geometry
         windows = [window.geometry for window in wm.windows(self.__main_filter)
                                    if window.id != win.id and \
                                       window.desktop == win.desktop]
+
+
+        order = {True: [self.__vertical, self.__horizontal],
+                 False: [self.__horizontal, self.__vertical]}
         for method in order[vertical_first]:
             method(win, current, workarea,
                    windows, direction, sticky, insideout)
@@ -163,11 +166,11 @@ def __top_left(current, workarea,
             output = inside - size(current)
     return output
 
-#TODO: merge with __top_left() method
 def __bottom_right(current, workarea,
                    windows, insides, xy_name,
                    sticky, insideout):
     """Return bottom or right edge of new window's position."""
+    #TODO: merge with __top_left() method
     xy, xy2, size = RepositionerResizer.ATTRGETTERS[xy_name]
     adjecent = [xy(other) for other in windows 
                           if xy(other) < xy2(workarea) and \
@@ -220,18 +223,18 @@ def expand(win, direction):
     border = reposition_resize(win, direction, 
                                sticky=(not direction.is_middle))
     logging.debug(border)
-    win.move_resize(border)
-    return border, direction
+    win.move_resize(border, direction)
+    #return border, direction
 
 
 def shrink(win, direction):
     border = shrink_window(win, direction.invert(), sticky=False)
     logging.debug(border)
-    win.move_resize(border)
-    return border, direction
+    win.move_resize(border, direction)
+    #return border, direction
 
 
-def hover(win, direction):
+def move(win, direction):
     border = reposition_resize(win, direction, 
                                sticky=(not direction.is_middle), 
                                insideout=(not direction.is_middle))
@@ -245,7 +248,7 @@ def hover(win, direction):
     logging.debug('x: %s, y: %s, gravity: %s' % 
                   (geometry.x, geometry.y, direction))
     win.move_resize(geometry)
-    return geometry, direction
+    #return geometry, direction
 
 
 def put(win, position):
@@ -265,7 +268,7 @@ def put(win, position):
     logging.debug('x: %s, y: %s, gravity: %s' % 
                   (geometry.x, geometry.y, position))
     win.move_resize(geometry)
-    return geometry, position
+    #return geometry, position
 
 
 #TODO: reset GRIDED on every other function
@@ -281,7 +284,7 @@ def __get_iterator(sizes, new_size):
     return itertools.cycle(sizes)
 
 
-def grid(win, position, gravity, size, cycle='width'):
+def grid(win, position, gravity, sizes, cycle='width'):
 
     class DummyWindow(object):
 
@@ -289,12 +292,12 @@ def grid(win, position, gravity, size, cycle='width'):
         
         gravity = Gravity(0.5, 0.5)
 
-        def __init__(self, window, x, y, size, gravity):
+        def __init__(self, window, x, y, sizes, gravity):
             self.borders = window.borders
             self.desktop = window.desktop
             self.id = window.id
-            width = int(workarea.width * min(size.width))
-            height = int(workarea.height * min(size.height))
+            width = int(workarea.width * min(sizes.width))
+            height = int(workarea.height * min(sizes.height))
             self.geometry = Geometry(x, y, width, height, gravity)
 
     # TODO: move checking state and resetting to handler
@@ -303,11 +306,10 @@ def grid(win, position, gravity, size, cycle='width'):
     workarea = wm.workarea_geometry
     x = workarea.x + workarea.width * position.x
     y = workarea.y + workarea.height * position.y
-    heights = [int(workarea.height * height) for height in size.height]
-    widths = [int(workarea.width * width) for width in size.width]
+    heights = [int(workarea.height * height) for height in sizes.height]
+    widths = [int(workarea.width * width) for width in sizes.width]
     if GRIDED and win.id == GRIDED['id'] and \
        GRIDED['placement'] == (position, gravity):
-        #TODO: Checking win.geometry with stored geometry instead?
         old = win.geometry
         if cycle == 'width':
             new_width = GRIDED['width'].next()
@@ -318,7 +320,7 @@ def grid(win, position, gravity, size, cycle='width'):
             new_width = old.width + \
                         min(abs(old.width - width) for width in widths)
     else:
-        dummy = DummyWindow(win, x, y, size, gravity)
+        dummy = DummyWindow(win, x, y, sizes, gravity)
         border = reposition_resize(dummy, dummy.gravity,
                                    vertical_first=(cycle is 'height'))
         new_width = max([width for width in widths 
@@ -335,8 +337,8 @@ def grid(win, position, gravity, size, cycle='width'):
         GRIDED['placement'] = (position, gravity)
     geometry = Geometry(x, y, new_width, new_height, gravity)
     logging.debug('width: %s, height: %s' % (geometry.width, geometry.height))
-    win.move_resize(geometry)
-    return geometry, gravity.invert()
+    win.move_resize(geometry, gravity.invert())
+    #return geometry, gravity.invert()
 
 
 # =========================================================================
@@ -369,36 +371,36 @@ print '---------------------'
 print wm.active_window().geometry
 print '---------------------'
 
-
+# Obsolete
 FULL = 1.0
 HALF = 0.5
 THIRD = 1.0/3
 QUARTER = 0.25
 
 GRID3x3 = [Size([THIRD, HALF, THIRD*2], [THIRD, HALF]),
-            Size([THIRD, THIRD*2, FULL], [THIRD, HALF]),
-            Size([THIRD, HALF, THIRD*2], [THIRD, HALF]),
-            Size([THIRD, HALF, THIRD*2], [THIRD, FULL]),
-            Size([THIRD, THIRD*2, FULL], [THIRD, FULL]),
-            Size([THIRD, HALF, THIRD*2], [THIRD, FULL]),
-            Size([THIRD, HALF, THIRD*2], [THIRD, HALF, THIRD*2]),
-            Size([THIRD, THIRD*2, FULL], [THIRD, HALF, THIRD*2]),
-            Size([THIRD, HALF, THIRD*2], [THIRD, HALF, THIRD*2])]
+           Size([THIRD, THIRD*2, FULL], [THIRD, HALF]),
+           Size([THIRD, HALF, THIRD*2], [THIRD, HALF]),
+           Size([THIRD, HALF, THIRD*2], [THIRD, FULL]),
+           Size([THIRD, THIRD*2, FULL], [THIRD, FULL]),
+           Size([THIRD, HALF, THIRD*2], [THIRD, FULL]),
+           Size([THIRD, HALF, THIRD*2], [THIRD, HALF, THIRD*2]),
+           Size([THIRD, THIRD*2, FULL], [THIRD, HALF, THIRD*2]),
+           Size([THIRD, HALF, THIRD*2], [THIRD, HALF, THIRD*2])]
 
 GRID2x3 = [Size([THIRD, HALF, THIRD*2], [HALF]),
-            Size([THIRD, FULL], [HALF]),
-            Size([THIRD, HALF, THIRD*2], [HALF]),
-            Size([THIRD, HALF, THIRD*2], [FULL]),
-            Size([THIRD, THIRD*2], [FULL]),
-            Size([THIRD, HALF, THIRD*2], [FULL]),
-            Size([THIRD, HALF, THIRD*2], [HALF]),
-            Size([THIRD, FULL], [HALF]),
-            Size([THIRD, HALF, THIRD*2], [HALF])]
+           Size([THIRD, FULL], [HALF]),
+           Size([THIRD, HALF, THIRD*2], [HALF]),
+           Size([THIRD, HALF, THIRD*2], [FULL]),
+           Size([THIRD, THIRD*2], [FULL]),
+           Size([THIRD, HALF, THIRD*2], [FULL]),
+           Size([THIRD, HALF, THIRD*2], [HALF]),
+           Size([THIRD, FULL], [HALF]),
+           Size([THIRD, HALF, THIRD*2], [HALF])]
 
 GRID = GRID3x3
 
 
-KEY_MAPPING = config.load('pyworc')
+KEY_MAPPING = config.load()
 
 def handle(event):
     logging.debug('type=%s, window=%s, keycode=%s, modifiers=%s' %
@@ -416,18 +418,8 @@ def handle(event):
     if not (event.modifiers, event.keycode) in KEY_MAPPING:
         logging.error('Unrecognized key!')
         return
-    geometry, gravity = globals()[data[0]](window, *data[1:])
-    window.sync()
-    time.sleep(0.01)
-    win_geometry = window.geometry
-    if win_geometry != geometry:
-        print 'win:', win_geometry 
-        print 'geo:', geometry
-        x = geometry.x + geometry.width * gravity.x
-        y = geometry.y + geometry.height * gravity.y
-        win_geometry.set_position(x, y, gravity)
-        window.move_resize(win_geometry)
-        window.flush()
+    globals()[data[0]](window, *data[1:])
+    wm.flush()
 
 HANDLER = KeyPressEventHandler(KEY_MAPPING.keys(), handle)
 HANDLER.grab_keys(wm)

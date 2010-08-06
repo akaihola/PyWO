@@ -1,4 +1,5 @@
 import re
+import os
 from ConfigParser import ConfigParser
 
 from core import Size, Gravity, WindowManager
@@ -59,26 +60,20 @@ def parse_gravity(gravity):
     return Gravity(x, y)
 
 
-def load(filename):
+def load(filename='.pyworc'):
 
     """Load configuration file"""
 
-    CONFIG.read(filename) #TODO: various places?
-
-    keys = {}
+    CONFIG.read([os.path.join(os.path.dirname(__file__), 'pyworc'),
+                 os.path.join(os.path.expanduser('~'), '.pyworc')])
     mappings = {}
-
-    for key, value in CONFIG.items('KEYS'):
-        keys[key] = value
-
+    keys = dict(CONFIG.items('KEYS'))
     CONFIG.remove_section('KEYS')
+    #TODO: choose predefined layout (3x2, 3x3) in config file
 
     for section in CONFIG.sections():
-        data = {}
-        for key, value in CONFIG.items(section):
-            data[key] = value
+        data = dict(CONFIG.items(section))
 
-        #TODO: globals()? maybe GRAVITIES dict?
         direction = parse_gravity(data['direction'])
         position  = parse_gravity(data['position'])
         if 'gravity' in data:
@@ -97,8 +92,8 @@ def load(filename):
         mask_code = WindowManager.keycode(keys['grid_height'], mask_key)
         mappings[mask_code] = ['grid', position, gravity, sizes, 'height']
 
-        mask_code = WindowManager.keycode(keys['hover'], mask_key)
-        mappings[mask_code] = ['hover', direction]
+        mask_code = WindowManager.keycode(keys['move'], mask_key)
+        mappings[mask_code] = ['move', direction]
         mask_code = WindowManager.keycode(keys['expand'], mask_key)
         mappings[mask_code] = ['expand', direction]
         mask_code = WindowManager.keycode(keys['shrink'], mask_key)

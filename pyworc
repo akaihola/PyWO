@@ -9,7 +9,7 @@ bottom-right = KP_3
 bottom = KP_2
 bottom-left = KP_1
 
-hover = Alt
+move = Alt
 expand = Shift
 shrink = Alt-Shift
 put = Alt-Ctrl

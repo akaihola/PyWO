@@ -553,7 +553,7 @@ class Window(XObject):
                         width + left + right,
                         height + top + bottom)
 
-    def move_resize(self, geometry):
+    def move_resize(self, geometry, on_resize=Gravity(0, 0)):
         """Move or resize window using provided geometry.
 
         Postion and size must include window's borders. 
@@ -564,6 +564,7 @@ class Window(XObject):
         y = geometry.y
         width = geometry.width - (left + right)
         height = geometry.height - (top + bottom)
+        geometry_size = (width, height)
         current = self.__geometry()
         hints = self._win.get_wm_normal_hints()
         # This is a fix for WINE, OpenOffice and KeePassX windows
@@ -599,7 +600,10 @@ class Window(XObject):
             height += base
             if hints.height_inc and height < hints.min_height:
                 height += hints.height_inc
-        # TODO: adjust position after changing size(?)
+        # Adjust position after size change
+        if (width, height) != geometry_size:
+            x = x + (geometry_size[0] - width) * on_resize.x
+            y = y + (geometry_size[1] - height) * on_resize.y
         self._win.configure(x=x, y=y, width=width, height=height)
 
     def maximize(self, mode):

@@ -400,14 +400,14 @@ GRID2x3 = [Size([THIRD, HALF, THIRD*2], [HALF]),
 GRID = GRID3x3
 
 
-KEY_MAPPING = config.load()
+CONFIG = config.Config()
 
 def handle(event):
     logging.debug('type=%s, window=%s, keycode=%s, modifiers=%s' %
                   (event.type, event.window_id, event.keycode, event.modifiers))
     window = wm.active_window()
     print window.name
-    data = KEY_MAPPING[event.modifiers, event.keycode]
+    data = CONFIG.mappings[event.modifiers, event.keycode]
     logging.info([str(e) for e in data])
     if data[0] in ['exit', 'reload']:
         globals()[data[0]]()
@@ -415,13 +415,13 @@ def handle(event):
     if Window.TYPE_NORMAL not in window.type:
         logging.error('Only normal windows!')
         return
-    if not (event.modifiers, event.keycode) in KEY_MAPPING:
+    if not (event.modifiers, event.keycode) in CONFIG.mappings:
         logging.error('Unrecognized key!')
         return
     globals()[data[0]](window, *data[1:])
     wm.flush()
 
-HANDLER = KeyPressEventHandler(KEY_MAPPING.keys(), handle)
+HANDLER = KeyPressEventHandler(CONFIG.mappings.keys(), handle)
 HANDLER.grab_keys(wm)
 #wm.unlisten()
 

@@ -221,24 +221,24 @@ shrink_window = RepositionerResizer(__ins_top_left, __ins_bottom_right,
 
 def expand(win, direction):
     border = reposition_resize(win, direction, 
-                               sticky=(not direction.is_middle))
+                               sticky=(not direction.is_middle),
+                               vertical_first=CONFIG.settings['vertical_first'])
     logging.debug(border)
     win.move_resize(border, direction)
-    #return border, direction
 
 
 def shrink(win, direction):
-    border = shrink_window(win, direction.invert(), sticky=False)
+    border = shrink_window(win, direction.invert(), sticky=False,
+                           vertical_first=CONFIG.settings['vertical_first'])
     logging.debug(border)
     win.move_resize(border, direction)
-    #return border, direction
 
 
 def move(win, direction):
     border = reposition_resize(win, direction, 
                                sticky=(not direction.is_middle), 
-                               insideout=(not direction.is_middle))
-    print border
+                               insideout=(not direction.is_middle),
+                               vertical_first=CONFIG.settings['vertical_first'])
     geometry = win.geometry
     geometry.width = min(border.width, geometry.width)
     geometry.height = min(border.height, geometry.height)
@@ -248,7 +248,6 @@ def move(win, direction):
     logging.debug('x: %s, y: %s, gravity: %s' % 
                   (geometry.x, geometry.y, direction))
     win.move_resize(geometry)
-    #return geometry, direction
 
 
 def put(win, position):
@@ -268,7 +267,6 @@ def put(win, position):
     logging.debug('x: %s, y: %s, gravity: %s' % 
                   (geometry.x, geometry.y, position))
     win.move_resize(geometry)
-    #return geometry, position
 
 
 #TODO: reset GRIDED on every other function
@@ -337,8 +335,10 @@ def grid(win, position, gravity, sizes, cycle='width'):
         GRIDED['placement'] = (position, gravity)
     geometry = Geometry(x, y, new_width, new_height, gravity)
     logging.debug('width: %s, height: %s' % (geometry.width, geometry.height))
-    win.move_resize(geometry, gravity.invert())
-    #return geometry, gravity.invert()
+    if CONFIG.settings['invert_on_resize']:
+        win.move_resize(geometry, gravity.invert())
+    else:
+        win.move_resize(geometry, gravity)
 
 
 # =========================================================================
@@ -354,10 +354,12 @@ def exit():
     sys.exit()
 
 def reload():
-    global KEY_MAPPING, HANDLER
-    KEY_MAPPING = config.load('pyworc')
+    global HANDLER
+    CONFIG.load('pyworc')
     HANDLER.ungrab_keys(wm)
-    HANDLER = KeyPressEventHandler(KEY_MAPPING.keys(), handle)
+    HANDLER = KeyPressEventHandler(CONFIG.mappings.keys(), 
+                                   CONFIG.settings['numlock'], 
+                                   handle)
     HANDLER.grab_keys(wm)
 
 
@@ -421,7 +423,9 @@ def handle(event):
     globals()[data[0]](window, *data[1:])
     wm.flush()
 
-HANDLER = KeyPressEventHandler(CONFIG.mappings.keys(), handle)
+HANDLER = KeyPressEventHandler(CONFIG.mappings.keys(), 
+                               CONFIG.settings['numlock'], 
+                               handle)
 HANDLER.grab_keys(wm)
 #wm.unlisten()
 

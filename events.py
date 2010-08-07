@@ -67,21 +67,22 @@ class KeyPressEventHandler(EventHandler):
     
     """Handler for X.KeyPress events."""
 
-    def __init__(self, keys, handler_method=None):
+    def __init__(self, keys, numlock, handler_method=None):
         EventHandler.__init__(self, X.KeyPressMask, [X.KeyPress])
         self.handler_method = handler_method
         self.keys = keys
+        self.numlock = numlock
 
     def grab_keys(self, window):
         """Grab keys and start listening to window's events."""
         for mask, code in self.keys:
-            window.grab_key(mask, code)
+            window.grab_key(mask, code, self.numlock)
         window.listen(self)
 
     def ungrab_keys(self, window):
         """Ungrab keys and stop listening to window's events."""
         for mask, code in self.keys:
-            window.ungrab_key(mask, code)
+            window.ungrab_key(mask, code, self.numlock)
         window.unlisten(self)
 
     def handle_event(self, event):

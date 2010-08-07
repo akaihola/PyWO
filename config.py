@@ -5,6 +5,11 @@ from ConfigParser import ConfigParser
 from core import Size, Gravity, WindowManager
 
 
+OFF = 0
+ON = 1
+IGNORE = 2
+
+
 class Config(object):
 
     """Config class holding all data from configuration files."""
@@ -66,13 +71,25 @@ class Config(object):
                          if self.__PATTERN.match(xy)]
         return Gravity(x, y)
 
+    def __parse_settings(self):
+        """Parse SETTINGS section of the config file"""
+        for key, value in self.__config.items('SETTINGS'):
+            value = value.lower()
+            if value in ['1', 'yes', 'on', 'true']:
+                self.settings[key] = ON
+            elif value == 'ignore':
+                self.settings[key] = IGNORE
+            else:
+                self.settings[key] = OFF
+        print self.settings
+
     def load(self, filename='.pyworc'):
         """Load configuration file"""
         self.__config.read([os.path.join(os.path.dirname(__file__), 'pyworc'),
                             os.path.join(os.path.expanduser('~'), '.pyworc')])
         keys = dict(self.__config.items('KEYS'))
         self.__config.remove_section('KEYS')
-        self.settings = dict(self.__config.items('SETTINGS'))
+        self.__parse_settings()
         self.__config.remove_section('SETTINGS')
         #TODO: choose predefined layout (3x2, 3x3) in config file
         for section in self.__config.sections():

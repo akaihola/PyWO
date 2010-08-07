@@ -1,6 +1,7 @@
 [SETTINGS]
 numlock = ignore
 invert_on_resize = yes
+vertical_first = yes
 
 [KEYS]
 top-left = KP_7

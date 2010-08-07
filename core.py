@@ -321,31 +321,35 @@ class XObject(object):
         self._win.change_attributes(event_mask=event_mask)
 
     #TODO: Make NumLock an option?
-    def grab_key(self, modifiers, keycode):
+    def grab_key(self, modifiers, keycode, numlock):
         """Grab key.
 
         Grab key alone, with CapsLock on and/or with NumLock on.
 
         """
-        self._win.grab_key(keycode, modifiers, 
-                           1, X.GrabModeAsync, X.GrabModeAsync)
-        self._win.grab_key(keycode, modifiers | X.LockMask, 
-                           1, X.GrabModeAsync, X.GrabModeAsync)
-        self._win.grab_key(keycode, modifiers | X.Mod2Mask, 
-                           1, X.GrabModeAsync, X.GrabModeAsync)
-        self._win.grab_key(keycode, modifiers | X.LockMask | X.Mod2Mask, 
-                           1, X.GrabModeAsync, X.GrabModeAsync)
+        if numlock in [0, 2]:
+            self._win.grab_key(keycode, modifiers, 
+                               1, X.GrabModeAsync, X.GrabModeAsync)
+            self._win.grab_key(keycode, modifiers | X.LockMask, 
+                               1, X.GrabModeAsync, X.GrabModeAsync)
+        if numlock in [1, 2]:
+            self._win.grab_key(keycode, modifiers | X.Mod2Mask, 
+                               1, X.GrabModeAsync, X.GrabModeAsync)
+            self._win.grab_key(keycode, modifiers | X.LockMask | X.Mod2Mask, 
+                               1, X.GrabModeAsync, X.GrabModeAsync)
 
-    def ungrab_key(self, modifiers, keycode):
+    def ungrab_key(self, modifiers, keycode, numlock):
         """Ungrab key.
 
         Ungrab key alone, with CapsLock on and/or with NumLock on.
 
         """
-        self._win.ungrab_key(keycode, modifiers)
-        self._win.ungrab_key(keycode, modifiers | X.LockMask)
-        self._win.ungrab_key(keycode, modifiers | X.Mod2Mask)
-        self._win.ungrab_key(keycode, modifiers | X.LockMask | X.Mod2Mask)
+        if numlock in [0, 2]:
+            self._win.ungrab_key(keycode, modifiers)
+            self._win.ungrab_key(keycode, modifiers | X.LockMask)
+        if numlock in [1, 2]:
+            self._win.ungrab_key(keycode, modifiers | X.Mod2Mask)
+            self._win.ungrab_key(keycode, modifiers | X.LockMask | X.Mod2Mask)
 
     def _translate_coords(self, x, y):
         """Return translated coordinates.

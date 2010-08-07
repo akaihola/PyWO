@@ -412,7 +412,8 @@ class Window(XObject):
     # List of window managers that don't need position translation
     __DONT_TRANSLATE = ['compiz']
     __ADJUST_GEOMETRY = ['compiz', 'kwin', 'e16', 
-                         'icewm', 'fluxbox', 'blackbox']
+                         'icewm', 'blackbox', 'fvwm',]
+                         #'fluxbox',]
 
     # List of window types
     TYPE_DESKTOP = XObject.atom('_NET_WM_WINDOW_TYPE_DESKTOP')

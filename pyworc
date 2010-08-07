@@ -1,9 +1,18 @@
 [SETTINGS]
+; 1/on/yes/true - work only when NumLock is on
+; ignore - ignore NumLock state (works when on and off)
+; 0/off/no/false - work only when NumLock is off
 numlock = ignore
+
+; invert window gravity if it needs resizing (eg terminals with incremental 
+; size change), works only for grid
 invert_on_resize = yes
+
+; if true try expandig in vertical axis first
 vertical_first = yes
 
 [KEYS]
+; section/point-name =  key
 top-left = KP_7
 top = KP_8
 top-right = KP_9
@@ -14,16 +23,39 @@ bottom-right = KP_3
 bottom = KP_2
 bottom-left = KP_1
 
+; key modifiers for different actions
 move = Alt
 expand = Shift
 shrink = Alt-Shift
 put = Alt-Ctrl
+; cycle widths
 grid_width = Ctrl
+; cycle heights
 grid_height = Ctrl-Shift
 
+; print info for current window
 info = Shift-Alt-A
+; exit PyWo
 exit = Shift-Alt-Q
+; reload configuration file
 reload = Shift-Alt-R
+
+; [name-of-screen-position]
+; direction     - direction of move, expand, shrink
+; position      - position relative to screen (for put and grid)
+; gravity       - window gravity (if no gravity set, same as position)
+; widths        - list of widths for grid
+; heights       - list of height for grid
+; 
+; valid direction, position, gravity values:
+; - TOP_LEFT, TOP, TOP_RIGHT, 
+; - LEFT, MIDDLE, RIGHT, 
+; - BOTTOM_LEFT, BOTTOM, BOTTOM_RIGHT
+; - or x, y percent value - eg: 1.0, 0.5
+;
+; valid widths, heights values:
+; - QUARTER, THIRD, HALF, FULL
+; - 1.0/3*2 or THIRD*2 (will be evaluated)
 
 [top-left]
 direction = TOP_LEFT

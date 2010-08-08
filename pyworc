@@ -11,7 +11,7 @@ invert_on_resize = yes
 ; if true try expandig in vertical axis first
 vertical_first = yes
 
-; grid_2x2, grid_3x2, grid_3x3, none
+; grid_2x2, grid_3x2, grid_3x3, custom
 layout = grid_3x3
 
 [KEYS]
@@ -26,7 +26,7 @@ bottom-right = KP_3
 bottom = KP_2
 bottom-left = KP_1
 
-; key modifiers for different actions
+; key modifiers for different actions (Alt, Shift, Ctrl, Win/Super)
 move = Alt
 expand = Shift
 shrink = Alt-Shift
@@ -61,3 +61,4 @@ reload = Shift-Alt-R
 ; valid widths, heights values:
 ; - QUARTER, THIRD, HALF, FULL
 ; - 1.0/3*2 or THIRD*2 (will be evaluated)
+

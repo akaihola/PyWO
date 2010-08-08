@@ -1,4 +1,19 @@
 #!/usr/bin/env python
+#
+# Copyright 2010, Wojciech 'KosciaK' Pietrzok
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 
 import itertools
 import logging
@@ -7,7 +22,11 @@ import time
 
 from core import Gravity, Size, Geometry, Window, WindowManager
 from events import KeyPressEventHandler
-import config
+from config import Config
+
+
+__author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
+__version__ = "0.0.1"
 
 
 # TODO: move it somewhere
@@ -269,9 +288,6 @@ def put(win, position):
     win.move_resize(geometry)
 
 
-#TODO: reset GRIDED on every other function
-GRIDED = {}
-
 def __get_iterator(sizes, new_size):
     sizes.sort()
     if new_size in sizes[len(sizes)/2:] and \
@@ -374,7 +390,8 @@ print wm.active_window().geometry
 print '---------------------'
 
 
-CONFIG = config.Config()
+CONFIG = Config()
+GRIDED = {}
 
 def handle(event):
     logging.debug('type=%s, window=%s, keycode=%s, modifiers=%s' %

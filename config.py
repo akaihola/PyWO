@@ -85,6 +85,8 @@ class Config(object):
 
     def load(self, filename='.pyworc'):
         """Load configuration file"""
+        self.settings = {}
+        self.mappings = {}
         self.__config.read([os.path.join(os.path.dirname(__file__), 'pyworc'),
                             os.path.join(os.path.expanduser('~'), '.pyworc')])
         keys = dict(self.__config.items('KEYS'))
@@ -119,6 +121,7 @@ class Config(object):
             self.mappings[mask_code] = ['expand', direction]
             mask_code = WindowManager.keycode(keys['shrink'], mask_key)
             self.mappings[mask_code] = ['shrink', direction]
+            self.__config.remove_section(section)
 
         mask_code = WindowManager.keycode(keys['exit'])
         self.mappings[mask_code] = ['exit']

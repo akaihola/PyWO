@@ -11,7 +11,7 @@ invert_on_resize = yes
 ; if true try expandig in vertical axis first
 vertical_first = yes
 
-; grid_2x2, grid_3x2, grid_3x3
+; grid_2x2, grid_3x2, grid_3x3, none
 layout = grid_3x3
 
 [KEYS]

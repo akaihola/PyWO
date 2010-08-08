@@ -392,6 +392,8 @@ def handle(event):
     if not (event.modifiers, event.keycode) in CONFIG.mappings:
         logging.error('Unrecognized key!')
         return
+    if data[0] != 'grid':
+        GRIDED['id'] = None
     globals()[data[0]](window, *data[1:])
     wm.flush()
 

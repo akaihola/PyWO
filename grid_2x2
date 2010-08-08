@@ -1,0 +1,65 @@
+; 2x2 grid layout
+
+[top-left]
+direction = TOP_LEFT
+position = TOP_LEFT
+gravity = TOP_LEFT
+widths = HALF
+heights = HALF
+
+[top]
+direction = TOP
+position = TOP
+gravity = TOP
+widths = FULL
+heights = HALF
+
+[top-right]
+direction = TOP_RIGHT
+position = TOP_RIGHT
+gravity = TOP_RIGHT
+widths = HALF
+heights = HALF
+
+[left]
+direction = LEFT
+position = LEFT
+gravity = LEFT
+widths = HALF
+heights = FULL
+
+[middle]
+direction = MIDDLE
+position = MIDDLE
+gravity = MIDDLE
+widths = FULL
+heights = FULL
+
+[right]
+direction = RIGHT
+position = RIGHT
+gravity = RIGHT
+widths = HALF
+heights = FULL
+
+[bottom-left]
+direction = BOTTOM_LEFT
+position = BOTTOM_LEFT
+gravity = BOTTOM_LEFT
+widths = HALF
+heights = HALF
+
+[bottom]
+direction = BOTTOM
+position = BOTTOM
+gravity = BOTTOM
+widths = FULL
+heights = HALF
+
+[bottom-right]
+direction = BOTTOM_RIGHT
+position = BOTTOM_RIGHT
+gravity = BOTTOM_RIGHT
+widths = HALF
+heights = HALF
+

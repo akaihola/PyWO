@@ -90,8 +90,11 @@ class Config(object):
         keys = dict(self.__config.items('KEYS'))
         self.__config.remove_section('KEYS')
         self.__parse_settings()
+        if self.__config.has_option('SETTINGS', 'layout'):
+            layout = self.__config.get('SETTINGS', 'layout')
+            self.__config.read(os.path.join(os.path.dirname(__file__), layout))
         self.__config.remove_section('SETTINGS')
-        #TODO: choose predefined layout (3x2, 3x3) in config file
+        print self.__config.sections()
         for section in self.__config.sections():
             data = dict(self.__config.items(section))
             direction = self.__parse_gravity(data['direction'])

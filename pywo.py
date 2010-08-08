@@ -373,34 +373,6 @@ print '---------------------'
 print wm.active_window().geometry
 print '---------------------'
 
-# Obsolete
-FULL = 1.0
-HALF = 0.5
-THIRD = 1.0/3
-QUARTER = 0.25
-
-GRID3x3 = [Size([THIRD, HALF, THIRD*2], [THIRD, HALF]),
-           Size([THIRD, THIRD*2, FULL], [THIRD, HALF]),
-           Size([THIRD, HALF, THIRD*2], [THIRD, HALF]),
-           Size([THIRD, HALF, THIRD*2], [THIRD, FULL]),
-           Size([THIRD, THIRD*2, FULL], [THIRD, FULL]),
-           Size([THIRD, HALF, THIRD*2], [THIRD, FULL]),
-           Size([THIRD, HALF, THIRD*2], [THIRD, HALF, THIRD*2]),
-           Size([THIRD, THIRD*2, FULL], [THIRD, HALF, THIRD*2]),
-           Size([THIRD, HALF, THIRD*2], [THIRD, HALF, THIRD*2])]
-
-GRID2x3 = [Size([THIRD, HALF, THIRD*2], [HALF]),
-           Size([THIRD, FULL], [HALF]),
-           Size([THIRD, HALF, THIRD*2], [HALF]),
-           Size([THIRD, HALF, THIRD*2], [FULL]),
-           Size([THIRD, THIRD*2], [FULL]),
-           Size([THIRD, HALF, THIRD*2], [FULL]),
-           Size([THIRD, HALF, THIRD*2], [HALF]),
-           Size([THIRD, FULL], [HALF]),
-           Size([THIRD, HALF, THIRD*2], [HALF])]
-
-GRID = GRID3x3
-
 
 CONFIG = config.Config()
 

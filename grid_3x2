@@ -1,0 +1,65 @@
+; 3x2 grid layout
+
+[top-left]
+direction = TOP_LEFT
+position = TOP_LEFT
+gravity = TOP_LEFT
+widths = THIRD, HALF, THIRD*2
+heights = HALF
+
+[top]
+direction = TOP
+position = TOP
+gravity = TOP
+widths = THIRD, THIRD*2, FULL
+heights = HALF
+
+[top-right]
+direction = TOP_RIGHT
+position = TOP_RIGHT
+gravity = TOP_RIGHT
+widths = THIRD, HALF, THIRD*2
+heights = HALF
+
+[left]
+direction = LEFT
+position = LEFT
+gravity = LEFT
+widths = THIRD, HALF, THIRD*2
+heights = FULL
+
+[middle]
+direction = MIDDLE
+position = MIDDLE
+gravity = MIDDLE
+widths = THIRD, THIRD*2, FULL
+heights = FULL
+
+[right]
+direction = RIGHT
+position = RIGHT
+gravity = RIGHT
+widths = THIRD, HALF, THIRD*2
+heights = FULL
+
+[bottom-left]
+direction = BOTTOM_LEFT
+position = BOTTOM_LEFT
+gravity = BOTTOM_LEFT
+widths = THIRD, HALF, THIRD*2
+heights = HALF
+
+[bottom]
+direction = BOTTOM
+position = BOTTOM
+gravity = BOTTOM
+widths = THIRD, THIRD*2, FULL
+heights = HALF
+
+[bottom-right]
+direction = BOTTOM_RIGHT
+position = BOTTOM_RIGHT
+gravity = BOTTOM_RIGHT
+widths = THIRD, HALF, THIRD*2
+heights = HALF
+

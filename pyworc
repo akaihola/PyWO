@@ -11,6 +11,9 @@ invert_on_resize = yes
 ; if true try expandig in vertical axis first
 vertical_first = yes
 
+; grid_2x2, grid_3x2, grid_3x3
+layout = grid_3x3
+
 [KEYS]
 ; section/point-name =  key
 top-left = KP_7
@@ -40,6 +43,8 @@ exit = Shift-Alt-Q
 ; reload configuration file
 reload = Shift-Alt-R
 
+; Example of custom screen position definition:
+;
 ; [name-of-screen-position]
 ; direction     - direction of move, expand, shrink
 ; position      - position relative to screen (for put and grid)
@@ -56,67 +61,3 @@ reload = Shift-Alt-R
 ; valid widths, heights values:
 ; - QUARTER, THIRD, HALF, FULL
 ; - 1.0/3*2 or THIRD*2 (will be evaluated)
-
-[top-left]
-direction = TOP_LEFT
-position = TOP_LEFT
-gravity = TOP_LEFT
-widths = THIRD, HALF, THIRD*2
-heights = THIRD, HALF, THIRD*2
-
-[top]
-direction = TOP
-position = TOP
-gravity = TOP
-widths = THIRD, THIRD*2, FULL
-heights = THIRD, HALF, THIRD*2
-
-[top-right]
-direction = TOP_RIGHT
-position = TOP_RIGHT
-gravity = TOP_RIGHT
-widths = THIRD, HALF, THIRD*2
-heights = THIRD, HALF, THIRD*2
-
-[left]
-direction = LEFT
-position = LEFT
-gravity = LEFT
-widths = THIRD, HALF, THIRD*2
-heights = THIRD, FULL
-
-[middle]
-direction = MIDDLE
-position = MIDDLE
-gravity = MIDDLE
-widths = THIRD, THIRD*2, FULL
-heights = THIRD, FULL
-
-[right]
-direction = RIGHT
-position = RIGHT
-gravity = RIGHT
-widths = THIRD, HALF, THIRD*2
-heights = THIRD, FULL
-
-[bottom-left]
-direction = BOTTOM_LEFT
-position = BOTTOM_LEFT
-gravity = BOTTOM_LEFT
-widths = THIRD, HALF, THIRD*2
-heights = THIRD, HALF
-
-[bottom]
-direction = BOTTOM
-position = BOTTOM
-gravity = BOTTOM
-widths = THIRD, THIRD*2, FULL
-heights = THIRD, HALF
-
-[bottom-right]
-direction = BOTTOM_RIGHT
-position = BOTTOM_RIGHT
-gravity = BOTTOM_RIGHT
-widths = THIRD, HALF, THIRD*2
-heights = THIRD, HALF
-

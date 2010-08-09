@@ -14,6 +14,15 @@
 # limitations under the License.
 #
 
+"""core.py is an abstract layer between Xlib and the rest of aplication.
+
+core module (with events module) encapsulates all comunication with X Server.
+It contains objects representing Window Manager, Windows, and other basic
+concepts needed for repositioning and resizing windows (size, position,
+borders, gravity, etc).
+
+"""
+
 import logging
 import time
 import threading
@@ -30,6 +39,10 @@ class Gravity(object):
     """Gravity point as a percentage of width and height of the window."""
 
     def __init__(self, x, y):
+        """
+        x - percentage of width
+        y - percentage of height
+        """
         self.x = x
         self.y = y
         self.is_middle = (x == 1.0/2) and (y == 1.0/2)
@@ -127,7 +140,6 @@ class Geometry(Position, Size):
 
     __DEFAULT_GRAVITY = Gravity(0, 0)
 
-    #TODO: Maybe it will be better to keep gravity inside Geometry?
     def __init__(self, x, y, width, height,
                  gravity=__DEFAULT_GRAVITY):
         Size.__init__(self, int(width), int(height))
@@ -288,6 +300,10 @@ class XObject(object):
                        'Win': X.Mod4Mask,}
 
     def __init__(self, win_id=None):
+        """
+        win_id - id of the window to be created, if no id assume it's 
+                 Window Manager (root window)
+        """
         self.__root = self.__DISPLAY.screen().root
         if win_id:
             # Normal window

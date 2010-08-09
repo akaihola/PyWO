@@ -14,6 +14,8 @@
 # limitations under the License.
 #
 
+"""config.py encapsulates dealing with configuration file."""
+
 import re
 import os
 from ConfigParser import ConfigParser
@@ -134,19 +136,19 @@ class Config(object):
             mask_code = WindowManager.keycode(keys['grid_height'], mask_key)
             self.mappings[mask_code] = ['grid', position, gravity, 
                                         sizes, 'height']
-            mask_code = WindowManager.keycode(keys['move'], mask_key)
-            self.mappings[mask_code] = ['move', direction]
+            mask_code = WindowManager.keycode(keys['float'], mask_key)
+            self.mappings[mask_code] = ['float', direction]
             mask_code = WindowManager.keycode(keys['expand'], mask_key)
             self.mappings[mask_code] = ['expand', direction]
             mask_code = WindowManager.keycode(keys['shrink'], mask_key)
             self.mappings[mask_code] = ['shrink', direction]
             self.__config.remove_section(section)
 
-        mask_code = WindowManager.keycode(keys['exit'])
-        self.mappings[mask_code] = ['exit']
-        mask_code = WindowManager.keycode(keys['info'])
-        self.mappings[mask_code] = ['test']
         mask_code = WindowManager.keycode(keys['reload'])
         self.mappings[mask_code] = ['reload']
+        mask_code = WindowManager.keycode(keys['exit'])
+        self.mappings[mask_code] = ['exit']
+        mask_code = WindowManager.keycode(keys['debug'])
+        self.mappings[mask_code] = ['debug']
 
 

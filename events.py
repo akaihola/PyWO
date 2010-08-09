@@ -14,6 +14,16 @@
 # limitations under the License.
 #
 
+"""events.py module encapsulate all X events handling.
+
+events module contain abstract base classes representing event handler, and
+event object wrapper. These should be subclassed by concrete implementations
+dealing with concrete X event types.
+
+Right now only handlers and wrappers for X.KeyPress events are provided.
+
+"""
+
 import logging
 
 from Xlib import X 
@@ -29,13 +39,16 @@ class Event(object):
     """Abstract base class for X event wrappers."""
 
     def __init__(self, event):
-        self.event = event
+        """
+        event - raw X event object
+        """
+        self.__event = event
         self.type = event.type
 
     @property
     def window_id(self):
         """Return id of the window, which is the source of the event."""
-        return self.event.window.id
+        return self.__event.window.id
 
     @property
     def window(self):
@@ -48,16 +61,21 @@ class EventHandler(object):
     """Abstract base class for event handlers."""
 
     def __init__(self, mask, types):
+        """
+        mask - X.EventMask
+        types - list of X.EventTypes using given mask
+        """
         self.mask = mask
         self.types = types
 
     def handle_event(self, event):
         """Handle raw X event. 
         
-        If handler_method present forward event to this method.
+        This method is called by EventDispatcher, sending raw X event, which
+        should be wrapped into correct Event object and handled.
 
         """
-        pass
+        raise NotImplementesError
 
 
 class KeyEvent(Event):
@@ -87,6 +105,12 @@ class KeyPressEventHandler(EventHandler):
     """Handler for X.KeyPress events."""
 
     def __init__(self, keys, numlock, handler_method=None):
+        """
+        keys - list of (mask, keycode) pairs
+        numlock - state of NumLock key (0 - OFF, 1 - OFF, 2 - IGNORE)
+        handler_method - method that will handle events 
+                         (if key_press is not overriden by subclass)
+        """
         EventHandler.__init__(self, X.KeyPressMask, [X.KeyPress])
         self.handler_method = handler_method
         self.keys = keys
@@ -110,7 +134,11 @@ class KeyPressEventHandler(EventHandler):
         self.key_press(event)
 
     def key_press(self, event):
-        """Handle key press event or delegate to handler method."""
+        """Handle key press event or delegate to handler method.
+        
+        This method should be overriden by subclasses.
+        
+        """
         if self.handler_method:
             self.handler_method(event)
 

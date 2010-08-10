@@ -27,7 +27,7 @@ import logging
 import time
 import threading
 
-from Xlib import X, XK, Xatom, protocol
+from Xlib import X, XK, Xatom, protocol, error
 from Xlib.display import Display
 
 
@@ -223,48 +223,49 @@ class EventDispatcher(threading.Thread):
         If there's no registered handlers stop running.
 
         """
-        logging.info('Starting EventDispatcher')
+        logging.info('EventDispatcher started')
         while self.__handlers:
             time.sleep(0.005)
             while self.__display.pending_events():
                 # Dispatch all pending events if present
                 self.__dispatch(self.__display.next_event())
-        logging.info('Stopped EventDispatcher')
+        logging.info('EventDispatcher stopped')
 
     def register(self, window, handler):
         """Register event handler and return new window's event mask."""
-        logging.info('window=%s, handler.mask=%s, handler.types=%s' % 
-                     (window.id, handler.mask, handler.types))
+        logging.info('Registering %s for window %s' %
+                     (handler.__class__.__name__, window.id))
+        logging.debug('handler.mask=%s, handler.types=%s' % 
+                      (handler.mask, handler.types))
         if not window.id in self.__handlers:
             self.__handlers[window.id] = {}
         for type in handler.types:
             self.__handlers[window.id][type] = handler
-        logging.debug('handlers %s' % self.__handlers)
         if not self.isAlive():
             self.start()
         return set([handler.mask 
                     for handler in self.__handlers[window.id].values()])
 
-    def unregister(self, window, handler):
+    def unregister(self, window, handler=None):
         """Unregister event handler and return new window's event mask.
         
         If handler is None all handlers will be unregistered.
         
         """
         if not handler and window.id in self.__handlers:
-            logging.info('window=%s ALL handlers!' % (window.id))
+            logging.info('Unregistering all handlers for window %s' % (window.id))
             self.__handlers[window.id] = {}
         elif window.id in self.__handlers:
-            logging.info('window=%s, handler.mask=%s, handler.types=%s' % 
-                         (window.id, handler.mask, handler.types))
+            logging.info('Unregistering %s for window %s' %
+                         (handler.__class__.__name__, window.id))
+            logging.debug('handler.mask=%s, handler.types=%s' % 
+                          (handler.mask, handler.types))
             for type in handler.types:
                 if type in self.__handlers[window.id]:
                     del self.__handlers[window.id][type]
         if not self.__handlers[window.id]:
             del self.__handlers[window.id]
-            logging.debug('handlers %s' % self.__handlers)
             return []
-        logging.debug('handlers %s' % self.__handlers)
         return set([handler.mask 
                     for handler in self.__handlers[window.id].values()])
 
@@ -290,14 +291,17 @@ class XObject(object):
 
     __DISPLAY = Display()
     __EVENT_DISPATCHER = EventDispatcher(__DISPLAY)
+    __BAD_ACCESS = error.CatchError(error.BadAccess)
 
     # List of recognized key modifiers
     __KEY_MODIFIERS = {'Alt': X.Mod1Mask,
                        'Ctrl': X.ControlMask,
-                       'Control': X.ControlMask,
                        'Shift': X.ShiftMask,
                        'Super': X.Mod4Mask,
-                       'Win': X.Mod4Mask,}
+                       'NumLock': X.Mod2Mask,
+                       'CapsLock': X.LockMask}
+
+    __KEYCODES = {}
 
     def __init__(self, win_id=None):
         """
@@ -350,12 +354,22 @@ class XObject(object):
     def __set_event_mask(self, masks):
         """Update event mask."""
         event_mask = 0
-        logging.debug(masks)
+        logging.debug('Setting %s masks for window %s' % 
+                      ([str(e) for e in masks], self.id))
         for mask in masks:
             event_mask = event_mask | mask
         self._win.change_attributes(event_mask=event_mask)
 
-    #TODO: Make NumLock an option?
+    def __grab_key(self, keycode, modifiers):
+        """Grab key."""
+        self._win.grab_key(keycode, modifiers, 
+                           1, X.GrabModeAsync, X.GrabModeAsync,
+                           onerror=self.__BAD_ACCESS)
+        self.sync()
+        if self.__BAD_ACCESS.get_error():
+            logging.error("Can't use %s" % 
+                              self.keycode2str(modifiers, keycode))
+
     def grab_key(self, modifiers, keycode, numlock):
         """Grab key.
 
@@ -363,15 +377,11 @@ class XObject(object):
 
         """
         if numlock in [0, 2]:
-            self._win.grab_key(keycode, modifiers, 
-                               1, X.GrabModeAsync, X.GrabModeAsync)
-            self._win.grab_key(keycode, modifiers | X.LockMask, 
-                               1, X.GrabModeAsync, X.GrabModeAsync)
+            self.__grab_key(keycode, modifiers)
+            self.__grab_key(keycode, modifiers | X.LockMask)
         if numlock in [1, 2]:
-            self._win.grab_key(keycode, modifiers | X.Mod2Mask, 
-                               1, X.GrabModeAsync, X.GrabModeAsync)
-            self._win.grab_key(keycode, modifiers | X.LockMask | X.Mod2Mask, 
-                               1, X.GrabModeAsync, X.GrabModeAsync)
+            self.__grab_key(keycode, modifiers | X.Mod2Mask)
+            self.__grab_key(keycode, modifiers | X.LockMask | X.Mod2Mask)
 
     def ungrab_key(self, modifiers, keycode, numlock):
         """Ungrab key.
@@ -396,7 +406,7 @@ class XObject(object):
         return self._win.translate_coords(self.__root, x, y)
 
     @classmethod
-    def keycode(cls, code, key=''):
+    def str2keycode(cls, code, key=''):
         """Convert key as string(s) into (modifiers, keycode) pair.
         
         There must be both modifier(s) and key persenti. If you send both
@@ -427,7 +437,23 @@ class XObject(object):
         
         keysym = XK.string_to_keysym(key)
         keycode = cls.__DISPLAY.keysym_to_keycode(keysym)
+        cls.__KEYCODES[keycode] = key
         return (modifiers, keycode)
+
+    @classmethod
+    def keycode2str(cls, modifiers, keycode):
+        """Convert key as (modifiers, keycode) pair into string.
+        
+        Works ONLY for already registered keycodes!
+        
+        """
+        key = []
+        for name, code in cls.__KEY_MODIFIERS.items():
+            if modifiers & code:
+                key.append(name)
+
+        key.append(cls.__KEYCODES[keycode])
+        return '-'.join(key)
 
     @classmethod
     def flush(cls):
@@ -682,22 +708,22 @@ class Window(XObject):
 
     def full_info(self):
         """Print full window's info, for debug use only."""
-        print '----------==========----------'
-        print 'ID:', self.id
-        print 'NAME:', self.name
-        print 'CLASS:', self.class_name
-        print 'TYPE:', self.type
-        print 'STATE:', self.state
-        print 'DESKTOP:', self.desktop
-        print 'BORDERS:', self.borders
-        print 'BORDERS_raw:', self.__borders()
-        print 'GEOMETRY:', self.geometry
-        print 'GEOMETRY_raw:', self._win.get_geometry()
-        print 'PARENT:', self.parent_id, self.parent
-        print 'NORMAL_HINTS:', self._win.get_wm_normal_hints()
-        print 'ATTRIBUTES:', self._win.get_attributes()
-        print 'QUERY_TREE:', self._win.query_tree()
-        print '----------==========----------'
+        logging.debug('----------==========----------')
+        logging.debug('ID=%s' % self.id)
+        logging.debug('NAME=%s' % self.name)
+        logging.debug('CLASS=%s' % [str(e) for e in self.class_name])
+        logging.debug('TYPE=%s' % [str(e) for e in self.type])
+        logging.debug('STATE=%s' % [str(e) for e in self.state])
+        logging.debug('DESKTOP=%s' % self.desktop)
+        logging.debug('BORDERS=%s' % self.borders)
+        logging.debug('BORDERS_raw=%s' % [str(e) for e in self.__borders()])
+        logging.debug('GEOMETRY=%s' % self.geometry)
+        logging.debug('GEOMETRY_raw=%s' % self._win.get_geometry())
+        logging.debug('PARENT=%s %s' % (self.parent_id, self.parent))
+        logging.debug('NORMAL_HINTS=%s' % self._win.get_wm_normal_hints())
+        logging.debug('ATTRIBUTES=%s' % self._win.get_attributes())
+        logging.debug('QUERY_TREE=%s' % self._win.query_tree())
+        logging.debug('----------==========----------')
 
 
 class WindowManager(XObject):

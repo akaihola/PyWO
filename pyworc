@@ -26,7 +26,7 @@ bottom-right = KP_3
 bottom = KP_2
 bottom-left = KP_1
 
-; key modifiers for different actions (Alt, Shift, Ctrl, Win/Super)
+; key modifiers for different actions (Alt, Shift, Ctrl, Super)
 float = Alt
 expand = Shift
 shrink = Alt-Shift

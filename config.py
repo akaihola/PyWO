@@ -102,7 +102,6 @@ class Config(object):
                 self.settings[key] = IGNORE
             else:
                 self.settings[key] = OFF
-        print self.settings
 
     def load(self, filename='.pyworc'):
         """Load configuration file"""
@@ -117,7 +116,6 @@ class Config(object):
             layout = self.__config.get('SETTINGS', 'layout')
             self.__config.read(os.path.join(os.path.dirname(__file__), layout))
         self.__config.remove_section('SETTINGS')
-        print self.__config.sections()
         for section in self.__config.sections():
             data = dict(self.__config.items(section))
             direction = self.__parse_gravity(data['direction'])
@@ -128,27 +126,27 @@ class Config(object):
                 gravity = position
             sizes = self.__parse_size(data['widths'], data['heights'])
             mask_key = keys[section]
-            mask_code = WindowManager.keycode(keys['put'], mask_key)
-            self.mappings[mask_code] = ['put', position]
-            mask_code = WindowManager.keycode(keys['grid_width'], mask_key)
-            self.mappings[mask_code] = ['grid', position, gravity, 
-                                        sizes, 'width']
-            mask_code = WindowManager.keycode(keys['grid_height'], mask_key)
-            self.mappings[mask_code] = ['grid', position, gravity, 
-                                        sizes, 'height']
-            mask_code = WindowManager.keycode(keys['float'], mask_key)
-            self.mappings[mask_code] = ['float', direction]
-            mask_code = WindowManager.keycode(keys['expand'], mask_key)
-            self.mappings[mask_code] = ['expand', direction]
-            mask_code = WindowManager.keycode(keys['shrink'], mask_key)
-            self.mappings[mask_code] = ['shrink', direction]
+            mask_code = WindowManager.str2keycode(keys['put'], mask_key)
+            self.mappings[mask_code] = ['put', [position]]
+            mask_code = WindowManager.str2keycode(keys['grid_width'], mask_key)
+            self.mappings[mask_code] = ['grid', 
+                                        [position, gravity, sizes, 'width']]
+            mask_code = WindowManager.str2keycode(keys['grid_height'], mask_key)
+            self.mappings[mask_code] = ['grid', 
+                                        [position, gravity, sizes, 'height']]
+            mask_code = WindowManager.str2keycode(keys['float'], mask_key)
+            self.mappings[mask_code] = ['float', [direction]]
+            mask_code = WindowManager.str2keycode(keys['expand'], mask_key)
+            self.mappings[mask_code] = ['expand', [direction]]
+            mask_code = WindowManager.str2keycode(keys['shrink'], mask_key)
+            self.mappings[mask_code] = ['shrink', [direction]]
             self.__config.remove_section(section)
 
-        mask_code = WindowManager.keycode(keys['reload'])
-        self.mappings[mask_code] = ['reload']
-        mask_code = WindowManager.keycode(keys['exit'])
-        self.mappings[mask_code] = ['exit']
-        mask_code = WindowManager.keycode(keys['debug'])
-        self.mappings[mask_code] = ['debug']
+        mask_code = WindowManager.str2keycode(keys['reload'])
+        self.mappings[mask_code] = ['reload', []]
+        mask_code = WindowManager.str2keycode(keys['exit'])
+        self.mappings[mask_code] = ['exit', []]
+        mask_code = WindowManager.str2keycode(keys['debug'])
+        self.mappings[mask_code] = ['debug', []]
 
 

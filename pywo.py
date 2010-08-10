@@ -15,6 +15,8 @@
 # limitations under the License.
 #
 
+"""pywo.py is the main module for PyWO."""
+
 import itertools
 import logging
 import operator
@@ -28,16 +30,15 @@ from reposition import reposition_resize, shrink_window
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
-__version__ = "0.0.1"
+__version__ = "0.1"
 
 
-# TODO: move it somewhere
-format = '%(levelname)s:%(filename)s(%(lineno)d):%(funcName)s: %(message)s'
-logging.basicConfig(level=logging.DEBUG, format=format)
-logging.getLogger().setLevel(logging.DEBUG)
-
+WM = WindowManager()
+CONFIG = Config()
+GRIDED = {}
 
 def expand(win, direction):
+    """Expand window in given direction."""
     border = reposition_resize(win, direction, 
                                sticky=(not direction.is_middle),
                                vertical_first=CONFIG.settings['vertical_first'])
@@ -46,6 +47,7 @@ def expand(win, direction):
 
 
 def shrink(win, direction):
+    """Shrink window in given direction."""
     border = shrink_window(win, direction.invert(), sticky=False,
                            vertical_first=CONFIG.settings['vertical_first'])
     logging.debug(border)
@@ -53,6 +55,7 @@ def shrink(win, direction):
 
 
 def move(win, direction):
+    """Move window in given direction."""
     border = reposition_resize(win, direction, 
                                sticky=(not direction.is_middle), 
                                insideout=(not direction.is_middle),
@@ -69,15 +72,16 @@ def move(win, direction):
 
 
 def put(win, position):
+    """Put window in given position (without resizing)."""
     # TODO: move checking state to handler!
     state = win.state
     if Window.STATE_MAXIMIZED_VERT in state and \
        Window.STATE_MAXIMIZED_VERT in state:
-        print "Can't put maximized window!"
+        logging.warning("Can't put maximized window!")
         return
     
     #win.shade(0) # TODO: not sure...
-    workarea = wm.workarea_geometry
+    workarea = WM.workarea_geometry
     geometry = win.geometry
     x = workarea.x + workarea.width * position.x
     y = workarea.y + workarea.height * position.y
@@ -102,6 +106,7 @@ class DummyWindow(object):
         self.geometry = Geometry(x, y, width, height, gravity)
 
 def __get_iterator(sizes, new_size):
+    """Prepare cycle iterator for window sizes."""
     sizes.sort()
     if new_size in sizes[len(sizes)/2:] and \
        new_size != sizes[len(sizes)/2]:
@@ -111,10 +116,11 @@ def __get_iterator(sizes, new_size):
     return itertools.cycle(sizes)
 
 def grid(win, position, gravity, sizes, cycle='width'):
+    """Put window in given position and resize it."""
     # TODO: move checking state and resetting to handler
     win.reset() 
     win.sync() 
-    workarea = wm.workarea_geometry
+    workarea = WM.workarea_geometry
     x = workarea.x + workarea.width * position.x
     y = workarea.y + workarea.height * position.y
     heights = [int(workarea.height * height) for height in sizes.height]
@@ -155,6 +161,7 @@ def grid(win, position, gravity, sizes, cycle='width'):
 
 
 def print_info(win):
+    """Print debug info about current window."""
     win.full_info()
     geo =  win.geometry
     win.move_resize(geo)
@@ -162,17 +169,20 @@ def print_info(win):
 
 
 def close():
-    HANDLER.ungrab_keys(wm)
+    """Ungrab keys and exit PyWO."""
+    HANDLER.ungrab_keys(WM)
+    logging.info('Exiting....')
     sys.exit()
 
 
 def reload():
+    """Reload configuration file."""
     global HANDLER
     CONFIG.load('pyworc')
-    HANDLER.ungrab_keys(wm)
+    HANDLER.ungrab_keys(WM)
     HANDLER.mappings = CONFIG.mappings.keys()
     HANDLER.numlock = CONFIG.settings['numlock']
-    HANDLER.grab_keys(wm)
+    HANDLER.grab_keys(WM)
 
 
 ACTIONS = {'float': move,
@@ -184,31 +194,20 @@ ACTIONS = {'float': move,
            'exit': close,
            'debug': print_info}
 
-wm = WindowManager()
-print 'WindowManager:', wm.name
-print 'Desktops:', wm.desktops, 'current:', wm.desktop
-print 'Desktop size:', wm.desktop_size
-print 'Viewport:', wm.viewport
-print 'Workarea:', wm.workarea_geometry
-print '---------------------'
-print wm.active_window().geometry
-print '---------------------'
-
-
-CONFIG = Config()
-GRIDED = {}
 
 def handle(event):
-    logging.debug('type=%s, window=%s, keycode=%s, modifiers=%s' %
+    """Event handler method for KeyPressEventHandler."""
+    logging.debug('EVENT: type=%s, window=%s, keycode=%s, modifiers=%s' %
                   (event.type, event.window_id, event.keycode, event.modifiers))
-    window = wm.active_window()
-    print window.name
-    data = CONFIG.mappings[event.modifiers, event.keycode]
-    logging.info([str(e) for e in data])
     if not (event.modifiers, event.keycode) in CONFIG.mappings:
         logging.error('Unrecognized key!')
         return
-    action = data[0]
+    window = WM.active_window()
+    logging.debug(window.name)
+    action, args = CONFIG.mappings[event.modifiers, event.keycode]
+    logging.debug('%s%s' % 
+                  (action, 
+                  ['%s: %s' % (a.__class__.__name__, str(a)) for a in args]))
     if action in ['exit', 'reload']:
         ACTIONS[action]()
         return
@@ -218,11 +217,30 @@ def handle(event):
         return
     if action != 'grid':
         GRIDED['id'] = None
-    ACTIONS[action](window, *data[1:])
-    wm.flush()
+    ACTIONS[action](window, *args)
+    WM.flush()
 
 HANDLER = KeyPressEventHandler(CONFIG.mappings.keys(), 
                                CONFIG.settings['numlock'], 
                                handle)
-HANDLER.grab_keys(wm)
+
+def start():
+    """Start PyWO."""
+    logging.info('Starting PyWO...')
+    logging.debug('----------==========----------')
+    logging.debug('WindowManager=%s' % WM.name)
+    logging.debug('Desktops=%s current=%s' % (WM.desktops, WM.desktop))
+    logging.debug('Desktop=%s' % WM.desktop_size)
+    logging.debug('Viewport=%s' % WM.viewport)
+    logging.debug('Workarea=%s' % WM.workarea_geometry)
+    logging.debug('----------==========----------')
+    HANDLER.grab_keys(WM)
+    logging.info('PyWO ready and running!')
+
+
+if __name__ == '__main__':
+    format = '%(levelname)s: %(filename)s %(funcName)s(%(lineno)d): %(message)s'
+    logging.basicConfig(level=logging.DEBUG, format=format)
+    logging.getLogger().setLevel(logging.DEBUG)
+    start()
 

@@ -218,7 +218,10 @@ def handle(event):
                   (action, 
                   ['%s: %s' % (a.__class__.__name__, str(a)) for a in args]))
     if action in ['exit', 'reload']:
-        ACTIONS[action]()
+        try:
+            ACTIONS[action]()
+        except Exception, err:
+            logging.exception(err)
         return
     if Window.TYPE_NORMAL not in window.type:
         #TODO: decide where to perform window type checking
@@ -226,7 +229,10 @@ def handle(event):
         return
     if action != 'grid':
         GRIDED['id'] = None
-    ACTIONS[action](window, *args)
+    try:
+        ACTIONS[action](window, *args)
+    except Exception, err:
+        logging.exception(err)
     WM.flush()
 
 HANDLER = KeyPressEventHandler(None, None, handle)

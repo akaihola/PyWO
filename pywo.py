@@ -49,7 +49,7 @@ def expand(win, direction):
 
 def shrink(win, direction):
     """Shrink window in given direction."""
-    border = shrink_window(win, direction.invert(), sticky=False,
+    border = shrink_window(win, direction.invert(), sticky=True,
                            vertical_first=CONFIG.settings['vertical_first'])
     logging.debug(border)
     win.move_resize(border, direction)

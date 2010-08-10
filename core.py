@@ -223,13 +223,13 @@ class EventDispatcher(threading.Thread):
         If there's no registered handlers stop running.
 
         """
-        logging.info('EventDispatcher started')
+        logging.debug('EventDispatcher started')
         while self.__handlers:
             time.sleep(0.005)
             while self.__display.pending_events():
                 # Dispatch all pending events if present
                 self.__dispatch(self.__display.next_event())
-        logging.info('EventDispatcher stopped')
+        logging.debug('EventDispatcher stopped')
 
     def register(self, window, handler):
         """Register event handler and return new window's event mask."""
@@ -252,7 +252,7 @@ class EventDispatcher(threading.Thread):
         
         """
         if not handler and window.id in self.__handlers:
-            logging.info('Unregistering all handlers for window %s' % (window.id))
+            logging.debug('Unregistering all handlers for window %s' % (window.id))
             self.__handlers[window.id] = {}
         elif window.id in self.__handlers:
             logging.debug('Unregistering %s (mask=%s, types=%s) for %s' %

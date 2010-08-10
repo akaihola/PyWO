@@ -16,6 +16,7 @@
 
 """config.py encapsulates dealing with configuration file."""
 
+import logging
 import re
 import os
 from ConfigParser import ConfigParser
@@ -59,7 +60,6 @@ class Config(object):
         self.__config = ConfigParser()
         self.settings = {}
         self.mappings = {}
-        self.load()
 
     def __parse_size(self, widths, heights):
         """Parse widths and heights strings and return Size object.
@@ -105,6 +105,7 @@ class Config(object):
 
     def load(self, filename='.pyworc'):
         """Load configuration file"""
+        logging.info('Loading configuration file...')
         self.settings = {}
         self.mappings = {}
         self.__config.read([os.path.join(os.path.dirname(__file__), 'pyworc'),
@@ -148,5 +149,6 @@ class Config(object):
         self.mappings[mask_code] = ['exit', []]
         mask_code = WindowManager.str2keycode(keys['debug'])
         self.mappings[mask_code] = ['debug', []]
+        logging.info('Configuration loaded.')
 
 

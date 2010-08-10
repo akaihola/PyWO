@@ -19,6 +19,7 @@
 
 import itertools
 import logging
+from logging.handlers import RotatingFileHandler
 import operator
 import time
 import sys
@@ -162,18 +163,18 @@ def grid(win, position, gravity, sizes, cycle='width'):
 
 def debug_info(win):
     """Print debug info about Window Manager, and current Window."""
-    logging.debug('----------==========----------')
-    logging.debug('WindowManager=%s' % WM.name)
-    logging.debug('Desktops=%s current=%s' % (WM.desktops, WM.desktop))
-    logging.debug('Desktop=%s' % WM.desktop_size)
-    logging.debug('Viewport=%s' % WM.viewport)
-    logging.debug('Workarea=%s' % WM.workarea_geometry)
+    logging.info('----------==========----------')
+    logging.info('WindowManager=%s' % WM.name)
+    logging.info('Desktops=%s current=%s' % (WM.desktops, WM.desktop))
+    logging.info('Desktop=%s' % WM.desktop_size)
+    logging.info('Viewport=%s' % WM.viewport)
+    logging.info('Workarea=%s' % WM.workarea_geometry)
     win.full_info()
     geo =  win.geometry
     win.move_resize(geo)
     win.sync()
-    logging.debug('New geometry=%s' % win.geometry)
-    logging.debug('----------==========----------')
+    logging.info('New geometry=%s' % win.geometry)
+    logging.info('----------==========----------')
 
 
 def close():
@@ -188,7 +189,7 @@ def reload():
     global HANDLER
     CONFIG.load('pyworc')
     HANDLER.ungrab_keys(WM)
-    HANDLER.mappings = CONFIG.mappings.keys()
+    HANDLER.keys = CONFIG.mappings.keys()
     HANDLER.numlock = CONFIG.settings['numlock']
     HANDLER.grab_keys(WM)
 
@@ -228,25 +229,30 @@ def handle(event):
     ACTIONS[action](window, *args)
     WM.flush()
 
-HANDLER = KeyPressEventHandler(CONFIG.mappings.keys(), 
-                               CONFIG.settings['numlock'], 
-                               handle)
+HANDLER = KeyPressEventHandler(None, None, handle)
 
 def start():
     """Start PyWO."""
+    logging.debug('>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<')
     logging.info('Starting PyWO...')
+    CONFIG.load()
+    HANDLER.keys = CONFIG.mappings.keys()
+    HANDLER.numlock = CONFIG.settings['numlock']
     HANDLER.grab_keys(WM)
     logging.info('PyWO ready and running!')
 
 
 if __name__ == '__main__':
+    #logging.basicConfig(level=logging.DEBUG)
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
     format = '%(levelname)s: %(filename)s %(funcName)s(%(lineno)d): %(message)s'
-    logging.basicConfig(level=logging.DEBUG, 
-                        format=format,
-                        filename='/tmp/PyWO.log',
-                        filemode='w')
+    rotating = RotatingFileHandler('/tmp/PyWO.log', 'a', 1024*50, 2, 'UTF-8')
+    rotating.setFormatter(logging.Formatter(format))
+    rotating.setLevel(logging.DEBUG)
+    logger.addHandler(rotating)
     console = logging.StreamHandler()
     console.setLevel(logging.INFO)
-    logging.getLogger().addHandler(console)
+    logger.addHandler(console)
     start()
 

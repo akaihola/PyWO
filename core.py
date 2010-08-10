@@ -233,10 +233,9 @@ class EventDispatcher(threading.Thread):
 
     def register(self, window, handler):
         """Register event handler and return new window's event mask."""
-        logging.info('Registering %s for window %s' %
-                     (handler.__class__.__name__, window.id))
-        logging.debug('handler.mask=%s, handler.types=%s' % 
-                      (handler.mask, handler.types))
+        logging.debug('Registering %s (mask=%s, types=%s) for %s' %
+                      (handler.__class__.__name__, 
+                       handler.mask, handler.types, window.id))
         if not window.id in self.__handlers:
             self.__handlers[window.id] = {}
         for type in handler.types:
@@ -256,10 +255,9 @@ class EventDispatcher(threading.Thread):
             logging.info('Unregistering all handlers for window %s' % (window.id))
             self.__handlers[window.id] = {}
         elif window.id in self.__handlers:
-            logging.info('Unregistering %s for window %s' %
-                         (handler.__class__.__name__, window.id))
-            logging.debug('handler.mask=%s, handler.types=%s' % 
-                          (handler.mask, handler.types))
+            logging.debug('Unregistering %s (mask=%s, types=%s) for %s' %
+                          (handler.__class__.__name__, 
+                           handler.mask, handler.types, window.id))
             for type in handler.types:
                 if type in self.__handlers[window.id]:
                     del self.__handlers[window.id][type]
@@ -708,22 +706,22 @@ class Window(XObject):
 
     def full_info(self):
         """Print full window's info, for debug use only."""
-        logging.debug('----------==========----------')
-        logging.debug('ID=%s' % self.id)
-        logging.debug('Name=%s' % self.name)
-        logging.debug('Class=%s' % [str(e) for e in self.class_name])
-        logging.debug('Type=%s' % [str(e) for e in self.type])
-        logging.debug('State=%s' % [str(e) for e in self.state])
-        logging.debug('Desktop=%s' % self.desktop)
-        logging.debug('Borders=%s' % self.borders)
-        logging.debug('Borders_raw=%s' % [str(e) for e in self.__borders()])
-        logging.debug('Geometry=%s' % self.geometry)
-        logging.debug('Geometry_raw=%s' % self._win.get_geometry())
-        logging.debug('Parent=%s %s' % (self.parent_id, self.parent))
-        logging.debug('Normal_hints=%s' % self._win.get_wm_normal_hints())
-        logging.debug('Attributes=%s' % self._win.get_attributes())
-        logging.debug('Query_tree=%s' % self._win.query_tree())
-        logging.debug('----------==========----------')
+        logging.info('----------==========----------')
+        logging.info('ID=%s' % self.id)
+        logging.info('Name=%s' % self.name)
+        logging.info('Class=%s' % [str(e) for e in self.class_name])
+        logging.info('Type=%s' % [str(e) for e in self.type])
+        logging.info('State=%s' % [str(e) for e in self.state])
+        logging.info('Desktop=%s' % self.desktop)
+        logging.info('Borders=%s' % self.borders)
+        logging.info('Borders_raw=%s' % [str(e) for e in self.__borders()])
+        logging.info('Geometry=%s' % self.geometry)
+        logging.info('Geometry_raw=%s' % self._win.get_geometry())
+        logging.info('Parent=%s %s' % (self.parent_id, self.parent))
+        logging.info('Normal_hints=%s' % self._win.get_wm_normal_hints())
+        logging.info('Attributes=%s' % self._win.get_attributes())
+        logging.info('Query_tree=%s' % self._win.query_tree())
+        logging.info('----------==========----------')
 
 
 class WindowManager(XObject):

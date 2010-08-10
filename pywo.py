@@ -160,12 +160,20 @@ def grid(win, position, gravity, sizes, cycle='width'):
         win.move_resize(geometry, gravity)
 
 
-def print_info(win):
-    """Print debug info about current window."""
+def debug_info(win):
+    """Print debug info about Window Manager, and current Window."""
+    logging.debug('----------==========----------')
+    logging.debug('WindowManager=%s' % WM.name)
+    logging.debug('Desktops=%s current=%s' % (WM.desktops, WM.desktop))
+    logging.debug('Desktop=%s' % WM.desktop_size)
+    logging.debug('Viewport=%s' % WM.viewport)
+    logging.debug('Workarea=%s' % WM.workarea_geometry)
     win.full_info()
     geo =  win.geometry
     win.move_resize(geo)
-    return geo, Gravity(0, 0)
+    win.sync()
+    logging.debug('New geometry=%s' % win.geometry)
+    logging.debug('----------==========----------')
 
 
 def close():
@@ -192,7 +200,7 @@ ACTIONS = {'float': move,
            'grid': grid,
            'reload': reload,
            'exit': close,
-           'debug': print_info}
+           'debug': debug_info}
 
 
 def handle(event):
@@ -227,20 +235,18 @@ HANDLER = KeyPressEventHandler(CONFIG.mappings.keys(),
 def start():
     """Start PyWO."""
     logging.info('Starting PyWO...')
-    logging.debug('----------==========----------')
-    logging.debug('WindowManager=%s' % WM.name)
-    logging.debug('Desktops=%s current=%s' % (WM.desktops, WM.desktop))
-    logging.debug('Desktop=%s' % WM.desktop_size)
-    logging.debug('Viewport=%s' % WM.viewport)
-    logging.debug('Workarea=%s' % WM.workarea_geometry)
-    logging.debug('----------==========----------')
     HANDLER.grab_keys(WM)
     logging.info('PyWO ready and running!')
 
 
 if __name__ == '__main__':
     format = '%(levelname)s: %(filename)s %(funcName)s(%(lineno)d): %(message)s'
-    logging.basicConfig(level=logging.DEBUG, format=format)
-    logging.getLogger().setLevel(logging.DEBUG)
+    logging.basicConfig(level=logging.DEBUG, 
+                        format=format,
+                        filename='/tmp/PyWO.log',
+                        filemode='w')
+    console = logging.StreamHandler()
+    console.setLevel(logging.INFO)
+    logging.getLogger().addHandler(console)
     start()
 

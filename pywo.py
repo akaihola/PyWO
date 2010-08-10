@@ -74,14 +74,6 @@ def move(win, direction):
 
 def put(win, position):
     """Put window in given position (without resizing)."""
-    # TODO: move checking state to handler!
-    state = win.state
-    if Window.STATE_MAXIMIZED_VERT in state and \
-       Window.STATE_MAXIMIZED_VERT in state:
-        logging.warning("Can't put maximized window!")
-        return
-    
-    #win.shade(0) # TODO: not sure...
     workarea = WM.workarea_geometry
     geometry = win.geometry
     x = workarea.x + workarea.width * position.x
@@ -118,7 +110,6 @@ def __get_iterator(sizes, new_size):
 
 def grid(win, position, gravity, sizes, cycle='width'):
     """Put window in given position and resize it."""
-    # TODO: move checking state and resetting to handler
     win.reset() 
     win.sync() 
     workarea = WM.workarea_geometry
@@ -155,10 +146,9 @@ def grid(win, position, gravity, sizes, cycle='width'):
         GRIDED['placement'] = (position, gravity)
     geometry = Geometry(x, y, new_width, new_height, gravity)
     logging.debug('width: %s, height: %s' % (geometry.width, geometry.height))
-    if CONFIG.settings['invert_on_resize']:
-        win.move_resize(geometry, gravity.invert())
-    else:
-        win.move_resize(geometry, gravity)
+    if CONFIG.settings['invert_on_resize']: win.move_resize(geometry,
+                                                            gravity.invert())
+    else: win.move_resize(geometry, gravity)
 
 
 def debug_info(win):
@@ -223,13 +213,23 @@ def handle(event):
         except Exception, err:
             logging.exception(err)
         return
-    if Window.TYPE_NORMAL not in window.type:
-        #TODO: decide where to perform window type checking
-        logging.error('Only normal windows!')
+    type = window.type
+    if (Window.TYPE_DESKTOP in type or \
+        Window.TYPE_DOCK in type or \
+        Window.TYPE_SPLASH in type):
+        logging.error("Can't %s window like this!" % action)
+        return
+    state = window.state
+    if action in ['float', 'expand', 'shrink', 'put'] and \
+       (Window.STATE_FULLSCREEN in state or \
+        (Window.STATE_MAXIMIZED_HORZ in state and \
+         Window.STATE_MAXIMIZED_VERT in state)):
+        logging.error("Can't %s window in fullscreen or maximized mode" % action)
         return
     if action != 'grid':
         GRIDED['id'] = None
     try:
+        window.shade(window.MODE_UNSET)
         ACTIONS[action](window, *args)
     except Exception, err:
         logging.exception(err)
@@ -249,11 +249,10 @@ def start():
 
 
 if __name__ == '__main__':
-    #logging.basicConfig(level=logging.DEBUG)
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
     format = '%(levelname)s: %(filename)s %(funcName)s(%(lineno)d): %(message)s'
-    rotating = RotatingFileHandler('/tmp/PyWO.log', 'a', 1024*50, 2, 'UTF-8')
+    rotating = RotatingFileHandler('/tmp/PyWO.log', 'a', 1024*50, 2)
     rotating.setFormatter(logging.Formatter(format))
     rotating.setLevel(logging.DEBUG)
     logger.addHandler(rotating)

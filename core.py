@@ -686,9 +686,16 @@ class Window(XObject):
                 0, 0, 0]
         self.__change_state(data)
 
+    def fullscreen(self, mode):
+        """Make window fullscreen (if supported by window manager)."""
+        data = [mode, 
+                Window.STATE_FULLSCREEN,
+                0, 0, 0]
+        self.__change_state(data)
+
     def reset(self):
-        """Unmaximize (both horizontally and vertically) and unshade."""
-        #TODO: What about Fullscreen?
+        """Unmaximize (horizontally and vertically), unshade, unfullscreen."""
+        self.fullscreen(self.MODE_UNSET)
         self.maximize(self.MODE_UNSET)
         self.shade(self.MODE_UNSET)
 

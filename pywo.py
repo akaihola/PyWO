@@ -25,7 +25,7 @@ import time
 import sys
 
 from core import Gravity, Size, Geometry, Window, WindowManager
-from events import KeyPressEventHandler
+from events import KeyPressHandler
 from config import Config
 from reposition import reposition_resize, shrink_window
 
@@ -179,7 +179,6 @@ def reload():
     global HANDLER
     CONFIG.load('pyworc')
     HANDLER.ungrab_keys(WM)
-    HANDLER.keys = CONFIG.mappings.keys()
     HANDLER.numlock = CONFIG.settings['numlock']
     HANDLER.grab_keys(WM)
 
@@ -194,7 +193,7 @@ ACTIONS = {'float': move,
            'debug': debug_info}
 
 
-def handle(event):
+def key_press(event):
     """Event handler method for KeyPressEventHandler."""
     logging.debug('EVENT: type=%s, window=%s, keycode=%s, modifiers=%s' %
                   (event.type, event.window_id, event.keycode, event.modifiers))
@@ -235,15 +234,18 @@ def handle(event):
         logging.exception(err)
     WM.flush()
 
-HANDLER = KeyPressEventHandler(None, None, handle)
+HANDLER = KeyPressHandler(key_press)
+
+def focus_in(event):
+    #logging.info(event.window.id)
+    pass
 
 def start():
     """Start PyWO."""
     logging.debug('>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<')
     logging.info('Starting PyWO...')
     CONFIG.load()
-    HANDLER.keys = CONFIG.mappings.keys()
-    HANDLER.numlock = CONFIG.settings['numlock']
+    HANDLER.set_keys(CONFIG.mappings.keys(), CONFIG.settings['numlock'])
     HANDLER.grab_keys(WM)
     logging.info('PyWO ready and running!')
 

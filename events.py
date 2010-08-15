@@ -20,7 +20,7 @@ events module contain abstract base classes representing event handler, and
 event object wrapper. These should be subclassed by concrete implementations
 dealing with concrete X event types.
 
-Right now only handlers and wrappers for X.KeyPress events are provided.
+Right now only handlers and wrappers for X.KeyPress, X.DestroyNotify events are provided.
 
 """
 
@@ -32,6 +32,10 @@ from core import Window
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
+
+
+STRUCTURE_SUBSTRUCTURE = {True: X.SubstructureNotifyMask,
+                          False: X.StructureNotifyMask}
 
 
 class Event(object):
@@ -60,22 +64,22 @@ class EventHandler(object):
 
     """Abstract base class for event handlers."""
 
-    def __init__(self, mask, types):
+    def __init__(self, mask, mapping):
         """
         mask - X.EventMask
-        types - list of X.EventTypes using given mask
+        mapping - dict of X.EventTypes and associated methods
         """
         self.mask = mask
-        self.types = types
+        self.__mapping = mapping
+
+    @property
+    def types(self):
+        return self.__mapping.keys()
 
     def handle_event(self, event):
-        """Handle raw X event. 
-        
-        This method is called by EventDispatcher, sending raw X event, which
-        should be wrapped into correct Event object and handled.
-
-        """
-        raise NotImplementesError
+        """Wrap raw X event into _EVENT_TYPE (Event object) and call _METHOD."""
+        event = self._EVENT_TYPE(event)
+        self.__mapping[event.type](event)
 
 
 class KeyEvent(Event):
@@ -100,19 +104,25 @@ class KeyEvent(Event):
         return (modifiers or X.AnyModifier, keycode)
 
 
-class KeyPressEventHandler(EventHandler):
+class KeyPressHandler(EventHandler):
     
     """Handler for X.KeyPress events."""
 
-    def __init__(self, keys, numlock, handler_method=None):
+    _EVENT_TYPE = KeyEvent
+
+    def __init__(self, key_press, keys=None, numlock=None):
         """
+        key_press - method that will handle events 
         keys - list of (mask, keycode) pairs
         numlock - state of NumLock key (0 - OFF, 1 - OFF, 2 - IGNORE)
-        handler_method - method that will handle events 
-                         (if key_press is not overriden by subclass)
         """
-        EventHandler.__init__(self, X.KeyPressMask, [X.KeyPress])
-        self.handler_method = handler_method
+        EventHandler.__init__(self, X.KeyPressMask, 
+                              {X.KeyPress: key_press})
+        self.keys = keys
+        self.numlock = numlock
+
+    def set_keys(self, keys, numlock):
+        """Set new keys list."""
         self.keys = keys
         self.numlock = numlock
 
@@ -128,18 +138,25 @@ class KeyPressEventHandler(EventHandler):
             window.ungrab_key(mask, code, self.numlock)
         window.unlisten(self)
 
-    def handle_event(self, event):
-        """Wrap raw X event into KeyEvent and delegate to handler method."""
-        event = KeyEvent(event)
-        self.key_press(event)
 
-    def key_press(self, event):
-        """Handle key press event or delegate to handler method.
-        
-        This method should be overriden by subclasses.
-        
+class DestroyNotifyEvent(Event):
+
+    """Class representing X.DestroyNotify events."""
+
+    def __init__(self, event):
+        Event.__init__(self, event)
+
+
+class DestroyNotifyHandler(EventHandler):
+
+    """Handler for X.DestroyNotify events."""
+
+    def __init__(self, destroyed, children=False):
         """
-        if self.handler_method:
-            self.handler_method(event)
-
+        destroyed - method that will handle events
+        children - False - listen for children windows' events
+                   True - listen for window's events
+        """
+        EventHandler.__init__(self, STRUCTURE_SUBSTRUCTURE[children],
+                              {X.DestroyNotify: destroyed})
 

@@ -214,6 +214,7 @@ class EventDispatcher(threading.Thread):
     def __init__(self, display):
         threading.Thread.__init__(self)
         self.__display = display
+        self.__root = display.screen().root
         self.__handlers = {}
 
     def run(self):
@@ -252,7 +253,8 @@ class EventDispatcher(threading.Thread):
         
         """
         if not handler and window.id in self.__handlers:
-            logging.debug('Unregistering all handlers for window %s' % (window.id))
+            logging.debug('Unregistering all handlers for window %s' % 
+                          (window.id))
             self.__handlers[window.id] = {}
         elif window.id in self.__handlers:
             logging.debug('Unregistering %s (mask=%s, types=%s) for %s' %
@@ -269,14 +271,25 @@ class EventDispatcher(threading.Thread):
 
     def __dispatch(self, event):
         """Dispatch raw X event to correct handler."""
-        if event.window.id not in self.__handlers:
-            logging.error('No handler for window %s' % event.window.id)
+        #FIXME: This works ONLY for KeyPress events!
+        if hasattr(event, 'window') and \
+           event.window.id in self.__handlers:
+            # Try window the event is reported on (if present)
+            handlers = self.__handlers[event.window.id]
+        elif hasattr(event, 'event') and \
+             event.event.id in self.__handlers:
+            # Try window the event is reported for (if present)
+            handlers = self.__handlers[event.event.id]
+        elif self.__root in self.__handlers:
+            # Try root window
+            handlers = self.__handlers[self.__root]
+        else:
+            logging.error('No handler for this event')
             return
-        win_handlers = self.__handlers[event.window.id]
-        if not event.type in win_handlers:
-            # Just skip unwanted events
+        if not event.type in handlers:
+            # Just skip unwanted events' types
             return
-        win_handlers[event.type].handle_event(event)
+        handlers[event.type].handle_event(event)
 
 
 class XObject(object):

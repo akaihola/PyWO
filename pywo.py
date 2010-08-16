@@ -161,14 +161,22 @@ def switch_cycle(win, keep_active):
     def active_changed(event):
         if event.atom_name == '_NET_ACTIVE_WINDOW':
             WM.unlisten(property_handler)
+            CONFIG.settings['switch_cycle'] = False
             active = WM.active_window()
-            win.move_resize(active.geometry)
-            active.move_resize(win.geometry)
+            active_geo, win_geo = active.geometry, win.geometry
+            win.move_resize(active_geo)
+            active.move_resize(win_geo)
             if keep_active:
                 win.activate()
 
     property_handler = PropertyNotifyHandler(active_changed)
-    WM.listen(property_handler)
+    if 'switch_cycle' in CONFIG.settings and \
+       CONFIG.settings['switch_cycle']:
+        WM.unlisten(property_handler)
+        CONFIG.settings['switch_cycle'] = False
+    else:
+        WM.listen(property_handler)
+        CONFIG.settings['switch_cycle'] = True
 
 
 def debug_info(win):

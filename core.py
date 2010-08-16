@@ -224,13 +224,13 @@ class EventDispatcher(threading.Thread):
     def run(self):
         """Perform event queue checking.
 
-        Every 5ms check event queue for pending events and dispatch them.
+        Every 50ms check event queue for pending events and dispatch them.
         If there's no registered handlers stop running.
 
         """
         logging.debug('EventDispatcher started')
         while self.__handlers:
-            time.sleep(0.005)
+            time.sleep(0.05)
             while self.__display.pending_events():
                 # Dispatch all pending events if present
                 self.__dispatch(self.__display.next_event())
@@ -336,6 +336,11 @@ class XObject(object):
     def atom(cls, name):
         """Return atom with given name."""
         return cls.__DISPLAY.intern_atom(name)
+
+    @classmethod
+    def atom_name(cls, atom):
+        """Return atom's name."""
+        return cls.__DISPLAY.get_atom_name(atom)
 
     def get_property(self, name):
         """Return property (None if there's no such property)."""
@@ -555,7 +560,6 @@ class Window(XObject):
         else:
             return None
 
-
     @property
     def parent(self):
         """Return window's parent."""
@@ -685,6 +689,11 @@ class Window(XObject):
             x = x + (geometry_size[0] - width) * on_resize.x
             y = y + (geometry_size[1] - height) * on_resize.y
         self._win.configure(x=x, y=y, width=width, height=height)
+
+    def activate(self):
+        """Make this window active."""
+        self._win.set_input_focus(X.RevertToNone, X.CurrentTime)
+        self._win.configure(stack_mode=X.Above)
 
     def maximize(self, mode):
         """Maximize window (both vertically and horizontally)."""

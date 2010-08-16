@@ -24,8 +24,6 @@ events module contain abstract base classes representing event handler, and
 event object wrapper. These should be subclassed by concrete implementations
 dealing with concrete X event types.
 
-Right now only handlers and wrappers for X.KeyPress, X.DestroyNotify events are provided.
-
 """
 
 import logging
@@ -50,13 +48,13 @@ class Event(object):
         """
         event - raw X event object
         """
-        self.__event = event
+        self._event = event
         self.type = event.type
 
     @property
     def window_id(self):
         """Return id of the window, which is the source of the event."""
-        return self.__event.window.id
+        return self._event.window.id
 
     @property
     def window(self):
@@ -71,7 +69,7 @@ class EventHandler(object):
     def __init__(self, mask, mapping):
         """
         mask - X.EventMask
-        mapping - dict of X.EventTypes and associated methods
+        mapping - dict of X.EventTypes and associated functions
         """
         self.mask = mask
         self.__mapping = mapping
@@ -88,7 +86,11 @@ class EventHandler(object):
 
 class KeyEvent(Event):
 
-    """Class representing X.KeyPress and X.KeyRelease events."""
+    """Class representing X.KeyPress and X.KeyRelease events.
+    
+    This event is generated if grabbed key is pressed.
+    
+    """
 
     # List of Modifiers we are interested in
     __KEY_MODIFIERS = (X.ShiftMask, X.ControlMask, X.Mod1Mask, X.Mod4Mask)
@@ -116,7 +118,7 @@ class KeyPressHandler(EventHandler):
 
     def __init__(self, key_press, keys=None, numlock=None):
         """
-        key_press - method that will handle events 
+        key_press - function that will handle events 
         keys - list of (mask, keycode) pairs
         numlock - state of NumLock key (0 - OFF, 1 - OFF, 2 - IGNORE)
         """
@@ -145,7 +147,11 @@ class KeyPressHandler(EventHandler):
 
 class DestroyNotifyEvent(Event):
 
-    """Class representing X.DestroyNotify events."""
+    """Class representing X.DestroyNotify events.
+    
+    This event is generated when a window is destroyed.
+    
+    """
 
     def __init__(self, event):
         Event.__init__(self, event)
@@ -157,10 +163,45 @@ class DestroyNotifyHandler(EventHandler):
 
     def __init__(self, destroyed, children=False):
         """
-        destroyed - method that will handle events
+        destroyed - function that will handle events
         children - False - listen for children windows' events
                    True - listen for window's events
         """
         EventHandler.__init__(self, STRUCTURE_SUBSTRUCTURE[children],
                               {X.DestroyNotify: destroyed})
+
+class PropertyNotifyEvent(Event):
+
+    """Class representing X.PropertyNotify events.
+    
+    This event is generated when property of the window is changed.
+    
+    """
+
+    NEW_VALUE = X.PropertyNewValue
+    DELETED = X.PropertyDelete
+
+    def __init__(self, event):
+        Event.__init__(self, event)
+        self.atom = event.atom
+        self.state = event.state
+
+    @property
+    def atom_name(self):
+        """Return event's atom name."""
+        return Window.atom_name(self.atom)
+
+
+class PropertyNotifyHandler(EventHandler):
+
+    """Hanlder for X.PropertyNotify events."""
+
+    _EVENT_TYPE = PropertyNotifyEvent
+
+    def __init__(self, property):
+        """
+        property - function that will handle events
+        """
+        EventHandler.__init__(self, X.PropertyChangeMask, 
+                              {X.PropertyNotify: property})
 

@@ -22,6 +22,7 @@
 """pywo.py is the main module for PyWO."""
 
 import itertools
+import collections
 import logging
 from logging.handlers import RotatingFileHandler
 import operator
@@ -29,13 +30,13 @@ import time
 import sys
 
 from core import Gravity, Size, Geometry, Window, WindowManager
-from events import KeyPressHandler
+from events import KeyPressHandler, PropertyNotifyHandler
 from config import Config
 from reposition import reposition_resize, shrink_window
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
-__version__ = "0.1"
+__version__ = "0.2"
 
 
 WM = WindowManager()
@@ -155,6 +156,21 @@ def grid(win, position, gravity, sizes, cycle='width'):
     else: win.move_resize(geometry, gravity)
 
 
+def switch_cycle(win, keep_active):
+    
+    def active_changed(event):
+        if event.atom_name == '_NET_ACTIVE_WINDOW':
+            WM.unlisten(property_handler)
+            active = WM.active_window()
+            win.move_resize(active.geometry)
+            active.move_resize(win.geometry)
+            if keep_active:
+                win.activate()
+
+    property_handler = PropertyNotifyHandler(active_changed)
+    WM.listen(property_handler)
+
+
 def debug_info(win):
     """Print debug info about Window Manager, and current Window."""
     logging.info('----------==========----------')
@@ -183,7 +199,7 @@ def reload():
     global HANDLER
     CONFIG.load('pyworc')
     HANDLER.ungrab_keys(WM)
-    HANDLER.numlock = CONFIG.settings['numlock']
+    HANDLER.set_keys(CONFIG.mappings.keys(), CONFIG.settings['numlock'])
     HANDLER.grab_keys(WM)
 
 
@@ -192,6 +208,7 @@ ACTIONS = {'float': move,
            'shrink': shrink,
            'put': put,
            'grid': grid,
+           'switch_cycle': switch_cycle,
            'reload': reload,
            'exit': close,
            'debug': debug_info}
@@ -238,14 +255,11 @@ def key_press(event):
         logging.exception(err)
     WM.flush()
 
+
 HANDLER = KeyPressHandler(key_press)
 
-def focus_in(event):
-    #logging.info(event.window.id)
-    pass
-
 def start():
-    """Start PyWO."""
+    """Setup and start PyWO."""
     logging.debug('>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<')
     logging.info('Starting PyWO...')
     CONFIG.load()
@@ -255,6 +269,7 @@ def start():
 
 
 if __name__ == '__main__':
+    # Setup logging ...
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
     format = '%(levelname)s: %(filename)s %(funcName)s(%(lineno)d): %(message)s'
@@ -265,5 +280,6 @@ if __name__ == '__main__':
     console = logging.StreamHandler()
     console.setLevel(logging.INFO)
     logger.addHandler(console)
+    # ... and start PyWO
     start()
 

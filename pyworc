@@ -14,6 +14,8 @@ vertical_first = yes
 ; grid_2x2, grid_3x2, grid_3x3, custom
 layout = grid_3x2
 
+;ignore_actions = grid_height
+
 [KEYS]
 ; section/point-name =  key
 top-left = KP_7
@@ -25,6 +27,9 @@ right = KP_6
 bottom-right = KP_3
 bottom = KP_2
 bottom-left = KP_1
+
+switch = Alt-KP_Divide
+cycle = Alt-Shift-KP_Divide
 
 ; key modifiers (Alt, Shift, Ctrl, Super) for actions 
 float = Alt

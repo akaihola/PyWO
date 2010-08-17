@@ -1,5 +1,5 @@
 #
-# PyWO - Python Windows Organizer
+# PyWO - Python Window Organizer
 # Copyright 2010, Wojciech 'KosciaK' Pietrzok
 #
 # This file is part of PyWO.
@@ -116,32 +116,35 @@ class KeyPressHandler(EventHandler):
 
     _EVENT_TYPE = KeyEvent
 
-    def __init__(self, key_press, keys=None, numlock=None):
+    def __init__(self, key_press, keys=[], numlock=0, capslock=0):
         """
         key_press - function that will handle events 
         keys - list of (mask, keycode) pairs
         numlock - state of NumLock key (0 - OFF, 1 - OFF, 2 - IGNORE)
+        capslock - state of CapsLock key
         """
         EventHandler.__init__(self, X.KeyPressMask, 
                               {X.KeyPress: key_press})
         self.keys = keys
         self.numlock = numlock
+        self.capslock = capslock
 
-    def set_keys(self, keys, numlock):
+    def set_keys(self, keys, numlock, capslock):
         """Set new keys list."""
         self.keys = keys
         self.numlock = numlock
+        self.capslock = capslock
 
     def grab_keys(self, window):
         """Grab keys and start listening to window's events."""
         for mask, code in self.keys:
-            window.grab_key(mask, code, self.numlock)
+            window.grab_key(mask, code, self.numlock, self.capslock)
         window.listen(self)
 
     def ungrab_keys(self, window):
         """Ungrab keys and stop listening to window's events."""
         for mask, code in self.keys:
-            window.ungrab_key(mask, code, self.numlock)
+            window.ungrab_key(mask, code, self.numlock, self.capslock)
         window.unlisten(self)
 
 

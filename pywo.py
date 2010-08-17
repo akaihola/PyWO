@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# PyWO - Python Windows Organizer
+# PyWO - Python Window Organizer
 # Copyright 2010, Wojciech 'KosciaK' Pietrzok
 #
 # This file is part of PyWO.
@@ -207,7 +207,9 @@ def reload():
     global HANDLER
     CONFIG.load('pyworc')
     HANDLER.ungrab_keys(WM)
-    HANDLER.set_keys(CONFIG.mappings.keys(), CONFIG.settings['numlock'])
+    HANDLER.set_keys(CONFIG.mappings.keys(), 
+                     CONFIG.settings['numlock'],
+                     CONFIG.settings['capslock'])
     HANDLER.grab_keys(WM)
 
 
@@ -271,7 +273,9 @@ def start():
     logging.debug('>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<')
     logging.info('Starting PyWO...')
     CONFIG.load()
-    HANDLER.set_keys(CONFIG.mappings.keys(), CONFIG.settings['numlock'])
+    HANDLER.set_keys(CONFIG.mappings.keys(), 
+                     CONFIG.settings['numlock'],
+                     CONFIG.settings['capslock'])
     HANDLER.grab_keys(WM)
     logging.info('PyWO ready and running!')
 

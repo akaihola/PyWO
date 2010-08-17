@@ -1,5 +1,5 @@
 #
-# PyWO - Python Windows Organizer
+# PyWO - Python Window Organizer
 # Copyright 2010, Wojciech 'KosciaK' Pietrzok
 #
 # This file is part of PyWO.

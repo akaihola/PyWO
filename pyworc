@@ -1,8 +1,10 @@
 [SETTINGS]
-; 1/on/yes/true - work only when NumLock is on
-; ignore - ignore NumLock state (works when on and off)
-; 0/off/no/false - work only when NumLock is off
+; NumLock and CapsLock state settings:
+;     1/on/yes/true - work only when NumLock is on
+;     ignore - ignore NumLock state (works when on and off)
+;     0/off/no/false - work only when NumLock is off
 numlock = ignore
+capslock = ignore
 
 ; invert window gravity if it needs resizing (eg terminals with incremental 
 ; size change), works only for grid

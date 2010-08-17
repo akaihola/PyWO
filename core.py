@@ -1,5 +1,5 @@
 #
-# PyWO - Python Windows Organizer
+# PyWO - Python Window Organizer
 # Copyright 2010, Wojciech 'KosciaK' Pietrzok
 #
 # This file is part of PyWO.
@@ -389,30 +389,34 @@ class XObject(object):
             logging.error("Can't use %s" % 
                               self.keycode2str(modifiers, keycode))
 
-    def grab_key(self, modifiers, keycode, numlock):
+    def grab_key(self, modifiers, keycode, numlock, capslock):
         """Grab key.
 
         Grab key alone, with CapsLock on and/or with NumLock on.
 
         """
-        if numlock in [0, 2]:
+        if numlock in [0, 2] and capslock in [0, 2]:
             self.__grab_key(keycode, modifiers)
+        if numlock in [0, 2] and capslock in [1, 2]:
             self.__grab_key(keycode, modifiers | X.LockMask)
-        if numlock in [1, 2]:
+        if numlock in [1, 2] and capslock in [0, 2]:
             self.__grab_key(keycode, modifiers | X.Mod2Mask)
+        if numlock in [1, 2] and capslock in [1, 2]:
             self.__grab_key(keycode, modifiers | X.LockMask | X.Mod2Mask)
 
-    def ungrab_key(self, modifiers, keycode, numlock):
+    def ungrab_key(self, modifiers, keycode, numlock, capslock):
         """Ungrab key.
 
         Ungrab key alone, with CapsLock on and/or with NumLock on.
 
         """
-        if numlock in [0, 2]:
+        if numlock in [0, 2] and capslock in [0, 1]:
             self._win.ungrab_key(keycode, modifiers)
+        if numlock in [0, 2] and capslock in [1, 2]:
             self._win.ungrab_key(keycode, modifiers | X.LockMask)
-        if numlock in [1, 2]:
+        if numlock in [1, 2] and capslock in [0, 2]:
             self._win.ungrab_key(keycode, modifiers | X.Mod2Mask)
+        if numlock in [1, 2] and capslock in [1, 2]:
             self._win.ungrab_key(keycode, modifiers | X.LockMask | X.Mod2Mask)
 
     def _translate_coords(self, x, y):

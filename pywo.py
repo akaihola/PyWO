@@ -22,187 +22,34 @@
 """pywo.py is the main module for PyWO."""
 
 import itertools
-import collections
 import logging
 from logging.handlers import RotatingFileHandler
-import operator
-import time
 import sys
 
-from core import Gravity, Size, Geometry, Window, WindowManager
-from events import KeyPressHandler, PropertyNotifyHandler
+from core import WindowManager
+from events import KeyPressHandler
 from config import Config
-from reposition import reposition_resize, shrink_window
+from actions import ACTIONS, register_action
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
-__version__ = "0.2"
+__version__ = "0.3"
 
 
 WM = WindowManager()
 CONFIG = Config()
-GRIDED = {}
-
-def expand(win, direction):
-    """Expand window in given direction."""
-    border = reposition_resize(win, direction, 
-                               sticky=(not direction.is_middle),
-                               vertical_first=CONFIG.settings['vertical_first'])
-    logging.debug(border)
-    win.move_resize(border, direction)
 
 
-def shrink(win, direction):
-    """Shrink window in given direction."""
-    border = shrink_window(win, direction.invert(), sticky=True,
-                           vertical_first=CONFIG.settings['vertical_first'])
-    logging.debug(border)
-    win.move_resize(border, direction)
-
-
-def move(win, direction):
-    """Move window in given direction."""
-    border = reposition_resize(win, direction, 
-                               sticky=(not direction.is_middle), 
-                               insideout=(not direction.is_middle),
-                               vertical_first=CONFIG.settings['vertical_first'])
-    geometry = win.geometry
-    geometry.width = min(border.width, geometry.width)
-    geometry.height = min(border.height, geometry.height)
-    x = border.x + border.width * direction.x
-    y = border.y + border.height * direction.y
-    geometry.set_position(x, y, direction)
-    logging.debug('x: %s, y: %s, gravity: %s' % 
-                  (geometry.x, geometry.y, direction))
-    win.move_resize(geometry)
-
-
-def put(win, position):
-    """Put window in given position (without resizing)."""
-    workarea = WM.workarea_geometry
-    geometry = win.geometry
-    x = workarea.x + workarea.width * position.x
-    y = workarea.y + workarea.height * position.y
-    geometry.set_position(x, y, position)
-    logging.debug('x: %s, y: %s, gravity: %s' % 
-                  (geometry.x, geometry.y, position))
-    win.move_resize(geometry)
-
-
-class DummyWindow(object):
-
-    """Mock Window object, only location information is needed."""
-    
-    gravity = Gravity(0.5, 0.5)
-
-    def __init__(self, workarea, window, x, y, sizes, gravity):
-        self.borders = window.borders
-        self.desktop = window.desktop
-        self.id = window.id
-        width = int(workarea.width * min(sizes.width))
-        height = int(workarea.height * min(sizes.height))
-        self.geometry = Geometry(x, y, width, height, gravity)
-
-def __get_iterator(sizes, new_size):
-    """Prepare cycle iterator for window sizes."""
-    sizes.sort()
-    if new_size in sizes[len(sizes)/2:] and \
-       new_size != sizes[len(sizes)/2]:
-        sizes.reverse()
-    sizes = sizes[sizes.index(new_size)+1:] + \
-             sizes[:sizes.index(new_size)+1]
-    return itertools.cycle(sizes)
-
-def grid(win, position, gravity, sizes, cycle='width'):
-    """Put window in given position and resize it."""
-    win.reset() 
-    win.sync() 
-    workarea = WM.workarea_geometry
-    x = workarea.x + workarea.width * position.x
-    y = workarea.y + workarea.height * position.y
-    heights = [int(workarea.height * height) for height in sizes.height]
-    widths = [int(workarea.width * width) for width in sizes.width]
-    if GRIDED and win.id == GRIDED['id'] and \
-       GRIDED['placement'] == (position, gravity):
-        old = win.geometry
-        if cycle == 'width':
-            new_width = GRIDED['width'].next()
-            new_height = old.height + \
-                         min(abs(old.height - height) for height in heights)
-        elif cycle == 'height':
-            new_height = GRIDED['height'].next()
-            new_width = old.width + \
-                        min(abs(old.width - width) for width in widths)
-    else:
-        dummy = DummyWindow(workarea, win, x, y, sizes, gravity)
-        border = reposition_resize(dummy, dummy.gravity,
-                                   vertical_first=(cycle is 'height'))
-        new_width = max([width for width in widths 
-                               if border.width - width >= 0 and \
-                                  x - width * position.x >= border.x and \
-                                  x + width * (1 - position.x) <= border.x2])
-        new_height = max([height for height in heights 
-                                 if border.height - height >= 0 and \
-                                    y - height * position.y >= border.y and \
-                                    y + height * (1 - position.y) <= border.y2])
-        GRIDED['id'] = win.id
-        GRIDED['width'] = __get_iterator(widths, new_width)
-        GRIDED['height'] = __get_iterator(heights, new_height)
-        GRIDED['placement'] = (position, gravity)
-    geometry = Geometry(x, y, new_width, new_height, gravity)
-    logging.debug('width: %s, height: %s' % (geometry.width, geometry.height))
-    if CONFIG.settings['invert_on_resize']: win.move_resize(geometry,
-                                                            gravity.invert())
-    else: win.move_resize(geometry, gravity)
-
-
-def switch_cycle(win, keep_active):
-    
-    def active_changed(event):
-        if event.atom_name == '_NET_ACTIVE_WINDOW':
-            WM.unlisten(property_handler)
-            CONFIG.settings['switch_cycle'] = False
-            active = WM.active_window()
-            active_geo, win_geo = active.geometry, win.geometry
-            win.move_resize(active_geo)
-            active.move_resize(win_geo)
-            if keep_active:
-                win.activate()
-
-    property_handler = PropertyNotifyHandler(active_changed)
-    if 'switch_cycle' in CONFIG.settings and \
-       CONFIG.settings['switch_cycle']:
-        WM.unlisten(property_handler)
-        CONFIG.settings['switch_cycle'] = False
-    else:
-        WM.listen(property_handler)
-        CONFIG.settings['switch_cycle'] = True
-
-
-def debug_info(win):
-    """Print debug info about Window Manager, and current Window."""
-    logging.info('----------==========----------')
-    logging.info('WindowManager=%s' % WM.name)
-    logging.info('Desktops=%s current=%s' % (WM.desktops, WM.desktop))
-    logging.info('Desktop=%s' % WM.desktop_size)
-    logging.info('Viewport=%s' % WM.viewport)
-    logging.info('Workarea=%s' % WM.workarea_geometry)
-    win.full_info()
-    geo =  win.geometry
-    win.move_resize(geo)
-    win.sync()
-    logging.info('New geometry=%s' % win.geometry)
-    logging.info('----------==========----------')
-
-
-def close():
+@register_action('exit')
+def _close(*args):
     """Ungrab keys and exit PyWO."""
     HANDLER.ungrab_keys(WM)
     logging.info('Exiting....')
     sys.exit()
 
 
-def reload():
+@register_action('reload')
+def _reload(*args):
     """Reload configuration file."""
     global HANDLER
     CONFIG.load('pyworc')
@@ -212,16 +59,6 @@ def reload():
                      CONFIG.settings['capslock'])
     HANDLER.grab_keys(WM)
 
-
-ACTIONS = {'float': move,
-           'expand': expand,
-           'shrink': shrink,
-           'put': put,
-           'grid': grid,
-           'switch_cycle': switch_cycle,
-           'reload': reload,
-           'exit': close,
-           'debug': debug_info}
 
 
 def key_press(event):
@@ -237,27 +74,6 @@ def key_press(event):
     logging.debug('%s%s' % 
                   (action, 
                   ['%s: %s' % (a.__class__.__name__, str(a)) for a in args]))
-    if action in ['exit', 'reload']:
-        try:
-            ACTIONS[action]()
-        except Exception, err:
-            logging.exception(err)
-        return
-    type = window.type
-    if (Window.TYPE_DESKTOP in type or \
-        Window.TYPE_DOCK in type or \
-        Window.TYPE_SPLASH in type):
-        logging.error("Can't %s window like this!" % action)
-        return
-    state = window.state
-    if action in ['float', 'expand', 'shrink', 'put'] and \
-       (Window.STATE_FULLSCREEN in state or \
-        (Window.STATE_MAXIMIZED_HORZ in state and \
-         Window.STATE_MAXIMIZED_VERT in state)):
-        logging.error("Can't %s window in fullscreen or maximized mode" % action)
-        return
-    if action != 'grid':
-        GRIDED['id'] = None
     try:
         window.shade(window.MODE_UNSET)
         ACTIONS[action](window, *args)

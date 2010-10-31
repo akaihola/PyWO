@@ -30,9 +30,6 @@ bottom-right = KP_3
 bottom = KP_2
 bottom-left = KP_1
 
-switch = Alt-KP_Divide
-cycle = Alt-Shift-KP_Divide
-
 ; key modifiers (Alt, Shift, Ctrl, Super) for actions 
 float = Alt
 expand = Shift
@@ -42,6 +39,9 @@ put = Alt-Ctrl
 grid_width = Ctrl
 ; cycle heights
 grid_height = Ctrl-Shift
+
+switch = Alt-KP_Divide
+cycle = Alt-Shift-KP_Divide
 
 ; exit PyWo
 exit = Ctrl-Shift-Alt-Q

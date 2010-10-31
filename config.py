@@ -32,14 +32,15 @@ from core import WindowManager as WM
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
 
-OFF = 0
-ON = 1
-IGNORE = 2
-
-
 class Config(object):
 
     """Config class holding all data from configuration files."""
+
+    __INSTANCE = None
+
+    _OFF = 0
+    _ON = 1
+    _IGNORE = 2
 
     # Predefined sizes that can be used in config files
     __SIZES = {'FULL': '1.0',
@@ -61,11 +62,15 @@ class Config(object):
     # Pattern matching simple calculations with floating numbers
     __PATTERN = re.compile('^[ 0-9\.\+-/\*]+$')
 
-    def __init__(self):
-        self.__config = ConfigParser()
-        self.settings = {}
-        self.mappings = {}
-        self.ignore = []
+    def __new__(cls):
+        if not cls.__INSTANCE:
+            config = object.__new__(cls)
+            config.__config = ConfigParser()
+            config.settings = {}
+            config.mappings = {}
+            config.ignore = []
+            cls.__INSTANCE = config
+        return cls.__INSTANCE
 
     def __parse_size(self, widths, heights):
         """Parse widths and heights strings and return Size object.
@@ -77,8 +82,7 @@ class Config(object):
         for old, new in self.__SIZES.items():
             widths = widths.replace(old, new)
             heights = heights.replace(old, new)
-        width = [eval(width) for width in widths.split(', ')
-                             if self.__PATTERN.match(width)]
+        width = [eval(width) for width in widths.split(', ') if self.__PATTERN.match(width)]
         height = [eval(height) for height in heights.split(', ')
                                if self.__PATTERN.match(height)]
         return Size(width, height)
@@ -103,11 +107,11 @@ class Config(object):
         for key, value in self.__config.items('SETTINGS'):
             value = value.lower()
             if value in ['1', 'yes', 'on', 'true']:
-                self.settings[key] = ON
+                self.settings[key] = self._ON
             elif value == 'ignore':
-                self.settings[key] = IGNORE
+                self.settings[key] = self._IGNORE
             else:
-                self.settings[key] = OFF
+                self.settings[key] = self._OFF
 
     def load(self, filename='.pyworc'):
         """Load configuration file"""
@@ -164,7 +168,7 @@ class Config(object):
                 key = WM.str2keycode(keys['put'], mask_key)
                 self.mappings[key] = ['put', [position]]
             if not ('grid' in self.ignore or 'grid' in ignore or \
-                    'grid_width' in ignore or 'grid_width' in ignore):
+                    'grid_width' in self.ignore or 'grid_width' in ignore):
                 key = WM.str2keycode(keys['grid_width'], mask_key)
                 self.mappings[key] = ['grid', 
                                      [position, gravity, sizes, 'width']]

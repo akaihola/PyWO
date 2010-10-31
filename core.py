@@ -432,7 +432,7 @@ class XObject(object):
     def str2keycode(cls, code, key=''):
         """Convert key as string(s) into (modifiers, keycode) pair.
         
-        There must be both modifier(s) and key persenti. If you send both
+        There must be both modifier(s) and key persent. If you send both
         modifier(s) and key in one string, they must be separated using '-'. 
         Modifiers must be separated using '-'.
         Keys are case insensitive.
@@ -627,7 +627,7 @@ class Window(XObject):
         """Return window's geometry.
 
         (x, y) coordinates are the top-left corner of the window,
-        relative to the left-top corner of desktop.
+        relative to the left-top corner of desktop (workarea?).
         Position and size *includes* window's borders!
         Position is translated if needed.
 
@@ -775,11 +775,10 @@ class WindowManager(XObject):
     def __new__(cls):
         if cls.__INSTANCE:
             return cls.__INSTANCE
-        else:
-            manager = object.__new__(cls)
-            XObject.__init__(manager)
-            cls.__INSTANCE = manager
-            return manager
+        manager = object.__new__(cls)
+        XObject.__init__(manager)
+        cls.__INSTANCE = manager
+        return manager
 
     @property
     def name(self):

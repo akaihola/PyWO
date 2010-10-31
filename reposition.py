@@ -18,7 +18,7 @@
 # along with PyWO.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-"""reposition.py provides methods used to find new window's geometry."""
+"""reposition.py provides methods used to find new geometry for window."""
 
 import logging
 import operator
@@ -29,12 +29,12 @@ from core import Window, WindowManager
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
 
-ATTRGETTERS = {'x': (operator.attrgetter('x'),
-                     operator.attrgetter('x2'),
-                     operator.attrgetter('width')),
-               'y': (operator.attrgetter('y'),
-                     operator.attrgetter('y2'),
-                     operator.attrgetter('height'))}
+_ATTRGETTERS = {'x': (operator.attrgetter('x'),
+                      operator.attrgetter('x2'),
+                      operator.attrgetter('width')),
+                'y': (operator.attrgetter('y'),
+                      operator.attrgetter('y2'),
+                      operator.attrgetter('height'))}
 
 class RepositionerResizer(object):
 
@@ -85,7 +85,7 @@ class RepositionerResizer(object):
         other window's edges.
 
         """
-        xy, xy2, size = ATTRGETTERS[xy_name]
+        xy, xy2, size = _ATTRGETTERS[xy_name]
         return [other for other in windows
                 if xy(other) < xy2(workarea) and \
                    xy2(other) > xy(workarea) and \
@@ -102,7 +102,7 @@ class RepositionerResizer(object):
         It contains both left/right, top/bottom edge's coordinates.
 
         """
-        xy, xy2, size = ATTRGETTERS[xy_name]
+        xy, xy2, size = _ATTRGETTERS[xy_name]
         top_left = [xy(other) for other in windows
                               if xy(current) <= xy(other) <= xy2(current)]
         bottom_right = [xy2(other) for other in windows 
@@ -171,7 +171,7 @@ def __top_left(current, workarea,
                windows, insides, xy_name,
                sticky, insideout):
     """Return top or left edge of new window's position."""
-    xy, xy2, size = ATTRGETTERS[xy_name]
+    xy, xy2, size = _ATTRGETTERS[xy_name]
     adjecent = [xy2(other) for other in windows 
                              if xy(workarea) < xy2(other) and \
                                 ((not sticky and \
@@ -196,7 +196,7 @@ def __bottom_right(current, workarea,
                    sticky, insideout):
     """Return bottom or right edge of new window's position."""
     #TODO: merge with __top_left() method
-    xy, xy2, size = ATTRGETTERS[xy_name]
+    xy, xy2, size = _ATTRGETTERS[xy_name]
     adjecent = [xy(other) for other in windows 
                           if xy(other) < xy2(workarea) and \
                              ((not sticky and \
@@ -228,7 +228,7 @@ def __ins_top_left(current, workarea,
     Use only coordinates inside current window.
     
     """
-    xy, xy2, size = ATTRGETTERS[xy_name]
+    xy, xy2, size = _ATTRGETTERS[xy_name]
     return min([coord for coord in insides
                       if coord > xy(current) and \
                          coord != xy2(current)] or \
@@ -242,7 +242,7 @@ def __ins_bottom_right(current, workarea,
     Use only coordinates inside current window.
     
     """
-    xy, xy2, size = ATTRGETTERS[xy_name]
+    xy, xy2, size = _ATTRGETTERS[xy_name]
     return max([coord for coord in insides
                       if coord < xy2(current) and \
                          coord != xy(current)] or \

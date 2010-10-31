@@ -36,8 +36,8 @@ from core import Window
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
 
-STRUCTURE_SUBSTRUCTURE = {True: X.SubstructureNotifyMask,
-                          False: X.StructureNotifyMask}
+_SUBSTRUCTURE = {True: X.SubstructureNotifyMask,
+                 False: X.StructureNotifyMask}
 
 
 class Event(object):
@@ -170,8 +170,9 @@ class DestroyNotifyHandler(EventHandler):
         children - False - listen for children windows' events
                    True - listen for window's events
         """
-        EventHandler.__init__(self, STRUCTURE_SUBSTRUCTURE[children],
+        EventHandler.__init__(self, _SUBSTRUCTURE[children],
                               {X.DestroyNotify: destroyed})
+
 
 class PropertyNotifyEvent(Event):
 

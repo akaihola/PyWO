@@ -55,8 +55,8 @@ def _reload(*args):
     CONFIG.load('pyworc')
     HANDLER.ungrab_keys(WM)
     HANDLER.set_keys(CONFIG.mappings.keys(), 
-                     CONFIG.settings['numlock'],
-                     CONFIG.settings['capslock'])
+                     CONFIG.numlock,
+                     CONFIG.capslock)
     HANDLER.grab_keys(WM)
 
 
@@ -90,8 +90,8 @@ def start():
     logging.info('Starting PyWO...')
     CONFIG.load()
     HANDLER.set_keys(CONFIG.mappings.keys(), 
-                     CONFIG.settings['numlock'],
-                     CONFIG.settings['capslock'])
+                     CONFIG.numlock,
+                     CONFIG.capslock)
     HANDLER.grab_keys(WM)
     logging.info('PyWO ready and running!')
 

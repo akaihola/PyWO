@@ -16,6 +16,7 @@ vertical_first = yes
 ; grid_2x2, grid_3x2, grid_3x3, custom
 layout = grid_3x2
 
+; list of ignored actions (separate with ', ')
 ;ignore_actions = grid_height
 
 [KEYS]
@@ -42,6 +43,8 @@ grid_height = Ctrl-Shift
 
 switch = Alt-KP_Divide
 cycle = Alt-Shift-KP_Divide
+
+sticky = Alt-KP_Multiply
 
 ; exit PyWo
 exit = Ctrl-Shift-Alt-Q

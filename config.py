@@ -68,7 +68,7 @@ class Config(object):
             config.__config = ConfigParser()
             config.settings = {}
             config.mappings = {}
-            config.ignore = []
+            config._ignore = []
             cls.__INSTANCE = config
         return cls.__INSTANCE
 
@@ -107,11 +107,11 @@ class Config(object):
         for key, value in self.__config.items('SETTINGS'):
             value = value.lower()
             if value in ['1', 'yes', 'on', 'true']:
-                self.settings[key] = self._ON
+                setattr(self, key, self._ON)
             elif value == 'ignore':
-                self.settings[key] = self._IGNORE
+                setattr(self, key, self._IGNORE)
             else:
-                self.settings[key] = self._OFF
+                setattr(self, key, self._OFF)
 
     def load(self, filename='.pyworc'):
         """Load configuration file"""
@@ -119,42 +119,42 @@ class Config(object):
         # Reset values
         self.settings = {}
         self.mappings = {}
-        self.ignore = []
+        self._ignore = []
         # Load config file
         self.__config.read([os.path.join(os.path.dirname(__file__), 'pyworc'),
                             os.path.join(os.path.expanduser('~'), '.pyworc')])
         keys = dict(self.__config.items('KEYS'))
         self.__config.remove_section('KEYS')
         # Parse SETTINGS section
-        self.__parse_settings()
         if self.__config.has_option('SETTINGS', 'layout'):
             # Load layout definition
             layout = self.__config.get('SETTINGS', 'layout')
             self.__config.read([os.path.join(os.path.dirname(__file__), layout),
                                 os.path.join(os.path.expanduser('~'), layout)])
+            self.__config.remove_option('SETTINGS', 'layout')
         if self.__config.has_option('SETTINGS', 'ignore_actions'):
             # Parse ignore_actions setting
             ignore = self.__config.get('SETTINGS', 'ignore_actions')
-            self.ignore = ignore.split(', ')
+            self._ignore = ignore.split(', ')
+            self.__config.remove_option('SETTINGS', 'ignore_actions')
+        self.__parse_settings()
         self.__config.remove_section('SETTINGS')
         # Parse every section
         for section in self.__config.sections():
             data = dict(self.__config.items(section))
             ignore = []
-            mask_key = keys[section]
+            keycode = WM.str2keycode(keys[section])
             if 'ignore_actions' in data:
                 ignore = data['ignore_actions'].split(', ')
-            if not (('float' in self.ignore or 'float' in ignore) and \
-                    ('expand' in self.ignore or 'expand' in ignore) and \
-                    ('shrink' in self.ignore or 'shrink' in ignore)):
+            ignore = ignore + self._ignore
+            if not ('float' in ignore and \
+                    'expand' in ignore and \
+                    'shrink' in ignore):
                 # No need to parse if float, expand, shrink are ignored
                 direction = self.__parse_gravity(data['direction'])
-            if not (('put' in self.ignore or 'put' in ignore) and \
-                    ('grid' in self.ignore or 'grid' in ignore or \
-                     ('grid_width' in self.ignore or \
-                      'grid_width' in ignore) and \
-                     ('grid_height' in self.ignore or \
-                      'grid_height' in ignore))):
+            if not ('put' in ignore and \
+                    ('grid' in ignore or \
+                     ('grid_width' in ignore and 'grid_height' in ignore))):
                 # No need to parse these if put and grid are ignored
                 position  = self.__parse_gravity(data['position'])
                 if 'gravity' in data:
@@ -164,46 +164,48 @@ class Config(object):
                 sizes = self.__parse_size(data['widths'], data['heights'])
 
             # Parse put, grid actions if not ignored
-            if not ('put' in self.ignore or 'put' in ignore):
-                key = WM.str2keycode(keys['put'], mask_key)
+            if not 'put' in ignore:
+                key = (WM.str2modifiers(keys['put']), keycode)
                 self.mappings[key] = ['put', [position]]
-            if not ('grid' in self.ignore or 'grid' in ignore or \
-                    'grid_width' in self.ignore or 'grid_width' in ignore):
-                key = WM.str2keycode(keys['grid_width'], mask_key)
+            if not ('grid' in ignore or 'grid_width' in ignore):
+                key = (WM.str2modifiers(keys['grid_width']), keycode)
                 self.mappings[key] = ['grid', 
                                      [position, gravity, sizes, 'width']]
-            if not ('grid' in self.ignore or 'grid' in ignore or \
-                    'grid_height' in self.ignore or 'grid_height' in ignore):
-                key = WM.str2keycode(keys['grid_height'], mask_key)
+            if not ('grid' in ignore or 'grid_height' in ignore):
+                key = (WM.str2modifiers(keys['grid_height']), keycode)
                 self.mappings[key] = ['grid', 
                                      [position, gravity, sizes, 'height']]
 
             # Parse float, expand, shrink actions if not ignored
-            if not ('float' in self.ignore or 'float' in ignore):
-                key = WM.str2keycode(keys['float'], mask_key)
+            if not 'float' in ignore:
+                key = (WM.str2modifiers(keys['float']), keycode)
                 self.mappings[key] = ['float', [direction]]
-            if not ('expand' in self.ignore or 'expand' in ignore):
-                key = WM.str2keycode(keys['expand'], mask_key)
+            if not 'expand' in ignore:
+                key = (WM.str2modifiers(keys['expand']), keycode)
                 self.mappings[key] = ['expand', [direction]]
-            if not ('shrink' in self.ignore or 'shrink' in ignore):
-                key = WM.str2keycode(keys['shrink'], mask_key)
+            if not 'shrink' in ignore:
+                key = (WM.str2modifiers(keys['shrink']), keycode)
                 self.mappings[key] = ['shrink', [direction]]
-                self.__config.remove_section(section)
+
+            self.__config.remove_section(section)
 
         # Parse switch, cycle if not ignored
-        if not 'switch' in self.ignore:
-            key = WM.str2keycode(keys['switch'])
+        if not 'switch' in self._ignore:
+            key = WM.str2modifiers_keycode(keys['switch'])
             self.mappings[key] = ['switch_cycle', [True]]
-        if not 'cycle' in self.ignore:
-            key = WM.str2keycode(keys['cycle'])
+        if not 'cycle' in self._ignore:
+            key = WM.str2modifiers_keycode(keys['cycle'])
             self.mappings[key] = ['switch_cycle', [False]]
+        if not 'sticky' in self._ignore:
+            key = WM.str2modifiers_keycode(keys['sticky'])
+            self.mappings[key] = ['sticky', []]
 
         # Parse reload, exit, debug. Can not be ignored!
-        key = WM.str2keycode(keys['reload'])
+        key = WM.str2modifiers_keycode(keys['reload'])
         self.mappings[key] = ['reload', []]
-        key = WM.str2keycode(keys['exit'])
+        key = WM.str2modifiers_keycode(keys['exit'])
         self.mappings[key] = ['exit', []]
-        key = WM.str2keycode(keys['debug'])
+        key = WM.str2modifiers_keycode(keys['debug'])
         self.mappings[key] = ['debug', []]
         logging.info('Configuration loaded.')
 

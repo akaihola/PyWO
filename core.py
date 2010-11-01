@@ -429,7 +429,30 @@ class XObject(object):
         return self._win.translate_coords(self.__root, x, y)
 
     @classmethod
-    def str2keycode(cls, code, key=''):
+    def str2modifiers(cls, masks, splitted=False):
+        # TODO: Check this part... not sure why it looks like that...
+        if not splitted:
+            masks = masks.split('-')
+        modifiers = 0
+        if masks[0]:
+            for mask in masks:
+                if not mask in cls.__KEY_MODIFIERS.keys():
+                    continue
+                modifiers = modifiers | cls.__KEY_MODIFIERS[mask]
+        else:
+            modifiers = X.AnyModifier
+
+        return modifiers
+
+    @classmethod
+    def str2keycode(cls, key):
+        keysym = XK.string_to_keysym(key)
+        keycode = cls.__DISPLAY.keysym_to_keycode(keysym)
+        cls.__KEYCODES[keycode] = key
+        return keycode
+
+    @classmethod
+    def str2modifiers_keycode(cls, code, key=''):
         """Convert key as string(s) into (modifiers, keycode) pair.
         
         There must be both modifier(s) and key persent. If you send both
@@ -448,19 +471,8 @@ class XObject(object):
         else:
             masks = code
         
-        # TODO: Check this part... not sure why it looks like that...
-        modifiers = 0
-        if masks[0]:
-            for mask in masks:
-                if not mask in cls.__KEY_MODIFIERS.keys():
-                    continue
-                modifiers = modifiers | cls.__KEY_MODIFIERS[mask]
-        else:
-            modifiers = X.AnyModifier
-        
-        keysym = XK.string_to_keysym(key)
-        keycode = cls.__DISPLAY.keysym_to_keycode(keysym)
-        cls.__KEYCODES[keycode] = key
+        modifiers = cls.str2modifiers(masks, True)
+        keycode = cls.str2keycode(key)
         return (modifiers, keycode)
 
     @classmethod
@@ -511,17 +523,17 @@ class Window(XObject):
 
     # List of window states
     STATE_MODAL = XObject.atom('_NET_WM_STATE_MODAL')
-    STATE_STICKY = XObject.atom('_NET_WM_STATE_STICKY')
-    STATE_MAXIMIZED_VERT = XObject.atom('_NET_WM_STATE_MAXIMIZED_VERT')
-    STATE_MAXIMIZED_HORZ = XObject.atom('_NET_WM_STATE_MAXIMIZED_HORZ')
-    STATE_SHADED = XObject.atom('_NET_WM_STATE_SHADED')
-    STATE_SKIP_TASKBAR = XObject.atom('_NET_WM_STATE_SKIP_TASKBAR')
-    STATE_SKIP_PAGER = XObject.atom('_NET_WM_STATE_SKIP_PAGER')
-    STATE_HIDDEN = XObject.atom('_NET_WM_STATE_HIDDEN')
-    STATE_FULLSCREEN = XObject.atom('_NET_WM_STATE_FULLSCREEN')
-    STATE_ABOVE = XObject.atom('_NET_WM_STATE_ABOVE')
-    STATE_BELOW = XObject.atom('_NET_WM_STATE_BELOW')
-    STATE_DEMANDS_ATTENTION = XObject.atom('_NET_WM_STATE_DEMANDS_ATTENTION')
+    STATE_STICKY = XObject.atom('_NET_WM_STATE_STICKY') # 262
+    STATE_MAXIMIZED_VERT = XObject.atom('_NET_WM_STATE_MAXIMIZED_VERT') # 263
+    STATE_MAXIMIZED_HORZ = XObject.atom('_NET_WM_STATE_MAXIMIZED_HORZ') # 264
+    STATE_SHADED = XObject.atom('_NET_WM_STATE_SHADED') # 321
+    STATE_SKIP_TASKBAR = XObject.atom('_NET_WM_STATE_SKIP_TASKBAR') # 322
+    STATE_SKIP_PAGER = XObject.atom('_NET_WM_STATE_SKIP_PAGER') # 323
+    STATE_HIDDEN = XObject.atom('_NET_WM_STATE_HIDDEN') # 324
+    STATE_FULLSCREEN = XObject.atom('_NET_WM_STATE_FULLSCREEN') # 265
+    STATE_ABOVE = XObject.atom('_NET_WM_STATE_ABOVE') # 325
+    STATE_BELOW = XObject.atom('_NET_WM_STATE_BELOW') # 326
+    STATE_DEMANDS_ATTENTION = XObject.atom('_NET_WM_STATE_DEMANDS_ATTENTION') # 327
 
     # Mode values (for maximize and shade functions)
     MODE_UNSET = 0
@@ -595,7 +607,7 @@ class Window(XObject):
         desktop = self.get_property('_NET_WM_DESKTOP')
         if not desktop:
             return 0
-        # FIXME: Metacity return 0xFFFFFFFF when "show on all desktops"
+        # returns 0xFFFFFFFF when "show on all desktops"
         return desktop.value[0]
 
     def __borders(self):
@@ -728,6 +740,13 @@ class Window(XObject):
         self.maximize(self.MODE_UNSET)
         self.shade(self.MODE_UNSET)
 
+    def sticky(self, mode):
+        """Make window fullscreen (if supported by window manager)."""
+        data = [mode, 
+                Window.STATE_STICKY,
+                0, 0, 0]
+        self.__change_state(data)
+
     def __change_state(self, data):
         """Send _NET_WM_STATE event to the root window."""
         type = self.atom('_NET_WM_STATE')
@@ -853,6 +872,8 @@ class WindowManager(XObject):
         """Return list of all windows (with bottom-top stacking order)."""
         windows_ids = self.windows_ids()
         windows = [Window(win_id) for win_id in windows_ids]
-        return [window for window in windows if filter_method(window)]
+        if filter_method:
+            return [window for window in windows if filter_method(window)]
+        return windows
 
 

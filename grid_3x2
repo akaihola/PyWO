@@ -1,5 +1,8 @@
 ; 3x2 grid layout
 
+[SETTINGS]
+ignore_actions = grid_height
+
 [top-left]
 direction = TOP_LEFT
 position = TOP_LEFT

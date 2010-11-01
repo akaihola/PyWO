@@ -84,7 +84,7 @@ def _expand(win, direction):
     _GRIDED['id'] = None
     border = reposition_resize(win, direction, 
                                sticky=(not direction.is_middle),
-                               vertical_first=_CONFIG.settings['vertical_first'])
+                               vertical_first=_CONFIG.vertical_first)
     logging.debug(border)
     win.move_resize(border, direction)
 
@@ -96,7 +96,7 @@ def _shrink(win, direction):
     """Shrink window in given direction."""
     _GRIDED['id'] = None
     border = shrink_window(win, direction.invert(), sticky=True,
-                           vertical_first=_CONFIG.settings['vertical_first'])
+                           vertical_first=_CONFIG.vertical_first)
     logging.debug(border)
     win.move_resize(border, direction)
 
@@ -110,7 +110,7 @@ def _move(win, direction):
     border = reposition_resize(win, direction, 
                                sticky=(not direction.is_middle), 
                                insideout=(not direction.is_middle),
-                               vertical_first=_CONFIG.settings['vertical_first'])
+                               vertical_first=_CONFIG.vertical_first)
     geometry = win.geometry
     geometry.width = min(border.width, geometry.width)
     geometry.height = min(border.height, geometry.height)
@@ -204,20 +204,58 @@ def _grid(win, position, gravity, sizes, cycle='width'):
         _GRIDED['placement'] = (position, gravity)
     geometry = Geometry(x, y, new_width, new_height, gravity)
     logging.debug('width: %s, height: %s' % (geometry.width, geometry.height))
-    if _CONFIG.settings['invert_on_resize']: 
+    if _CONFIG.invert_on_resize: 
         gravity = gravity.invert()
     win.move_resize(geometry, gravity)
+
+
+@register_action('maximize')
+@check_type
+def _maximize(win, mode=Window.MODE_TOGGLE):
+    win.shade(win.MODE_UNSET)
+    win.fullscreen(win.MODE_UNSET)
+    win.maximize(mode)
+
+
+@register_action('shade')
+@check_type
+def _shade(win, mode=Window.MODE_TOGGLE):
+    #win.maximize(win.MODE_UNSET)
+    win.fullscreen(win.MODE_UNSET)
+    win.shade(mode)
+
+
+@register_action('fullscreen')
+@check_type
+def _fullscreen(win, mode=Window.MODE_TOGGLE):
+    win.shade(win.MODE_UNSET)
+    win.maximize(win.MODE_UNSET)
+    win.fullscreen(mode)
+
+
+@register_action('sticky')
+@check_type
+def _sticky(win, mode=Window.MODE_TOGGLE):
+    # TODO: should I manully change desktop to 0xFFFFFFFF?
+    win.sticky(mode)
+
+
+@register_action('activate')
+@check_type
+def _activate(win, mode=Window.MODE_TOGGLE):
+    win.activate()
 
 
 @register_action('switch_cycle')
 @check_type
 def _switch_cycle(win, keep_active):
     _GRIDED['id'] = None
+    _switch_cycle = False
     
     def active_changed(event):
         if event.atom_name == '_NET_ACTIVE_WINDOW':
             _WM.unlisten(property_handler)
-            _CONFIG.settings['switch_cycle'] = False
+            _switch_cycle = False
             active = _WM.active_window()
             active_geo, win_geo = active.geometry, win.geometry
             win.move_resize(active_geo)
@@ -226,13 +264,12 @@ def _switch_cycle(win, keep_active):
                 win.activate()
 
     property_handler = PropertyNotifyHandler(active_changed)
-    if 'switch_cycle' in _CONFIG.settings and \
-        _CONFIG.settings['switch_cycle']:
+    if _switch_cycle:
         _WM.unlisten(property_handler)
-        _CONFIG.settings['switch_cycle'] = False
+        _switch_cycle = False
     else:
         _WM.listen(property_handler)
-        _CONFIG.settings['switch_cycle'] = True
+        _switch_cycle = True
 
 
 @register_action('debug')

@@ -18,7 +18,7 @@
 # along with PyWO.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-"""events.py module encapsulate all X events handling.
+"""events.py - X events handling.
 
 events module contain abstract base classes representing event handler, and
 event object wrapper. These should be subclassed by concrete implementations

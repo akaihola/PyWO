@@ -18,99 +18,113 @@
 # along with PyWO.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-"""actions.py defines core PyWO actions."""
+"""actions.py - core PyWO actions."""
 
 import itertools
 import logging
-from functools import wraps
 
-from core import Gravity, Geometry, Window, WindowManager
+from core import Gravity, Geometry, Window, WM
 from events import PropertyNotifyHandler
-from config import Config
 from reposition import reposition_resize, shrink_window
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
 
-ACTIONS = {}
+ACTIONS = {} # {action.name: action, }
 
-_WM = WindowManager()
-_CONFIG = Config()
 _GRIDED = {} # change to HISTORY
 
+TYPE = 1
+STATE = 2
 
-def register_action(name):
+
+class ActionException(Exception):
+
+    def __init__(self, msg):
+        self.msg = msg
+
+    def __str__(self):
+        return self.msg
+
+
+class Action(object):
+
+    def __init__(self, name, action, 
+                 check=[], unshade=False):
+        self.name = name
+        self.args = action.func_code.co_varnames[1:action.func_code.co_argcount]
+        self.__action = action
+        self.__check = check
+        self.__unshade = unshade
+
+    def __call__(self, win, **kwargs):
+        if self.__check:
+            self.__check_type_state(win)
+        if self.__unshade:
+            win.shade(win.MODE_UNSET)
+            win.flush()
+        self.__action(win, **kwargs)
+        # history
+        # _GRIDED
+
+    def __check_type_state(self, win):
+        type = win.type
+        if TYPE in self.__check and \
+           (Window.TYPE_DESKTOP in type or \
+            Window.TYPE_DOCK in type or \
+            Window.TYPE_SPLASH in type):
+            error_msg = "Can't perform action on window of this type."
+            raise ActionException(error_msg)
+
+        state = win.state
+        if STATE in self.__check and \
+           (Window.STATE_FULLSCREEN in state or \
+            (Window.STATE_MAXIMIZED_HORZ in state and \
+             Window.STATE_MAXIMIZED_VERT in state)):
+            error_msg = "Can't perform action on maximized/fullscreen window."
+            raise ActionException(error_msg)
+
+
+def register_action(name, check=[], unshade=False):
     """Register function as PyWO action with given name."""
     def register(action):
+        action = Action(name, action, check, unshade)
         ACTIONS[name] = action
         return action
     return register
 
 
-def check_type(action):
-    """Perform action only on normal windows."""
-    @wraps(action)
-    def check(win, *args):
-        type = win.type
-        if (Window.TYPE_DESKTOP in type or \
-            Window.TYPE_DOCK in type or \
-            Window.TYPE_SPLASH in type):
-            logging.error("Can't perform action on window of this type.")
-            return
-        return action(win, *args)
-    return check
-
-
-def check_state(action):
-    """Perform action only on not maximized/fullscreen windows."""
-    @wraps(action)
-    def check(win, *args):
-        state = win.state
-        if (Window.STATE_FULLSCREEN in state or \
-            (Window.STATE_MAXIMIZED_HORZ in state and \
-             Window.STATE_MAXIMIZED_VERT in state)):
-            logging.error("Can't perform action on maximized or fullscreen window.")
-            return
-        return action(win, *args)
-    return check
-
-
-@register_action('expand')
-@check_type
-@check_state
-def _expand(win, direction):
+@register_action(name='expand', check=[TYPE, STATE], unshade=True)
+def _expand(win, direction, vertical_first=True):
     """Expand window in given direction."""
     _GRIDED['id'] = None
     border = reposition_resize(win, direction, 
                                sticky=(not direction.is_middle),
-                               vertical_first=_CONFIG.vertical_first)
+                               vertical_first=vertical_first)
     logging.debug(border)
     win.move_resize(border, direction)
 
 
-@register_action('shrink')
-@check_type
-@check_state
-def _shrink(win, direction):
+@register_action(name='shrink', check=[TYPE, STATE], unshade=True)
+def _shrink(win, direction, vertical_first=True):
     """Shrink window in given direction."""
     _GRIDED['id'] = None
-    border = shrink_window(win, direction.invert(), sticky=True,
-                           vertical_first=_CONFIG.vertical_first)
+    border = shrink_window(win, direction.invert(), 
+                           sticky=True,
+                           vertical_first=vertical_first)
     logging.debug(border)
     win.move_resize(border, direction)
 
 
-@register_action('float')
-@check_type
-@check_state
-def _move(win, direction):
+@register_action(name='float', check=[TYPE, STATE], unshade=True)
+def _move(win, direction, vertical_first):
     """Move window in given direction."""
     _GRIDED['id'] = None
     border = reposition_resize(win, direction, 
                                sticky=(not direction.is_middle), 
                                insideout=(not direction.is_middle),
-                               vertical_first=_CONFIG.vertical_first)
+                               vertical_first=vertical_first)
     geometry = win.geometry
     geometry.width = min(border.width, geometry.width)
     geometry.height = min(border.height, geometry.height)
@@ -122,13 +136,11 @@ def _move(win, direction):
     win.move_resize(geometry)
 
 
-@register_action('put')
-@check_type
-@check_state
+@register_action(name='put', check=[TYPE, STATE], unshade=True)
 def _put(win, position):
     """Put window in given position (without resizing)."""
     _GRIDED['id'] = None
-    workarea = _WM.workarea_geometry
+    workarea = WM.workarea_geometry
     geometry = win.geometry
     x = workarea.x + workarea.width * position.x
     y = workarea.y + workarea.height * position.y
@@ -153,9 +165,7 @@ class _DummyWindow(object):
         self.geometry = Geometry(x, y, width, height, gravity)
 
 
-@register_action('grid')
-@check_type
-def _grid(win, position, gravity, sizes, cycle='width'):
+def __grid(win, position, gravity, sizes, invert_on_resize, cycle):
     """Put window in given position and resize it."""
 
     def get_iterator(sizes, new_size):
@@ -170,7 +180,7 @@ def _grid(win, position, gravity, sizes, cycle='width'):
 
     win.reset() 
     win.sync() 
-    workarea = _WM.workarea_geometry
+    workarea = WM.workarea_geometry
     x = workarea.x + workarea.width * position.x
     y = workarea.y + workarea.height * position.y
     heights = [int(workarea.height * height) for height in sizes.height]
@@ -204,59 +214,90 @@ def _grid(win, position, gravity, sizes, cycle='width'):
         _GRIDED['placement'] = (position, gravity)
     geometry = Geometry(x, y, new_width, new_height, gravity)
     logging.debug('width: %s, height: %s' % (geometry.width, geometry.height))
-    if _CONFIG.invert_on_resize: 
+    if invert_on_resize: 
         gravity = gravity.invert()
     win.move_resize(geometry, gravity)
 
 
-@register_action('maximize')
-@check_type
+@register_action(name='grid_width', check=[TYPE])
+def _grid_width(win, position, gravity, sizes, invert_on_resize=True):
+    """Put window in given position and resize it (cycle widths)."""
+    __grid(win, position, gravity, sizes, invert_on_resize, 'width')
+
+@register_action(name='grid_height', check=[TYPE])
+def _grid_height(win, position, gravity, sizes, invert_on_resize=True):
+    """Put window in given position and resize it (cycle heights)."""
+    __grid(win, position, gravity, sizes, invert_on_resize, 'height')
+
+
+@register_action(name='maximize', check=[TYPE], unshade=True)
 def _maximize(win, mode=Window.MODE_TOGGLE):
-    win.shade(win.MODE_UNSET)
+    """Maximize window."""
     win.fullscreen(win.MODE_UNSET)
     win.maximize(mode)
 
+@register_action(name='maximize_vert', check=[TYPE], unshade=True)
+def _maximize(win, mode=Window.MODE_TOGGLE):
+    """Maximize vertically window."""
+    win.fullscreen(win.MODE_UNSET)
+    win.maximize(mode, horz=False)
 
-@register_action('shade')
-@check_type
+@register_action(name='maximize_horz', check=[TYPE], unshade=True)
+def _maximize(win, mode=Window.MODE_TOGGLE):
+    """Maximize vertically window."""
+    win.fullscreen(win.MODE_UNSET)
+    win.maximize(mode, vert=False)
+
+
+@register_action(name='shade', check=[TYPE])
 def _shade(win, mode=Window.MODE_TOGGLE):
+    """Shade window."""
     #win.maximize(win.MODE_UNSET)
     win.fullscreen(win.MODE_UNSET)
     win.shade(mode)
 
 
-@register_action('fullscreen')
-@check_type
+@register_action(name='fullscreen', check=[TYPE], unshade=True)
 def _fullscreen(win, mode=Window.MODE_TOGGLE):
-    win.shade(win.MODE_UNSET)
+    """Fullscreen window."""
     win.maximize(win.MODE_UNSET)
     win.fullscreen(mode)
 
 
-@register_action('sticky')
-@check_type
+@register_action(name='sticky', check=[TYPE])
 def _sticky(win, mode=Window.MODE_TOGGLE):
+    """Change sticky (stay on all desktops/viewports) property."""
     # TODO: should I manully change desktop to 0xFFFFFFFF?
     win.sticky(mode)
 
 
-@register_action('activate')
-@check_type
+@register_action(name='activate', check=[TYPE], unshade=True)
 def _activate(win, mode=Window.MODE_TOGGLE):
+    """Activate window.
+    
+    Unshade, unminimize and switch to it's desktop/viewport.
+    
+    """
+    # TODO: test if changes to window's desktop (ok with viewports)
     win.activate()
 
 
-@register_action('switch_cycle')
-@check_type
-def _switch_cycle(win, keep_active):
+@register_action(name="close", check=[TYPE])
+def _close(win):
+    """Close window."""
+    win.close()
+
+
+def __switch_cycle(win, keep_active):
+    """Switch contents/placement of windows."""
     _GRIDED['id'] = None
     _switch_cycle = False
     
     def active_changed(event):
         if event.atom_name == '_NET_ACTIVE_WINDOW':
-            _WM.unlisten(property_handler)
+            WM.unlisten(property_handler)
             _switch_cycle = False
-            active = _WM.active_window()
+            active = WM.active_window()
             active_geo, win_geo = active.geometry, win.geometry
             win.move_resize(active_geo)
             active.move_resize(win_geo)
@@ -265,23 +306,38 @@ def _switch_cycle(win, keep_active):
 
     property_handler = PropertyNotifyHandler(active_changed)
     if _switch_cycle:
-        _WM.unlisten(property_handler)
+        WM.unlisten(property_handler)
         _switch_cycle = False
     else:
-        _WM.listen(property_handler)
+        WM.listen(property_handler)
         _switch_cycle = True
 
+@register_action(name='switch', check=[TYPE])
+def _switch(win):
+    """Switch placement of windows (keep focus on the same window)."""
+    __switch_cycle(win, True)
 
-@register_action('debug')
-@check_type
+@register_action(name='cycle', check=[TYPE])
+def _cycle(win):
+    """Switch contents of windows (focus on new window)."""
+    __switch_cycle(win, False)
+
+
+@register_action(name='blink', check=[TYPE, STATE])
+def _blink(win):
+    """Blink window (show border around window)."""
+    win.blink()
+
+
+@register_action(name='debug', check=[TYPE])
 def _debug_info(win):
     """Print debug info about Window Manager, and current Window."""
     logging.info('----------==========----------')
-    logging.info('WindowManager=%s' % _WM.name)
-    logging.info('Desktops=%s current=%s' % (_WM.desktops, _WM.desktop))
-    logging.info('Desktop=%s' % _WM.desktop_size)
-    logging.info('Viewport=%s' % _WM.viewport)
-    logging.info('Workarea=%s' % _WM.workarea_geometry)
+    logging.info('WindowManager=%s' % WM.name)
+    logging.info('Desktops=%s current=%s' % (WM.desktops, WM.desktop))
+    logging.info('Desktop=%s' % WM.desktop_size)
+    logging.info('Viewport=%s' % WM.viewport)
+    logging.info('Workarea=%s' % WM.workarea_geometry)
     win.full_info()
     geo =  win.geometry
     win.move_resize(geo)
@@ -289,3 +345,9 @@ def _debug_info(win):
     logging.info('New geometry=%s' % win.geometry)
     logging.info('----------==========----------')
 
+# TODO: new actions
+#   - resize (with gravity?)
+#   - move (relative with gravity and +/-length)?
+#   - place (absolute x,y)
+#   - switch desktop/viewport
+#   - move window to desktop/viewport

@@ -18,7 +18,7 @@
 # along with PyWO.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-"""core.py is an abstract layer between Xlib and the rest of aplication.
+"""core.py - an abstract layer between Xlib and the rest of aplication.
 
 core module (with events module) encapsulates all comunication with X Server.
 It contains objects representing Window Manager, Windows, and other basic
@@ -28,6 +28,7 @@ borders, gravity, etc).
 """
 
 import logging
+import re
 import time
 import threading
 
@@ -203,7 +204,7 @@ class Borders(object):
         return string % (self.left, self.right, self.top, self.bottom)
 
 
-class EventDispatcher(threading.Thread):
+class EventDispatcher(object):
 
     """Checks the event queue and dispatches events to correct handlers.
 
@@ -216,10 +217,11 @@ class EventDispatcher(threading.Thread):
     """
 
     def __init__(self, display):
-        threading.Thread.__init__(self)
+        # What about integration with gobject?
+        # gobject.io_add_watch(root.display, gobject.IO_IN, handle_xevent)
         self.__display = display
         self.__root = display.screen().root
-        self.__handlers = {}
+        self.__handlers = {} # {window.id: {handler.type: handler, }, }
 
     def run(self):
         """Perform event queue checking.
@@ -241,12 +243,14 @@ class EventDispatcher(threading.Thread):
         logging.debug('Registering %s (mask=%s, types=%s) for %s' %
                       (handler.__class__.__name__, 
                        handler.mask, handler.types, window.id))
+        started = len(self.__handlers)
         if not window.id in self.__handlers:
             self.__handlers[window.id] = {}
         for type in handler.types:
             self.__handlers[window.id][type] = handler
-        if not self.isAlive():
-            self.start()
+        if not started:
+            t = threading.Thread(target=self.run)
+            t.start()
         return set([handler.mask 
                     for handler in self.__handlers[window.id].values()])
 
@@ -419,6 +423,15 @@ class XObject(object):
         if numlock in [1, 2] and capslock in [1, 2]:
             self._win.ungrab_key(keycode, modifiers | X.LockMask | X.Mod2Mask)
 
+    def draw_rectangle(self, x, y, width, height, line):
+        color = self.__DISPLAY.screen().black_pixel
+        gc = self.__root.create_gc(line_width=line,
+                                   #join_style=X.JoinRound,
+                                   foreground=color,
+                                   function=X.GXinvert,
+                                   subwindow_mode=X.IncludeInferiors,)
+        self.__root.rectangle(gc, x, y, width, height)
+
     def _translate_coords(self, x, y):
         """Return translated coordinates.
         
@@ -464,12 +477,11 @@ class XObject(object):
         For example: "Ctrl-A", "Super-Alt-x"
         
         """
+        if key:
+            code = '-'.join([code,key])
         code = code.split('-')
-        if not key:
-            key = code[-1]
-            masks = code[:-1]
-        else:
-            masks = code
+        key = code[-1]
+        masks = code[:-1]
         
         modifiers = cls.str2modifiers(masks, True)
         keycode = cls.str2keycode(key)
@@ -707,16 +719,23 @@ class Window(XObject):
         self._win.configure(x=x, y=y, width=width, height=height)
 
     def activate(self):
-        """Make this window active."""
-        self._win.set_input_focus(X.RevertToNone, X.CurrentTime)
-        self._win.configure(stack_mode=X.Above)
+        """Make this window active (unshade, unminimize)."""
+        type = self.atom('_NET_ACTIVE_WINDOW')
+        mask = X.SubstructureRedirectMask
+        data = [0, 0, 0, 0, 0]
+        self.send_event(data, type, mask)
+        # NOTE: Previously used for activating (didn't unshade/unminimize)
+        #       Need to test if setting X.Above is needed in various WMs
+        #self._win.set_input_focus(X.RevertToNone, X.CurrentTime)
+        #self._win.configure(stack_mode=X.Above)
 
-    def maximize(self, mode):
+    def maximize(self, mode,
+                 vert=STATE_MAXIMIZED_VERT, 
+                 horz=STATE_MAXIMIZED_HORZ):
         """Maximize window (both vertically and horizontally)."""
-        #TODO: separate VERT and HORZ?
         data = [mode, 
-                Window.STATE_MAXIMIZED_VERT,
-                Window.STATE_MAXIMIZED_HORZ,
+                vert,
+                horz,
                 0, 0]
         self.__change_state(data)
 
@@ -747,11 +766,29 @@ class Window(XObject):
                 0, 0, 0]
         self.__change_state(data)
 
+    def close(self):
+        """Close window."""
+        type = self.atom('_NET_CLOSE_WINDOW')
+        mask = X.SubstructureRedirectMask
+        data = [0, 0, 0, 0, 0]
+        self.send_event(data, type, mask)
+
     def __change_state(self, data):
         """Send _NET_WM_STATE event to the root window."""
         type = self.atom('_NET_WM_STATE')
         mask = X.SubstructureRedirectMask
         self.send_event(data, type, mask)
+
+    def blink(self):
+        """For 0.25 second show borderaround window."""
+        geo = self.geometry
+        self.draw_rectangle(geo.x+5, geo.y+5, 
+                            geo.width-10, geo.height-10, 10)
+        self.flush()
+        time.sleep(0.25)
+        self.draw_rectangle(geo.x+5, geo.y+5, 
+                            geo.width-10, geo.height-10, 10)
+        self.flush()
 
     def __eq__(self, other):
         return self.id == other.id
@@ -783,12 +820,12 @@ class WindowManager(XObject):
     
     """Window Manager (or root window in X programming terms).
     
-    WindowManger's self._win refers to the root window.
+    WindowManager's self._win refers to the root window.
     It is Singleton.
 
     """
 
-    # Instance of the WindowManger class, make it Singleton.
+    # Instance of the WindowManager class, make it Singleton.
     __INSTANCE = None
 
     def __new__(cls):
@@ -868,12 +905,100 @@ class WindowManager(XObject):
         windows_ids = self.get_property('_NET_CLIENT_LIST_STACKING').value
         return windows_ids
 
-    def windows(self, filter_method=None):
-        """Return list of all windows (with bottom-top stacking order)."""
+    def windows(self, filter_method=None, match=''):
+        """Return list of all windows (with top-bottom stacking order)."""
         windows_ids = self.windows_ids()
         windows = [Window(win_id) for win_id in windows_ids]
         if filter_method:
             return [window for window in windows if filter_method(window)]
+        if match:
+            match = match.strip().lower()
+            desktop = self.desktop
+            workarea = self.workarea_geometry
+            def mapper(window, points=0):
+                name = window.name.lower().decode('utf-8')
+                if name == match:
+                    points += 200
+                elif match in name:
+                    left = name.find(match)
+                    right = (name.rfind(match) - len(name) + len(match)) * -1
+                    points += 150 - min(left, right)
+                geometry = window.geometry
+                if points and \
+                   (window.desktop == desktop or \
+                    window.desktop == 0xFFFFFFFF):
+                    points += 50
+                    if geometry.x < workarea.x2 and \
+                       geometry.x2 > workarea.x and \
+                       geometry.y < workarea.y2 and \
+                       geometry.y2 > workarea.y:
+                        points += 100
+                return (window, points)
+            windows = map(mapper, windows)
+            windows.sort(key=lambda win: win[1])
+            windows = [win for win, points in windows if points]
+        windows.reverse()
         return windows
 
+WM = WindowManager()
+
+
+# Predefined sizes that can be used in config files
+__SIZES = {'FULL': '1.0',
+           'HALF': '0.5',
+           'THIRD': '1.0/3',
+           'QUARTER': '0.25',
+          }
+
+# Predefined gravities, that can be used in config files
+__GRAVITIES = {'TOP_LEFT': Gravity(0, 0), 'UP_LEFT': Gravity(0, 0),
+               'TOP': Gravity(0.5, 0), 'UP': Gravity(0.5, 0),
+               'TOP_RIGHT': Gravity(1, 0), 'UP_RIGHT': Gravity(1, 0),
+               'LEFT': Gravity(0, 0.5),
+               'MIDDLE': Gravity(0.5, 0.5), 'CENTER': Gravity(0.5, 0.5),
+               'RIGHT': Gravity(1, 0.5),
+               'BOTTOM_LEFT': Gravity(0, 1), 'DOWN_LEFT': Gravity(0, 1),
+               'BOTTOM': Gravity(0.5, 1), 'DOWN': Gravity(0.5, 1),
+               'BOTTOM_RIGHT': Gravity(1, 1), 'DOWN_RIGHT': Gravity(1, 1),
+              }
+
+# Pattern matching simple calculations with floating numbers
+__PATTERN = re.compile('^[ 0-9\.\+-/\*]+$')
+
+
+def parse_size(widths, heights):
+    """Parse widths and heights strings and return Size object.
+
+    It can be float number (value will be evaluatedi, so 1.0/2 is valid) 
+    or predefined value in __SIZES.
+
+    """
+    if not widths or not heights:
+        return None
+    for name, value in __SIZES.items():
+        widths = widths.replace(name, value)
+        heights = heights.replace(name, value)
+    width = [eval(width) for width in widths.split(', ') 
+                         if __PATTERN.match(width)]
+    height = [eval(height) for height in heights.split(', ')
+                           if __PATTERN.match(height)]
+    return Size(width, height)
+
+
+def parse_gravity(gravity):
+    """Parse gravity string and return Gravity object.
+
+    It can be one of predefined __GRAVITIES, or x and y values (floating
+    numbers or those described in __SIZES).
+
+    """
+    if not gravity:
+        return None
+    if gravity in __GRAVITIES:
+        return __GRAVITIES[gravity]
+    for name, value in __SIZES.items():
+        gravity = gravity.replace(name, value)
+    x, y = [eval(xy) for xy in gravity.split(', ')
+                     if __PATTERN.match(xy)]
+    return Gravity(x, y)
 

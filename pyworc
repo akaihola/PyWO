@@ -1,4 +1,7 @@
 [SETTINGS]
+keyboard_service = on
+dbus_service = on
+
 ; NumLock and CapsLock state settings:
 ;     1/on/yes/true - work only when NumLock is on
 ;     ignore - ignore NumLock state (works when on and off)
@@ -18,6 +21,7 @@ layout = grid_3x2
 
 ; list of ignored actions (separate with ', ')
 ;ignore_actions = grid_height
+ignore_actions = 
 
 [KEYS]
 ; section/point-name =  key
@@ -36,15 +40,20 @@ float = Alt
 expand = Shift
 shrink = Alt-Shift
 put = Alt-Ctrl
-; cycle widths
+; grid - cycle widths
 grid_width = Ctrl
-; cycle heights
+; grid - cycle heights
 grid_height = Ctrl-Shift
 
 switch = Alt-KP_Divide
 cycle = Alt-Shift-KP_Divide
 
-sticky = Alt-KP_Multiply
+sticky = 
+maximize = 
+fullscreen = 
+shade = 
+activate = 
+close = 
 
 ; exit PyWo
 exit = Ctrl-Shift-Alt-Q
@@ -61,6 +70,7 @@ debug = Ctrl-Shift-Alt-I
 ; gravity       - window gravity (if no gravity set, same as position)
 ; widths        - list of widths for grid
 ; heights       - list of height for grid
+; ignore_actions- list of ignored actions for this section
 ; 
 ; valid direction, position, gravity values:
 ; - TOP_LEFT, TOP, TOP_RIGHT, 

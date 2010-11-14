@@ -156,7 +156,7 @@ class RepositionerResizer(object):
         workarea = wm.workarea_geometry
         windows = [window.geometry for window in wm.windows(self.__main_filter)
                                    if window.id != win.id and \
-                                      (window.desktop == win.desktop or \
+                                      (window.desktop == wm.desktop or \
                                        window.desktop == 0xFFFFFFFF)]
 
 

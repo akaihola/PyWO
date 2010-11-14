@@ -84,7 +84,10 @@ class DBusService(dbus.service.Object):
             window = Window(win_id)
         elif match:
             try:
-                window = WM.windows(match=match)[0]
+                windows = WM.windows(match=match,
+                                     filter_method=lambda win: 
+                                                    win.TYPE_NORMAL in win.type)
+                window = windows[0]
             except:
                 logging.error('Can\'t find window: %s' % match)
                 return 'Can\'t find window: %s' % match
@@ -117,7 +120,9 @@ class DBusService(dbus.service.Object):
 
     @dbus.service.method("net.kosciak.PyWO", in_signature='s', out_signature='a(is)')
     def Windows(self, match):
-        windows = WM.windows(match=match)
+        windows = WM.windows(match=match, 
+                             filter_method=lambda win: 
+                                                win.TYPE_NORMAL in win.type)
         return [(win.id, win.name.decode('utf-8')) for win in windows]
 
 DBusGMainLoop(set_as_default=True)

@@ -517,12 +517,6 @@ class Window(XObject):
 
     """Window object (X Server client?)."""
 
-    # List of window managers that don't need position translation
-    __DONT_TRANSLATE = ['compiz']
-    __ADJUST_GEOMETRY = ['compiz', 'kwin', 'e16', 
-                         'icewm', 'blackbox', 'fvwm',]
-                         #'fluxbox',]
-
     # List of window types
     TYPE_DESKTOP = XObject.atom('_NET_WM_WINDOW_TYPE_DESKTOP')
     TYPE_DOCK = XObject.atom('_NET_WM_WINDOW_TYPE_DOCK')
@@ -554,14 +548,15 @@ class Window(XObject):
 
     def __init__(self, win_id):
         XObject.__init__(self, win_id)
-        self.__translate_coords, self.__adjust_geometry = self.__check()
-
-    def __check(self):
-        """Check if position should be translated or adjusted."""
-        name = WindowManager().name.lower()
-        translate_coords = name not in Window.__DONT_TRANSLATE
-        adjust_geometry = name in Window.__ADJUST_GEOMETRY
-        return (translate_coords, adjust_geometry)
+        # Here comes the hacks for WMs strange behaviours....
+        wm_name = WindowManager().name.lower()
+        if wm_name.startswith('icewm'):
+            wm_name = 'icewm'
+        self.__translate_coords =  \
+                wm_name not in ['compiz', 'fluxbox', 'window maker', ]
+        self.__adjust_geometry =  \
+                wm_name in ['compiz', 'kwin', 'e16', 'icewm', 'blackbox', ]
+        self.__parent_xy = wm_name in ['fluxbox', 'window maker', ]
 
     @property
     def type(self):
@@ -625,9 +620,22 @@ class Window(XObject):
     def __borders(self):
         """Return raw borders info."""
         extents = self.get_property('_NET_FRAME_EXTENTS')
-        if not extents:
-            return (0, 0, 0, 0)
-        return extents.value
+        if extents:
+            return extents.value
+        # Hack for Blackbox, IceWM, Sawfish, Window Maker
+        win = self._win
+        parent = win.query_tree().parent
+        if win.get_geometry().width == parent.get_geometry().width and \
+           win.get_geometry().height == parent.get_geometry().height:
+            win, parent = parent, parent.query_tree().parent
+        win_geo = win.get_geometry()
+        parent_geo = parent.get_geometry()
+        border_widths = win_geo.border_width + parent_geo.border_width
+        left = win_geo.x + border_widths
+        top = win_geo.y + border_widths
+        right = parent_geo.width - win_geo.width - left + parent_geo.border_width*2
+        bottom = parent_geo.height - win_geo.height - top + parent_geo.border_width*2
+        return (left, right, top, bottom)
 
     @property
     def borders(self):
@@ -638,6 +646,11 @@ class Window(XObject):
     def __geometry(self):
         """Return raw geometry info (translated if needed)."""
         geometry = self._win.get_geometry()
+        if self.__parent_xy:
+            # Hack for Fluxbox, Window Maker
+            parent_geo = self._win.query_tree().parent.get_geometry()
+            geometry.x = parent_geo.x
+            geometry.y = parent_geo.y
         if self.__translate_coords:
             # if neeeded translate coords and multiply them by -1
             translated = self._translate_coords(geometry.x, geometry.y)
@@ -659,6 +672,7 @@ class Window(XObject):
         x, y, width, height = self.__geometry()
         left, right, top, bottom = self.__borders()
         if self.__adjust_geometry:
+            # Used in Compiz, KWin, E16, IceWM, Blackbox
             x -= left
             y -= top
         return Geometry(x, y,
@@ -734,8 +748,8 @@ class Window(XObject):
                  horz=STATE_MAXIMIZED_HORZ):
         """Maximize window (both vertically and horizontally)."""
         data = [mode, 
-                vert,
                 horz,
+                vert,
                 0, 0]
         self.__change_state(data)
 
@@ -782,12 +796,12 @@ class Window(XObject):
     def blink(self):
         """For 0.25 second show borderaround window."""
         geo = self.geometry
-        self.draw_rectangle(geo.x+5, geo.y+5, 
-                            geo.width-10, geo.height-10, 10)
+        self.draw_rectangle(geo.x+10, geo.y+10, 
+                            geo.width-20, geo.height-20, 20)
         self.flush()
         time.sleep(0.25)
-        self.draw_rectangle(geo.x+5, geo.y+5, 
-                            geo.width-10, geo.height-10, 10)
+        self.draw_rectangle(geo.x+10, geo.y+10, 
+                            geo.width-20, geo.height-20, 20)
         self.flush()
 
     def __eq__(self, other):
@@ -910,7 +924,7 @@ class WindowManager(XObject):
         windows_ids = self.windows_ids()
         windows = [Window(win_id) for win_id in windows_ids]
         if filter_method:
-            return [window for window in windows if filter_method(window)]
+            windows = [window for window in windows if filter_method(window)]
         if match:
             match = match.strip().lower()
             desktop = self.desktop

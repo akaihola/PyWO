@@ -233,7 +233,15 @@ def _grid_height(win, position, gravity, sizes, invert_on_resize=True):
 @register_action(name='maximize', check=[TYPE], unshade=True)
 def _maximize(win, mode=Window.MODE_TOGGLE):
     """Maximize window."""
-    win.fullscreen(win.MODE_UNSET)
+    state = win.state
+    if mode == Window.MODE_TOGGLE and \
+       Window.STATE_MAXIMIZED_HORZ in state and \
+       Window.STATE_MAXIMIZED_VERT in state:
+        mode = Window.MODE_UNSET
+    elif mode == Window.MODE_TOGGLE:
+        mode = Window.MODE_SET
+    if Window.STATE_FULLSCREEN in state:
+        win.fullscreen(win.MODE_UNSET)
     win.maximize(mode)
 
 @register_action(name='maximize_vert', check=[TYPE], unshade=True)
@@ -260,14 +268,13 @@ def _shade(win, mode=Window.MODE_TOGGLE):
 @register_action(name='fullscreen', check=[TYPE], unshade=True)
 def _fullscreen(win, mode=Window.MODE_TOGGLE):
     """Fullscreen window."""
-    win.maximize(win.MODE_UNSET)
+    #win.maximize(win.MODE_UNSET)
     win.fullscreen(mode)
 
 
 @register_action(name='sticky', check=[TYPE])
 def _sticky(win, mode=Window.MODE_TOGGLE):
     """Change sticky (stay on all desktops/viewports) property."""
-    # TODO: should I manully change desktop to 0xFFFFFFFF?
     win.sticky(mode)
 
 
@@ -278,7 +285,6 @@ def _activate(win, mode=Window.MODE_TOGGLE):
     Unshade, unminimize and switch to it's desktop/viewport.
     
     """
-    # TODO: test if changes to window's desktop (ok with viewports)
     win.activate()
 
 

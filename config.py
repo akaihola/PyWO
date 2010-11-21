@@ -24,7 +24,7 @@ import logging
 import os
 from ConfigParser import ConfigParser
 
-from core import parse_gravity, parse_size
+from core import Gravity, Size
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
@@ -44,13 +44,13 @@ class _Section(object):
         if 'grid' in self.ignored:
             self.ignored.update('grid_width', 'grid_height')
 
-        self.direction = parse_gravity(data.get('direction', ''))
-        self.position  = parse_gravity(data.get('position', ''))
+        self.direction = Gravity.parse(data.get('direction', ''))
+        self.position  = Gravity.parse(data.get('position', ''))
         if 'gravity' in data:
-            self.gravity = parse_gravity(data.get('gravity', ''))
+            self.gravity = Gravity.parse(data.get('gravity', ''))
         else:
             self.gravity = position
-        self.sizes = parse_size(data.get('widths', ''), 
+        self.sizes = Size.parse(data.get('widths', ''), 
                                 data.get('heights', ''))
 
 

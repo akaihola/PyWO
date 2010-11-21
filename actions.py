@@ -23,7 +23,7 @@
 import itertools
 import logging
 
-from core import Gravity, Geometry, Window, WM
+from core import Gravity, Geometry, Window, WM, normal_on_same_filter
 from events import PropertyNotifyHandler
 from reposition import reposition_resize, shrink_window
 
@@ -66,7 +66,7 @@ class Action(object):
             win.flush()
         self.__action(win, **kwargs)
         # history
-        # _GRIDED
+        # _GRIDED ??
 
     def __check_type_state(self, win):
         type = win.type
@@ -152,7 +152,7 @@ def _put(win, position):
 
 class _DummyWindow(object):
 
-    """Mock Window object, only location information is needed."""
+    """Dummy Window object, only geometry information is needed."""
     
     gravity = Gravity(0.5, 0.5)
 
@@ -338,22 +338,56 @@ def _blink(win):
 @register_action(name='debug', check=[TYPE])
 def _debug_info(win):
     """Print debug info about Window Manager, and current Window."""
-    logging.info('----------==========----------')
-    logging.info('WindowManager=%s' % WM.name)
-    logging.info('Desktops=%s current=%s' % (WM.desktops, WM.desktop))
-    logging.info('Desktop=%s' % WM.desktop_size)
-    logging.info('Viewport=%s' % WM.viewport)
-    logging.info('Workarea=%s' % WM.workarea_geometry)
-    win.full_info()
+    logging.info('-= Window Manager =-')
+    WM.debug_info()
+    logging.info('-= Current Window =-')
+    win.debug_info()
+    logging.info('-= Move with same geometry =-')
     geo =  win.geometry
     win.move_resize(geo)
     win.sync()
     logging.info('New geometry=%s' % win.geometry)
-    logging.info('----------==========----------')
+    logging.info('-= End of debug =-')
+
 
 # TODO: new actions
+#   - always on top
 #   - resize (with gravity?)
 #   - move (relative with gravity and +/-length)?
 #   - place (absolute x,y)
 #   - switch desktop/viewport
 #   - move window to desktop/viewport
+
+#@register_action(name="spatial_switcher", check=[TYPE, STATE])
+@register_action(name="sp", check=[TYPE, STATE])
+def _spatial_switcher(win, direction):
+    geometry = win.geometry
+    win_center = [geometry.x + geometry.width/2, 
+                  geometry.y + geometry.height/2]
+    print direction
+    if direction.is_top or direction.is_bottom:
+        multi = [2, 1]
+    else:
+        multi = [1, 2]
+    print multi
+    windows = WM.windows(normal_on_same_filter)
+    results = []
+    for window in windows:
+        if win.id == window.id:
+            continue
+        geometry = window.geometry
+        center = [geometry.x + geometry.width/2, 
+                  geometry.y + geometry.height/2]
+        vector = [center[0] - win_center[0],
+                  center[1] - win_center[1]]
+        if not vector[0]:
+            slope = 'undefined'
+        else:
+            slope = float(vector[1]) / float(vector[0])
+        length = (multi[0]*vector[0]**2 + multi[1]*vector[1]**2)**0.5
+        results.append((window.name, length, vector, slope))
+    results.sort(key=lambda e: e[2])
+    for result in results:
+        print result
+
+

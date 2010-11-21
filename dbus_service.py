@@ -47,7 +47,8 @@ def get_args(action, config, section=None):
 
 class DBusService(dbus.service.Object):
 
-    @dbus.service.method("net.kosciak.PyWO", in_signature='si', out_signature='s')
+    @dbus.service.method("net.kosciak.PyWO", 
+                         in_signature='si', out_signature='s')
     def PerformCommand(self, command, win_id):
         logging.debug('DBUS: command="%s", win_id=%s' % (command, win_id))
         cmd = command.strip().split(' ')
@@ -84,13 +85,13 @@ class DBusService(dbus.service.Object):
             window = Window(win_id)
         elif match:
             try:
-                windows = WM.windows(match=match,
-                                     filter_method=lambda win: 
-                                                    win.TYPE_NORMAL in win.type)
+                windows = WM.windows(lambda window: 
+                                            Window.TYPE_NORMAL in window.type,
+                                     match=match)
                 window = windows[0]
             except:
-                logging.error('Can\'t find window: %s' % match)
-                return 'Can\'t find window: %s' % match
+                logging.error('Can\'t find window matching: %s' % match)
+                return 'Can\'t find window matching: %s' % match
         else:
             window = WM.active_window()
 
@@ -110,20 +111,24 @@ class DBusService(dbus.service.Object):
         WM.flush()
         return ''
 
-    @dbus.service.method("net.kosciak.PyWO", in_signature='', out_signature='as')
+    @dbus.service.method("net.kosciak.PyWO", 
+                         in_signature='', out_signature='as')
     def Commands(self):
         return ACTIONS
 
-    @dbus.service.method("net.kosciak.PyWO", in_signature='', out_signature='as')
+    @dbus.service.method("net.kosciak.PyWO", 
+                         in_signature='', out_signature='as')
     def Sections(self):
         return CONFIG.sections
 
-    @dbus.service.method("net.kosciak.PyWO", in_signature='s', out_signature='a(is)')
+    @dbus.service.method("net.kosciak.PyWO", 
+                         in_signature='s', out_signature='a(is)')
     def Windows(self, match):
-        windows = WM.windows(match=match, 
-                             filter_method=lambda win: 
-                                                win.TYPE_NORMAL in win.type)
+        windows = WM.windows(lambda window: 
+                                    Window.TYPE_NORMAL in window.type,
+                             match=match)
         return [(win.id, win.name.decode('utf-8')) for win in windows]
+
 
 DBusGMainLoop(set_as_default=True)
 session_bus = dbus.SessionBus()
@@ -132,15 +137,15 @@ object = DBusService(session_bus, "/net/kosciak/PyWO")
 
 import gobject
 gobject.threads_init()
-MAINLOOP = gobject.MainLoop()
+loop = gobject.MainLoop()
 
 
 def start():
     logging.info('Starting PyWO D-Bus Service')
-    t = threading.Thread(target=MAINLOOP.run)
+    t = threading.Thread(target=loop.run)
     t.start()
 
 def stop():
-    MAINLOOP.quit()
+    loop.quit()
     logging.info('PyWO D-Bus Service stopped')
 

@@ -39,6 +39,28 @@ from Xlib.display import Display
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
 
+# Pattern matching simple calculations with floating numbers
+_PATTERN = re.compile('^[ 0-9\.\+-/\*]+$')
+
+# Predefined sizes that can be used in config files
+_SIZES = {'FULL': '1.0',
+          'HALF': '0.5',
+          'THIRD': '1.0/3',
+          'QUARTER': '0.25',
+         }
+
+# Predefined gravities, that can be used in config files
+_GRAVITIES = {'TOP_LEFT': (0, 0), 'UP_LEFT': (0, 0),
+              'TOP': (0.5, 0), 'UP': (0.5, 0),
+              'TOP_RIGHT': (1, 0), 'UP_RIGHT': (1, 0),
+              'LEFT': (0, 0.5),
+              'MIDDLE': (0.5, 0.5), 'CENTER': (0.5, 0.5),
+              'RIGHT': (1, 0.5),
+              'BOTTOM_LEFT': (0, 1), 'DOWN_LEFT': (0, 1),
+              'BOTTOM': (0.5, 1), 'DOWN': (0.5, 1),
+              'BOTTOM_RIGHT': (1, 1), 'DOWN_RIGHT': (1, 1),
+             }
+
 class Gravity(object):
 
     """Gravity point as a percentage of width and height of the window."""
@@ -75,11 +97,32 @@ class Gravity(object):
 
     def invert(self, vertical=True, horizontal=True):
         """Invert the gravity (left becomes right, top becomes bottom)."""
+        x, y = self.x, self.y
         if vertical:
             y = 1.0 - self.y
         if horizontal:
             x = 1.0 - self.x
         return Gravity(x, y)
+
+    @staticmethod
+    def parse(gravity):
+        """Parse gravity string and return Gravity object.
+
+        It can be one of predefined __GRAVITIES, or x and y values (floating
+        numbers or those described in __SIZES).
+
+        """
+        if not gravity:
+            return None
+        if gravity in _GRAVITIES:
+            x, y = _GRAVITIES[gravity]
+        else:
+            for name, value in _SIZES.items():
+                gravity = gravity.replace(name, value)
+            x, y = [eval(xy) for xy in gravity.split(',')
+                             if _PATTERN.match(xy)]
+        return Gravity(x, y)
+
 
     def __eq__(self, other):
         return ((self.x, self.y) ==
@@ -99,6 +142,29 @@ class Size(object):
     def __init__(self, width, height):
         self.width = width
         self.height = height
+
+    @staticmethod
+    def parse(width, height):
+        """Parse width and height strings and return Size object.
+
+        It can be float number (value will be evaluatedi, so 1.0/2 is valid) 
+        or predefined value in __SIZES.
+
+        """
+        if not width or not height:
+            return None
+        for name, value in _SIZES.items():
+            width = width.replace(name, value)
+            height = height.replace(name, value)
+        width = [eval(width) for width in width.split(',') 
+                             if _PATTERN.match(width)]
+        if len(width) == 1:
+            width = width[0]
+        height = [eval(height) for height in height.split(',')
+                               if _PATTERN.match(height)]
+        if len(height) == 1:
+            height = height[0]
+        return Size(width, height)
 
     def __eq__(self, other):
         return ((self.width, self.height) == (other.width, other.height))
@@ -529,17 +595,17 @@ class Window(XObject):
 
     # List of window states
     STATE_MODAL = XObject.atom('_NET_WM_STATE_MODAL')
-    STATE_STICKY = XObject.atom('_NET_WM_STATE_STICKY') # 262
-    STATE_MAXIMIZED_VERT = XObject.atom('_NET_WM_STATE_MAXIMIZED_VERT') # 263
-    STATE_MAXIMIZED_HORZ = XObject.atom('_NET_WM_STATE_MAXIMIZED_HORZ') # 264
-    STATE_SHADED = XObject.atom('_NET_WM_STATE_SHADED') # 321
-    STATE_SKIP_TASKBAR = XObject.atom('_NET_WM_STATE_SKIP_TASKBAR') # 322
-    STATE_SKIP_PAGER = XObject.atom('_NET_WM_STATE_SKIP_PAGER') # 323
-    STATE_HIDDEN = XObject.atom('_NET_WM_STATE_HIDDEN') # 324
-    STATE_FULLSCREEN = XObject.atom('_NET_WM_STATE_FULLSCREEN') # 265
-    STATE_ABOVE = XObject.atom('_NET_WM_STATE_ABOVE') # 325
-    STATE_BELOW = XObject.atom('_NET_WM_STATE_BELOW') # 326
-    STATE_DEMANDS_ATTENTION = XObject.atom('_NET_WM_STATE_DEMANDS_ATTENTION') # 327
+    STATE_STICKY = XObject.atom('_NET_WM_STATE_STICKY')
+    STATE_MAXIMIZED_VERT = XObject.atom('_NET_WM_STATE_MAXIMIZED_VERT')
+    STATE_MAXIMIZED_HORZ = XObject.atom('_NET_WM_STATE_MAXIMIZED_HORZ')
+    STATE_SHADED = XObject.atom('_NET_WM_STATE_SHADED')
+    STATE_SKIP_TASKBAR = XObject.atom('_NET_WM_STATE_SKIP_TASKBAR')
+    STATE_SKIP_PAGER = XObject.atom('_NET_WM_STATE_SKIP_PAGER')
+    STATE_HIDDEN = XObject.atom('_NET_WM_STATE_HIDDEN')
+    STATE_FULLSCREEN = XObject.atom('_NET_WM_STATE_FULLSCREEN')
+    STATE_ABOVE = XObject.atom('_NET_WM_STATE_ABOVE')
+    STATE_BELOW = XObject.atom('_NET_WM_STATE_BELOW')
+    STATE_DEMANDS_ATTENTION = XObject.atom('_NET_WM_STATE_DEMANDS_ATTENTION')
 
     # Mode values (for maximize and shade functions)
     MODE_UNSET = 0
@@ -810,14 +876,15 @@ class Window(XObject):
     def __ne__(self, other):
         return not self.id == other.id
 
-    def full_info(self):
+    def debug_info(self):
         """Print full window's info, for debug use only."""
-        logging.info('----------==========----------')
         logging.info('ID=%s' % self.id)
         logging.info('Name=%s' % self.name)
         logging.info('Class=%s' % [str(e) for e in self.class_name])
-        logging.info('Type=%s' % [str(e) for e in self.type])
-        logging.info('State=%s' % [str(e) for e in self.state])
+        #logging.info('Type=%s' % [str(e) for e in self.type])
+        logging.info('Type=%s' % [self.atom_name(e) for e in self.type])
+        #logging.info('State=%s' % [str(e) for e in self.state])
+        logging.info('State=%s' % [self.atom_name(e) for e in self.state])
         logging.info('Desktop=%s' % self.desktop)
         logging.info('Borders=%s' % self.borders)
         logging.info('Borders_raw=%s' % [str(e) for e in self.__borders()])
@@ -827,7 +894,6 @@ class Window(XObject):
         logging.info('Normal_hints=%s' % self._win.get_wm_normal_hints())
         logging.info('Attributes=%s' % self._win.get_attributes())
         logging.info('Query_tree=%s' % self._win.query_tree())
-        logging.info('----------==========----------')
 
 
 class WindowManager(XObject):
@@ -921,98 +987,77 @@ class WindowManager(XObject):
 
     def windows(self, filter_method=None, match=''):
         """Return list of all windows (with top-bottom stacking order)."""
+        # TODO: regexp matching?
         windows_ids = self.windows_ids()
         windows = [Window(win_id) for win_id in windows_ids]
         if filter_method:
             windows = [window for window in windows if filter_method(window)]
         if match:
-            match = match.strip().lower()
-            desktop = self.desktop
-            workarea = self.workarea_geometry
-            def mapper(window, points=0):
-                name = window.name.lower().decode('utf-8')
-                if name == match:
-                    points += 200
-                elif match in name:
-                    left = name.find(match)
-                    right = (name.rfind(match) - len(name) + len(match)) * -1
-                    points += 150 - min(left, right)
-                geometry = window.geometry
-                if points and \
-                   (window.desktop == desktop or \
-                    window.desktop == 0xFFFFFFFF):
-                    points += 50
-                    if geometry.x < workarea.x2 and \
-                       geometry.x2 > workarea.x and \
-                       geometry.y < workarea.y2 and \
-                       geometry.y2 > workarea.y:
-                        points += 100
-                return (window, points)
-            windows = map(mapper, windows)
-            windows.sort(key=lambda win: win[1])
-            windows = [win for win, points in windows if points]
+            windows = self.__name_matcher(windows, match)
         windows.reverse()
         return windows
+
+    def __name_matcher(self, windows, match):
+        match = match.strip().lower()
+        desktop = self.desktop
+        workarea = self.workarea_geometry
+        def mapper(window, points=0):
+            name = window.name.lower().decode('utf-8')
+            if name == match:
+                points += 200
+            elif match in name:
+                left = name.find(match)
+                right = (name.rfind(match) - len(name) + len(match)) * -1
+                points += 150 - min(left, right)
+            geometry = window.geometry
+            if points and \
+               (window.desktop == desktop or \
+                window.desktop == 0xFFFFFFFF):
+                points += 50
+                if geometry.x < workarea.x2 and \
+                   geometry.x2 > workarea.x and \
+                   geometry.y < workarea.y2 and \
+                   geometry.y2 > workarea.y:
+                    points += 100
+            return (window, points)
+        windows = map(mapper, windows)
+        windows.sort(key=lambda win: win[1])
+        windows = [win for win, points in windows if points]
+        return windows
+
+    def debug_info(self):
+        """Print full windows manager's info, for debug use only."""
+        logging.info('WindowManager=%s' % self.name)
+        logging.info('Desktops=%s, current=%s' % (self.desktops, self.desktop))
+        logging.info('Desktop=%s' % self.desktop_size)
+        logging.info('Viewport=%s' % self.viewport)
+        logging.info('Workarea=%s' % self.workarea_geometry)
 
 WM = WindowManager()
 
 
-# Predefined sizes that can be used in config files
-__SIZES = {'FULL': '1.0',
-           'HALF': '0.5',
-           'THIRD': '1.0/3',
-           'QUARTER': '0.25',
-          }
+def normal_on_same_filter(window):
+    """Default windows filter.
 
-# Predefined gravities, that can be used in config files
-__GRAVITIES = {'TOP_LEFT': Gravity(0, 0), 'UP_LEFT': Gravity(0, 0),
-               'TOP': Gravity(0.5, 0), 'UP': Gravity(0.5, 0),
-               'TOP_RIGHT': Gravity(1, 0), 'UP_RIGHT': Gravity(1, 0),
-               'LEFT': Gravity(0, 0.5),
-               'MIDDLE': Gravity(0.5, 0.5), 'CENTER': Gravity(0.5, 0.5),
-               'RIGHT': Gravity(1, 0.5),
-               'BOTTOM_LEFT': Gravity(0, 1), 'DOWN_LEFT': Gravity(0, 1),
-               'BOTTOM': Gravity(0.5, 1), 'DOWN': Gravity(0.5, 1),
-               'BOTTOM_RIGHT': Gravity(1, 1), 'DOWN_RIGHT': Gravity(1, 1),
-              }
-
-# Pattern matching simple calculations with floating numbers
-__PATTERN = re.compile('^[ 0-9\.\+-/\*]+$')
-
-
-def parse_size(widths, heights):
-    """Parse widths and heights strings and return Size object.
-
-    It can be float number (value will be evaluatedi, so 1.0/2 is valid) 
-    or predefined value in __SIZES.
+    Returns normal, not hidde, not shaded, not fullscreen, not maximized,
+    placed on the same desktop (or sticky), and on the same workarea.
 
     """
-    if not widths or not heights:
-        return None
-    for name, value in __SIZES.items():
-        widths = widths.replace(name, value)
-        heights = heights.replace(name, value)
-    width = [eval(width) for width in widths.split(', ') 
-                         if __PATTERN.match(width)]
-    height = [eval(height) for height in heights.split(', ')
-                           if __PATTERN.match(height)]
-    return Size(width, height)
+    if not Window.TYPE_NORMAL in window.type:
+        return False
+    state = window.state
+    geometry = window.geometry
+    workarea = WM.workarea_geometry
+    return Window.STATE_HIDDEN not in state and \
+           Window.STATE_SHADED not in state and \
+           Window.STATE_FULLSCREEN not in state and \
+           not (Window.STATE_MAXIMIZED_VERT in state and \
+                Window.STATE_MAXIMIZED_HORZ in state) and \
+           (window.desktop == WM.desktop or \
+            window.desktop == 0xFFFFFFFF) and \
+           geometry.x < workarea.x2 and \
+           geometry.x2 > workarea.x and \
+           geometry.y < workarea.y2 and \
+           geometry.y2 > workarea.y
 
-
-def parse_gravity(gravity):
-    """Parse gravity string and return Gravity object.
-
-    It can be one of predefined __GRAVITIES, or x and y values (floating
-    numbers or those described in __SIZES).
-
-    """
-    if not gravity:
-        return None
-    if gravity in __GRAVITIES:
-        return __GRAVITIES[gravity]
-    for name, value in __SIZES.items():
-        gravity = gravity.replace(name, value)
-    x, y = [eval(xy) for xy in gravity.split(', ')
-                     if __PATTERN.match(xy)]
-    return Gravity(x, y)
 

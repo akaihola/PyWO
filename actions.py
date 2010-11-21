@@ -111,7 +111,6 @@ def _shrink(win, direction, vertical_first=True):
     """Shrink window in given direction."""
     _GRIDED['id'] = None
     border = shrink_window(win, direction.invert(), 
-                           sticky=True,
                            vertical_first=vertical_first)
     logging.debug(border)
     win.move_resize(border, direction)
@@ -199,6 +198,7 @@ def __grid(win, position, gravity, sizes, invert_on_resize, cycle):
     else:
         dummy = _DummyWindow(workarea, win, x, y, sizes, gravity)
         border = reposition_resize(dummy, dummy.gravity,
+                                   sticky = False,
                                    vertical_first=(cycle is 'height'))
         new_width = max([width for width in widths 
                                if border.width - width >= 0 and \

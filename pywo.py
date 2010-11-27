@@ -21,10 +21,13 @@
 
 """pywo.py - main module for PyWO."""
 
-#import atexit
+import atexit
 import logging
 from logging.handlers import RotatingFileHandler
+import signal
 import sys
+import threading
+import time
 
 from core import WM
 from events import KeyPressHandler
@@ -63,23 +66,25 @@ def setup_loggers():
 
 
 def start():
-    """Setup and start PyWO."""
+    """Setup and start all services."""
     CONFIG.load('.pyworc')
     register_services()
     for service in SERVICES:
         service.start()
     logging.info('PyWO ready and running!')
+    while len(threading.enumerate()) > 1: 
+        time.sleep(0.1)
 
 
 def stop():
-    """Setup and start PyWO."""
+    """Stop all services."""
     for service in SERVICES:
         service.stop()
 
 
 @register_action(name='reload')
 def reload(*args):
-    """Reload configuration file."""
+    """Stop services, reload configuration file, and start again."""
     # TODO: add filepath as argument so it is possible to source any file as command
     logging.info('Reloading PyWO...')
     stop()
@@ -88,12 +93,18 @@ def reload(*args):
 
 @register_action(name='exit')
 def exit_pywo(*args):
-    """Ungrab keys and exit PyWO."""
+    """Stop sevices, and exit PyWO."""
     logging.info('Exiting PyWO...')
     stop()
 
+
 #atexit.register(stop)
 
+def interrupt_handler(signal, frame):
+    logging.error('Interrupted!')
+    stop()
+
+signal.signal(signal.SIGINT, interrupt_handler)
 
 if __name__ == '__main__':
     setup_loggers()

@@ -18,7 +18,7 @@
 # along with PyWO.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-"""reposition.py provides methods used to find new geometry for window."""
+"""resizer.py provides methods used to find new geometry for window."""
 
 import logging
 import operator
@@ -36,9 +36,9 @@ _ATTRGETTERS = {'x': (operator.attrgetter('x'),
                       operator.attrgetter('y2'),
                       operator.attrgetter('height'))}
 
-class RepositionerResizer(object):
+class Resizer(object):
 
-    """RepositionerResizer finds new geometry for window when resizing, moving.
+    """Resizer finds new geometry for window.
 
     Class must be initialized with methods returning new window's edges.
 
@@ -159,7 +159,7 @@ def __bottom_right(current, workarea, windows,
                       xy2(other) + size(current) < xy2(workarea)]
     return min(result)
 
-reposition_resize = RepositionerResizer(__top_left, __bottom_right)
+expand_window = Resizer(__top_left, __bottom_right)
 
 
 def __ins_top_left(current, workarea, windows, 
@@ -192,5 +192,5 @@ def __ins_bottom_right(current, workarea, windows,
     result = result or [xy2(current)]
     return max(result)
 
-shrink_window = RepositionerResizer(__ins_top_left, __ins_bottom_right) 
+shrink_window = Resizer(__ins_top_left, __ins_bottom_right) 
 

@@ -50,6 +50,8 @@ cycle = Alt-Shift-KP_Divide
 
 sticky = 
 maximize = 
+maximize_vert = 
+maximize_horz = 
 fullscreen = 
 shade = 
 activate = 

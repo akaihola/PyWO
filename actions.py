@@ -25,7 +25,7 @@ import logging
 
 from core import Gravity, Geometry, Window, WM, normal_on_same_filter
 from events import PropertyNotifyHandler
-from reposition import reposition_resize, shrink_window
+from resizer import expand_window, shrink_window
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
@@ -99,9 +99,9 @@ def register_action(name, check=[], unshade=False):
 def _expand(win, direction, vertical_first=True):
     """Expand window in given direction."""
     _GRIDED['id'] = None
-    border = reposition_resize(win, direction, 
-                               sticky=(not direction.is_middle),
-                               vertical_first=vertical_first)
+    border = expand_window(win, direction, 
+                           sticky=(not direction.is_middle),
+                           vertical_first=vertical_first)
     logging.debug(border)
     win.move_resize(border, direction)
 
@@ -120,10 +120,10 @@ def _shrink(win, direction, vertical_first=True):
 def _move(win, direction, vertical_first):
     """Move window in given direction."""
     _GRIDED['id'] = None
-    border = reposition_resize(win, direction, 
-                               sticky=(not direction.is_middle), 
-                               insideout=(not direction.is_middle),
-                               vertical_first=vertical_first)
+    border = expand_window(win, direction, 
+                           sticky=(not direction.is_middle), 
+                           insideout=(not direction.is_middle),
+                           vertical_first=vertical_first)
     geometry = win.geometry
     geometry.width = min(border.width, geometry.width)
     geometry.height = min(border.height, geometry.height)
@@ -197,9 +197,9 @@ def __grid(win, position, gravity, sizes, invert_on_resize, cycle):
                         min(abs(old.width - width) for width in widths)
     else:
         dummy = _DummyWindow(workarea, win, x, y, sizes, gravity)
-        border = reposition_resize(dummy, dummy.gravity,
-                                   sticky = False,
-                                   vertical_first=(cycle is 'height'))
+        border = expand_window(dummy, dummy.gravity,
+                               sticky = False,
+                               vertical_first=(cycle is 'height'))
         new_width = max([width for width in widths 
                                if border.width - width >= 0 and \
                                   x - width * position.x >= border.x and \

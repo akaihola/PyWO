@@ -33,6 +33,9 @@ from config import CONFIG
 from actions import ACTIONS, ActionException
 
 
+__author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
+
+
 def get_args(action, config, section=None):
     kwargs = {}
     for arg in action.args:
@@ -142,8 +145,8 @@ loop = gobject.MainLoop()
 
 def start():
     logging.info('Starting PyWO D-Bus Service')
-    t = threading.Thread(target=loop.run)
-    t.start()
+    thread = threading.Thread(name='D-Bus Service', target=loop.run)
+    thread.start()
 
 def stop():
     loop.quit()

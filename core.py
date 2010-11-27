@@ -43,23 +43,19 @@ __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 _PATTERN = re.compile('^[ 0-9\.\+-/\*]+$')
 
 # Predefined sizes that can be used in config files
-_SIZES = {'FULL': '1.0',
-          'HALF': '0.5',
-          'THIRD': '1.0/3',
-          'QUARTER': '0.25',
-         }
+SIZES = {'FULL': '1.0',
+         'HALF': '0.5',
+         'THIRD': '1.0/3',
+         'QUARTER': '0.25',
+        }
+SIZES_SHORT = {'F': '1.0',
+               'H': '0.5',
+               'T': '1.0/3',
+               'Q': '0.25',
+               }
 
 # Predefined gravities, that can be used in config files
-_GRAVITIES = {'TOP_LEFT': (0, 0), 'UP_LEFT': (0, 0),
-              'TOP': (0.5, 0), 'UP': (0.5, 0),
-              'TOP_RIGHT': (1, 0), 'UP_RIGHT': (1, 0),
-              'LEFT': (0, 0.5),
-              'MIDDLE': (0.5, 0.5), 'CENTER': (0.5, 0.5),
-              'RIGHT': (1, 0.5),
-              'BOTTOM_LEFT': (0, 1), 'DOWN_LEFT': (0, 1),
-              'BOTTOM': (0.5, 1), 'DOWN': (0.5, 1),
-              'BOTTOM_RIGHT': (1, 1), 'DOWN_RIGHT': (1, 1),
-             }
+GRAVITIES = {}
 
 class Gravity(object):
 
@@ -73,7 +69,8 @@ class Gravity(object):
         self.x = x
         self.y = y
         self.is_middle = (x == 1.0/2) and (y == 1.0/2)
-
+        # FIXME: should is_middle be also is_diagonal?
+        self.is_diagonal = (not x == 1.0/2) and (not y == 1.0/2)
 
     @property
     def is_top(self):
@@ -114,10 +111,12 @@ class Gravity(object):
         """
         if not gravity:
             return None
-        if gravity in _GRAVITIES:
-            x, y = _GRAVITIES[gravity]
+        if gravity in GRAVITIES:
+            return GRAVITIES[gravity]
         else:
-            for name, value in _SIZES.items():
+            for name, value in SIZES.items():
+                gravity = gravity.replace(name, value)
+            for name, value in SIZES_SHORT.items():
                 gravity = gravity.replace(name, value)
             x, y = [eval(xy) for xy in gravity.split(',')
                              if _PATTERN.match(xy)]
@@ -133,6 +132,20 @@ class Gravity(object):
 
     def __str__(self):
         return '(%.2f, %.2f)' % (self.x, self.y)
+
+for gravity, names in {
+            Gravity(0, 0): ['TOP_LEFT', 'UP_LEFT', 'TL', 'UL', 'NW'],
+            Gravity(0.5, 0): ['TOP', 'UP', 'T', 'U', 'N'],
+            Gravity(1, 0): ['TOP_RIGHT', 'UP_RIGHT', 'TR', 'UR', 'NE'],
+            Gravity(0, 0.5): ['LEFT', 'L', 'W'],
+            Gravity(0.5, 0.5): ['MIDDLE', 'CENTER', 'M', 'C', 'NSEW'],
+            Gravity(1, 0.5): ['RIGHT', 'R', 'E'],
+            Gravity(0, 1): ['BOTTOM_LEFT', 'DOWN_LEFT', 'BL', 'DL', 'SW'],
+            Gravity(0.5, 1): ['BOTTOM', 'DOWN', 'B', 'D', 'S'],
+            Gravity(1, 1): ['BOTTOM_RIGHT', 'DOWN_RIGHT', 'BR', 'DR', 'SE'],
+        }.items():
+    for name in names:
+        GRAVITIES[name] = gravity
 
 
 class Size(object):
@@ -153,7 +166,10 @@ class Size(object):
         """
         if not width or not height:
             return None
-        for name, value in _SIZES.items():
+        for name, value in SIZES.items():
+            width = width.replace(name, value)
+            height = height.replace(name, value)
+        for name, value in SIZES_SHORT.items():
             width = width.replace(name, value)
             height = height.replace(name, value)
         width = [eval(width) for width in width.split(',') 
@@ -315,7 +331,8 @@ class EventDispatcher(object):
         for type in handler.types:
             self.__handlers[window.id][type] = handler
         if not started:
-            t = threading.Thread(target=self.run)
+            t = threading.Thread(name='EventDispatcher', target=self.run)
+            #t.setDaemon(True)
             t.start()
         return set([handler.mask 
                     for handler in self.__handlers[window.id].values()])

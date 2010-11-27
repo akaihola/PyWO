@@ -25,14 +25,12 @@ import atexit
 import logging
 from logging.handlers import RotatingFileHandler
 import signal
-import sys
 import threading
 import time
 
 from core import WM
-from events import KeyPressHandler
 from config import CONFIG
-from actions import ACTIONS, register_action, ActionException
+from actions import register_action
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
@@ -73,6 +71,7 @@ def start():
         service.start()
     logging.info('PyWO ready and running!')
     while len(threading.enumerate()) > 1: 
+        # just keep the MainThread busy/idle(?) for Ctrl-C to work
         time.sleep(0.1)
 
 
@@ -95,16 +94,18 @@ def reload(*args):
 def exit_pywo(*args):
     """Stop sevices, and exit PyWO."""
     logging.info('Exiting PyWO...')
-    stop()
+    stop() # stop all services
+    WM.unlisten() # unregister all remaining handlers (switch/cycle, etc)
 
 
 #atexit.register(stop)
 
 def interrupt_handler(signal, frame):
     logging.error('Interrupted!')
-    stop()
+    exit_pywo(True)
 
 signal.signal(signal.SIGINT, interrupt_handler)
+
 
 if __name__ == '__main__':
     setup_loggers()

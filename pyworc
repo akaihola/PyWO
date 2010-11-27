@@ -61,7 +61,7 @@ close =
 exit = Ctrl-Shift-Alt-Q
 ; reload configuration file
 reload = Ctrl-Shift-Alt-R
-; print info for current window
+; print debug info
 debug = Ctrl-Shift-Alt-I
 
 ; Example of custom screen position definition:
@@ -75,9 +75,15 @@ debug = Ctrl-Shift-Alt-I
 ; ignore_actions- list of ignored actions for this section
 ; 
 ; valid direction, position, gravity values:
-; - TOP_LEFT, TOP, TOP_RIGHT, 
-; - LEFT, MIDDLE, RIGHT, 
-; - BOTTOM_LEFT, BOTTOM, BOTTOM_RIGHT
+; - TOP_LEFT, TL, UP_LEFT, UL, NW 
+; - TOP, T, UP, U, N 
+; - TOP_RIGHT, TR, UP_RIGHT, UR, NE
+; - LEFT, L
+; - MIDDLE, M, CENTER, C
+; - RIGHT, R
+; - BOTTOM_LEFT, BL, DOWN_LEFT, DL, SW
+; - BOTTOM, B, DOWN, D
+; - BOTTOM_RIGHT, BR, DOWN_RIGHT, DR, SE
 ; - or x, y percent value - eg: 1.0, 0.5
 ;
 ; valid widths, heights values:

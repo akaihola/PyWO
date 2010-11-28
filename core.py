@@ -343,7 +343,9 @@ class EventDispatcher(object):
         If handler is None all handlers will be unregistered.
         
         """
-        if not handler and window.id in self.__handlers:
+        if not window.id in self.__handlers:
+            return []
+        elif not handler and window.id in self.__handlers:
             logging.debug('Unregistering all handlers for window %s' % 
                           (window.id))
             self.__handlers[window.id] = {}

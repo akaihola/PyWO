@@ -45,14 +45,12 @@ class _Section(object):
             self.ignored.update('grid_width', 'grid_height')
 
         self.gravity = Gravity.parse(data.get('gravity', ''))
-        if 'direction' in data:
-            self.direction = Gravity.parse(data.get('direction', ''))
-        else:
-            self.direction = gravity
-        if 'postion' in data:
-            self.position  = Gravity.parse(data.get('position', ''))
-        else:
-            self.position = gravity
+        self.direction = Gravity.parse(data.get('direction', ''))
+        if not self.direction:
+            self.direction = self.gravity
+        self.position  = Gravity.parse(data.get('position', ''))
+        if not self.position:
+            self.position = self.gravity
         self.sizes = Size.parse(data.get('widths', ''), 
                                 data.get('heights', ''))
 

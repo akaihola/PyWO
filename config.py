@@ -51,6 +51,8 @@ class _Section(object):
         self.position  = Gravity.parse(data.get('position', ''))
         if not self.position:
             self.position = self.gravity
+        elif self.position and not self.gravity:
+            self.gravity = self.position
         self.sizes = Size.parse(data.get('widths', ''), 
                                 data.get('heights', ''))
 
@@ -63,11 +65,12 @@ class Config(object):
     ON = 1
     IGNORE = 2
 
-    def __init__(self):
+    def __init__(self, filename):
         self._config = ConfigParser()
         self.keys = {} # {'action_name': 'key', }
         self.ignored = set()
         self.sections = {} # {section.name: section, }
+        self.load(filename)
 
     def __parse_settings(self):
         """Parse SETTINGS section of the config file"""
@@ -82,10 +85,10 @@ class Config(object):
 
     def load(self, filename):
         """Load configuration file"""
-        logging.info('Loading configuration file')
-        # Load config file
+        logging.debug('Loading configuration file')
+        # Load config file (load default first)
         self._config.read([os.path.join(os.path.dirname(__file__), 'pyworc'),
-                            os.path.join(os.path.expanduser('~'), filename)])
+                           os.path.expanduser(filename)])
         self.keys = dict(self._config.items('KEYS'))
         self._config.remove_section('KEYS')
         # Parse SETTINGS section
@@ -95,6 +98,7 @@ class Config(object):
             self._config.read([os.path.join(os.path.dirname(__file__), layout),
                                 os.path.join(os.path.expanduser('~'), layout)])
             self._config.remove_option('SETTINGS', 'layout')
+        self.ignored = set()
         if self._config.has_option('SETTINGS', 'ignore_actions'):
             # Parse ignore_actions setting
             ignored = self._config.get('SETTINGS', 'ignore_actions')
@@ -112,4 +116,5 @@ class Config(object):
             self.sections[section] = _Section(self, section, key)
             self._config.remove_section(section)
 
-CONFIG = Config()
+        logging.debug('Loaded configuration file')
+

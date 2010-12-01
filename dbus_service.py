@@ -29,31 +29,23 @@ from dbus.mainloop.glib import DBusGMainLoop
 import dbus.service
 
 from core import WM, Window
-from config import CONFIG
-from actions import ACTIONS, ActionException
+from actions import ACTIONS, ActionException, get_args
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
 
-def get_args(action, config, section=None):
-    kwargs = {}
-    for arg in action.args:
-        if section:
-            value = getattr(section, arg, getattr(config, arg, None))
-        else:
-            value = getattr(config, arg, None)
-        if value:
-            kwargs[arg] = value
-    return kwargs
-
-
 class DBusService(dbus.service.Object):
+
+    CONFIG = None
 
     @dbus.service.method("net.kosciak.PyWO", 
                          in_signature='si', out_signature='s')
     def PerformCommand(self, command, win_id):
         logging.debug('DBUS: command="%s", win_id=%s' % (command, win_id))
+        # TODO: use commandline
+        # TODO: try/except parser exceptions?
+        ##(options, args) = PARSER.parse_args(command)
         cmd = command.strip().split(' ')
         try:
             action = ACTIONS[cmd[0]]
@@ -136,12 +128,14 @@ class DBusService(dbus.service.Object):
 DBusGMainLoop(set_as_default=True)
 session_bus = dbus.SessionBus()
 name = dbus.service.BusName("net.kosciak.PyWO", session_bus)
-object = DBusService(session_bus, "/net/kosciak/PyWO")
+service = DBusService(session_bus, "/net/kosciak/PyWO")
 
 import gobject
 gobject.threads_init()
 loop = gobject.MainLoop()
 
+def setup(config):
+    service.CONFIG = config
 
 def start():
     logging.info('Starting PyWO D-Bus Service')

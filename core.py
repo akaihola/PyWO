@@ -157,15 +157,16 @@ class Size(object):
         self.height = height
 
     @staticmethod
-    def parse(width, height):
+    def parse(widths, heights):
         """Parse width and height strings and return Size object.
 
         It can be float number (value will be evaluatedi, so 1.0/2 is valid) 
         or predefined value in __SIZES.
 
         """
-        if not width or not height:
+        if not widths or not heights:
             return None
+        width, height = widths, heights
         for name, value in SIZES.items():
             width = width.replace(name, value)
             height = height.replace(name, value)
@@ -180,6 +181,8 @@ class Size(object):
                                if _PATTERN.match(height)]
         if len(height) == 1:
             height = height[0]
+        if width == [] or height == []:
+            raise ValueError('Can\'t parse: %s, %s' % (widths, heights))
         return Size(width, height)
 
     def __eq__(self, other):
@@ -304,6 +307,7 @@ class EventDispatcher(object):
         self.__display = display
         self.__root = display.screen().root
         self.__handlers = {} # {window.id: {handler.type: handler, }, }
+        self.__thread = None
 
     def run(self):
         """Perform event queue checking.
@@ -314,10 +318,10 @@ class EventDispatcher(object):
         """
         logging.debug('EventDispatcher started')
         while self.__handlers:
-            time.sleep(0.05)
             while self.__display.pending_events():
                 # Dispatch all pending events if present
                 self.__dispatch(self.__display.next_event())
+            time.sleep(0.05)
         logging.debug('EventDispatcher stopped')
 
     def register(self, window, handler):
@@ -325,15 +329,17 @@ class EventDispatcher(object):
         logging.debug('Registering %s (mask=%s, types=%s) for %s' %
                       (handler.__class__.__name__, 
                        handler.mask, handler.types, window.id))
-        started = len(self.__handlers)
         if not window.id in self.__handlers:
             self.__handlers[window.id] = {}
         for type in handler.types:
             self.__handlers[window.id][type] = handler
-        if not started:
-            t = threading.Thread(name='EventDispatcher', target=self.run)
+        if not self.__thread or \
+           (self.__thread and not self.__thread.isAlive()):
+            # start new thread only if needed
+            self.__thread = threading.Thread(name='EventDispatcher', 
+                                 target=self.run)
             #t.setDaemon(True)
-            t.start()
+            self.__thread.start()
         return set([handler.mask 
                     for handler in self.__handlers[window.id].values()])
 

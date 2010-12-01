@@ -24,48 +24,13 @@ import logging
 
 from core import WM
 from events import KeyPressHandler
-from config import CONFIG
-from actions import ACTIONS, ActionException
+from actions import ACTIONS, ActionException, get_args
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
 
 MAPPINGS = {} # {(modifiers, keycode): (action, args), }
-
-def get_args(action, config, section=None):
-    kwargs = {}
-    for arg in action.args:
-        if section:
-            value = getattr(section, arg, getattr(config, arg, None))
-        else:
-            value = getattr(config, arg, None)
-        if value:
-            kwargs[arg] = value
-    return kwargs
-
-
-def set_mappings(config):
-    for action in ACTIONS.values():
-        if 'direction' in action.args or \
-           'position' in action.args or \
-           'gravity' in action.args:
-            mask = config.keys.get(action.name)
-            if not mask:
-                continue
-            for section in config.sections.values():
-                key = section.key
-                if key and action not in section.ignored:
-                    (modifiers, keycode) = WM.str2modifiers_keycode(mask, key)
-                    kwargs = get_args(action, config, section)
-                    MAPPINGS[(modifiers, keycode)] = (action, kwargs)
-        else:
-            key = config.keys.get(action.name)
-            if key and action not in config.ignored:
-                (modifiers, keycode) = WM.str2modifiers_keycode(key)
-                kwargs = get_args(action, config)
-                MAPPINGS[(modifiers, keycode)] = (action, kwargs)
-
 
 def key_press(event):
     """Event handler method for KeyPressEventHandler."""
@@ -92,12 +57,35 @@ def key_press(event):
 
 HANDLER = KeyPressHandler(key_press)
 
+
+def setup(config):
+    MAPPINGS.clear()
+    for action in ACTIONS.values():
+        if 'direction' in action.args or \
+           'position' in action.args or \
+           'gravity' in action.args:
+            mask = config.keys.get(action.name)
+            if not mask:
+                continue
+            for section in config.sections.values():
+                key = section.key
+                if key and action not in section.ignored:
+                    (modifiers, keycode) = WM.str2modifiers_keycode(mask, key)
+                    kwargs = get_args(action, config, section)
+                    MAPPINGS[(modifiers, keycode)] = (action, kwargs)
+        else:
+            key = config.keys.get(action.name)
+            if key and action not in config.ignored:
+                (modifiers, keycode) = WM.str2modifiers_keycode(key)
+                kwargs = get_args(action, config)
+                MAPPINGS[(modifiers, keycode)] = (action, kwargs)
+    # set new mappings
+    HANDLER.set_keys(MAPPINGS.keys(), 
+                     config.numlock,
+                     config.capslock)
+
 def start():
     logging.info('Registering keyboard shortcuts')
-    set_mappings(CONFIG)
-    HANDLER.set_keys(MAPPINGS.keys(), 
-                     CONFIG.numlock,
-                     CONFIG.capslock)
     HANDLER.grab_keys(WM)
 
 

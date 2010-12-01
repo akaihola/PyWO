@@ -23,7 +23,7 @@
 import itertools
 import logging
 
-from core import Gravity, Geometry, Window, WM, normal_on_same_filter
+from core import Gravity, Geometry, Size, Window, WM, normal_on_same_filter
 from events import PropertyNotifyHandler
 from resizer import expand_window, shrink_window
 
@@ -50,13 +50,14 @@ class ActionException(Exception):
 
 class Action(object):
 
-    def __init__(self, name, action, 
+    def __init__(self, action, name,
                  check=[], unshade=False):
         self.name = name
         self.args = action.func_code.co_varnames[1:action.func_code.co_argcount]
         self.__action = action
         self.__check = check
         self.__unshade = unshade
+        self.__doc__ = action.__doc__
 
     def __call__(self, win, **kwargs):
         if self.__check:
@@ -74,7 +75,7 @@ class Action(object):
            (Window.TYPE_DESKTOP in type or \
             Window.TYPE_DOCK in type or \
             Window.TYPE_SPLASH in type):
-            error_msg = "Can't perform action on window of this type."
+            error_msg = "Can't perform %s on window of this type." % self.name
             raise ActionException(error_msg)
 
         state = win.state
@@ -82,14 +83,15 @@ class Action(object):
            (Window.STATE_FULLSCREEN in state or \
             (Window.STATE_MAXIMIZED_HORZ in state and \
              Window.STATE_MAXIMIZED_VERT in state)):
-            error_msg = "Can't perform action on maximized/fullscreen window."
+            error_msg = "Can't perform %s on maximized/fullscreen window." % self.name
             raise ActionException(error_msg)
 
 
 def register_action(name, check=[], unshade=False):
     """Register function as PyWO action with given name."""
     def register(action):
-        action = Action(name, action, check, unshade)
+        doc = action.__doc__
+        action = Action(action, name, check, unshade)
         ACTIONS[name] = action
         return action
     return register
@@ -159,8 +161,14 @@ class _DummyWindow(object):
         self.borders = window.borders
         self.desktop = window.desktop
         self.id = window.id
-        width = int(workarea.width * min(sizes.width))
-        height = int(workarea.height * min(sizes.height))
+        try:
+            width = int(workarea.width * min(sizes.width))
+        except TypeError:
+            width = int(workarea.width * sizes.width)
+        try:
+            height = int(workarea.height * min(sizes.height))
+        except TypeError:
+            height = int(workarea.height * sizes.height)
         self.geometry = Geometry(x, y, width, height, gravity)
 
 
@@ -182,8 +190,14 @@ def __grid(win, position, gravity, sizes, invert_on_resize, cycle):
     workarea = WM.workarea_geometry
     x = workarea.x + workarea.width * position.x
     y = workarea.y + workarea.height * position.y
-    heights = [int(workarea.height * height) for height in sizes.height]
-    widths = [int(workarea.width * width) for width in sizes.width]
+    try:
+        widths = [int(workarea.width * width) for width in sizes.width]
+    except TypeError:
+        widths = [int(workarea.width * sizes.width)]
+    try:
+        heights = [int(workarea.height * height) for height in sizes.height]
+    except TypeError:
+        heights = [int(workarea.height * sizes.height)]
     if _GRIDED and win.id == _GRIDED['id'] and \
        _GRIDED['placement'] == (position, gravity):
         old = win.geometry
@@ -390,4 +404,58 @@ def _spatial_switcher(win, direction):
     for result in results:
         print result
 
+
+def get_args(action, config, section=None, options=None):
+    kwargs = {}
+    for arg in action.args:
+        for obj in [options, section, config]:
+            value = getattr(obj, arg, None)
+            if value is not None:
+                kwargs[arg] = value
+                break
+    return kwargs
+
+
+def perform_action(args, config, options={}, win_id=0):
+    if len(args) == 0:
+        parser.error('No ACTION provided')
+        return
+    try:
+        action = ACTIONS[args.pop(0)]
+    except:
+        raise ActionException('Invalid ACTION provided')
+    need_section = 'direction' in action.args or \
+                   'position' in action.args or \
+                   'gravity' in action.args
+    # TODO: what if all section options are provided in options?
+    if need_section and not args and not options:
+        raise ActionException('No SECTION provided')
+    elif need_section and args and args[0] not in config.sections:
+        raise ActionException('Invalid SECTION provided')
+    elif need_section and args:
+        section = config.sections[args.pop(0)]
+    else:
+        section = None
+
+    if win_id:
+        window = Window(win_id)
+    elif args:
+        # TODO: check system encoding?
+        args = [arg.decode('utf-8') for arg in args]
+        match = u' '.join(args)
+        windows = WM.windows(lambda window: Window.TYPE_NORMAL in window.type,
+                             match=match)
+        try:
+            window = windows[0]
+        except:
+            raise ActionException('No WINDOW matched: %s' % match)
+    else:
+        window = WM.active_window()
+
+    kwargs = get_args(action, config, section, options)
+    logging.debug('%s(%s)' % 
+                  (action.name, 
+                  ', '.join(['%s=%s' % (key, str(value)) 
+                             for key, value in kwargs.items()])))
+    action(window, **kwargs)
 

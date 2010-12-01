@@ -24,6 +24,7 @@ class TestSize(unittest.TestCase):
         self.assertEqual(Size.parse('HALF', 'QUARTER*2+HALF'), self.HALF_FULL)
         self.assertEqual(Size.parse('1.0/2', '0.1*6-0.1+HALF'), self.HALF_FULL)
         self.assertEqual(Size.parse('HALF, FULL', '1'), Size([0.5, 1], 1))
+        self.assertRaises(ValueError, Size.parse, 'tttgf', '0')
 
 
 class TestGravity(unittest.TestCase):

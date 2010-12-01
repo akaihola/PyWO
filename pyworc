@@ -87,6 +87,6 @@ debug = Ctrl-Shift-Alt-I
 ; - or x, y percent value - eg: 1.0, 0.5
 ;
 ; valid widths, heights values:
-; - QUARTER, THIRD, HALF, FULL
+; - QUARTER, Q, THIRD, T, HALF, H, FULL, F
 ; - 1.0/3*2 or THIRD*2 (will be evaluated)
 

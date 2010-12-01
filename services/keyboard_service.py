@@ -22,9 +22,9 @@
 
 import logging
 
+import actions
 from core import WM
 from events import KeyPressHandler
-from actions import ACTIONS, ActionException, get_args
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
@@ -48,7 +48,7 @@ def key_press(event):
                              for key, value in kwargs.items()])))
     try:
         action(window, **kwargs)
-    except ActionException, e:
+    except actions.ActionException, e:
         logging.error(e)
     except Exception, err:
         logging.exception(err)
@@ -60,7 +60,7 @@ HANDLER = KeyPressHandler(key_press)
 
 def setup(config):
     MAPPINGS.clear()
-    for action in ACTIONS.values():
+    for action in actions.all():
         if 'direction' in action.args or \
            'position' in action.args or \
            'gravity' in action.args:
@@ -71,13 +71,13 @@ def setup(config):
                 key = section.key
                 if key and action not in section.ignored:
                     (modifiers, keycode) = WM.str2modifiers_keycode(mask, key)
-                    kwargs = get_args(action, config, section)
+                    kwargs = actions.get_args(action, config, section)
                     MAPPINGS[(modifiers, keycode)] = (action, kwargs)
         else:
             key = config.keys.get(action.name)
             if key and action not in config.ignored:
                 (modifiers, keycode) = WM.str2modifiers_keycode(key)
-                kwargs = get_args(action, config)
+                kwargs = actions.get_args(action, config)
                 MAPPINGS[(modifiers, keycode)] = (action, kwargs)
     # set new mappings
     HANDLER.set_keys(MAPPINGS.keys(), 

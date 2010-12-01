@@ -28,8 +28,9 @@ import dbus
 from dbus.mainloop.glib import DBusGMainLoop
 import dbus.service
 
+import actions
+from commandline import parse_args
 from core import WM, Window
-from actions import ACTIONS, ActionException, get_args
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
@@ -43,78 +44,26 @@ class DBusService(dbus.service.Object):
                          in_signature='si', out_signature='s')
     def PerformCommand(self, command, win_id):
         logging.debug('DBUS: command="%s", win_id=%s' % (command, win_id))
-        # TODO: use commandline
         # TODO: try/except parser exceptions?
-        ##(options, args) = PARSER.parse_args(command)
-        cmd = command.strip().split(' ')
+        (options, args) = parse_args(command)
         try:
-            action = ACTIONS[cmd[0]]
-        except:
-            logging.error('Unrecognized action: %s' % cmd[0])
-            return 'Unrecognized action: %s' % cmd[0]
-
-        if ('direction' in action.args or \
-            'position' in action.args or \
-            'gravity' in action.args) and \
-           len(cmd) > 1 and \
-           cmd[1] in CONFIG.sections:
-            section = CONFIG.sections[cmd[1]]
-            match = u' '.join(cmd[2:])
-        elif ('direction' in action.args or \
-              'position' in action.args or \
-              'gravity' in action.args) and \
-             len(cmd) > 1 and \
-             cmd[1] not in CONFIG.sections:
-            logging.error('Unrecognized section: %s' % cmd[1])
-            return 'Unrecognized section: %s' % cmd[1]
-        elif ('direction' in action.args or \
-              'position' in action.args or \
-              'gravity' in action.args):
-            logging.error('No section specified')
-            return 'No section specified'
-        else:
-            section = None
-            match = u' '.join(cmd[1:])
-
-        if win_id > 0:
-            window = Window(win_id)
-        elif match:
-            try:
-                windows = WM.windows(lambda window: 
-                                            Window.TYPE_NORMAL in window.type,
-                                     match=match)
-                window = windows[0]
-            except:
-                logging.error('Can\'t find window matching: %s' % match)
-                return 'Can\'t find window matching: %s' % match
-        else:
-            window = WM.active_window()
-
-        logging.debug(window.name)
-        kwargs = get_args(action, CONFIG, section)
-        logging.debug('%s(%s)' % 
-                      (action.name, 
-                      ', '.join(['%s=%s' % (key, str(value)) 
-                                 for key, value in kwargs.items()])))
-        try:
-            action(window, **kwargs)
-        except ActionException, e:
-            logging.error(e)
-        except Exception, e:
-            logging.exception(e)
-            return e
-        WM.flush()
-        return ''
+            actions.perform(args, config, options)
+            WM.flush()
+            return ''
+        except actions.ActionException, e:
+            # TODO: What about other exceptions?
+            #       parser exceptions?
+            return str(e)
 
     @dbus.service.method("net.kosciak.PyWO", 
                          in_signature='', out_signature='as')
     def Commands(self):
-        return ACTIONS
+        return actions.all()
 
     @dbus.service.method("net.kosciak.PyWO", 
                          in_signature='', out_signature='as')
     def Sections(self):
-        return CONFIG.sections
+        return self.CONFIG.sections
 
     @dbus.service.method("net.kosciak.PyWO", 
                          in_signature='s', out_signature='a(is)')

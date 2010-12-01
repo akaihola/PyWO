@@ -21,20 +21,19 @@
 
 """pywo.py - main module for PyWO."""
 
-import atexit
+#import atexit
 import logging
 from logging.handlers import RotatingFileHandler
-import os
-import os.path
 import signal
 import threading
 import time
 import sys
 
-from core import WM
-from config import Config
-from actions import ACTIONS, register_action, perform_action, ActionException
+import actions
 from commandline import parse_args, print_help, print_error
+from config import Config
+from core import WM
+import services
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
@@ -61,23 +60,13 @@ def setup_loggers(debug=False):
     logger.addHandler(console)
 
 
-def register_services(config):
-    """Services autodiscovery - loads services defined in config file."""
-    global SERVICES
-    SERVICES = []
-    path = os.path.dirname(os.path.abspath(__file__))
-    services = [file for file in os.listdir(path) 
-                     if file.endswith('_service.py')]
-    for service in services:
-        module = service[0:-3]
-        print module
-        if getattr(config, module):
-            SERVICES.append(__import__(module))
-
-
 def start(config):
     """Setup and start all services."""
-    register_services(config)
+    global SERVICES
+    SERVICES = []
+    for service in services.all():
+        if getattr(config, service.__name__[9:]):
+            SERVICES.append(service)
     for service in SERVICES:
         service.setup(config)
         service.start()
@@ -90,7 +79,6 @@ def stop():
         service.stop()
 
 
-@register_action(name='reload')
 def reload(win, config=None, *args):
     """Stop services, reload configuration file, and start again."""
     logging.info('Reloading PyWO...')
@@ -102,7 +90,6 @@ def reload(win, config=None, *args):
     start(config)
 
 
-@register_action(name='exit')
 def exit_pywo(*args):
     """Stop sevices, and exit PyWO."""
     logging.info('Exiting PyWO...')
@@ -132,16 +119,19 @@ if __name__ == '__main__':
 
     if options.start_daemon:
         logging.info('Starting PyWO...')
+        actions.register(name='exit')(exit_pywo)
+        actions.register(name='reload')(reload)
         start(config)
         while len(threading.enumerate()) > 1: 
             # just keep the MainThread busy for Ctrl-C to work
             time.sleep(0.5)
     elif args:
         try:
-            perform_action(args, config, options)
+            actions.perform(args, config, options)
             WM.flush()
-        except ActionException, e:
+        except actions.ActionException, e:
             # TODO: What about other exceptions?
+            #       parser exceptions?
             print_error(e)
     else:
         #TODO: implement --actions to print out available actions, with args list and description (from __doc__?)

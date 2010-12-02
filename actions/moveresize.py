@@ -216,21 +216,6 @@ def _cycle(win):
     __switch_cycle(win, False)
 
 
-@register(name='debug', check=[TYPE])
-def _debug_info(win):
-    """Print debug info about Window Manager, and current Window."""
-    logging.info('-= Window Manager =-')
-    WM.debug_info()
-    logging.info('-= Current Window =-')
-    win.debug_info()
-    logging.info('-= Move with same geometry =-')
-    geo =  win.geometry
-    win.move_resize(geo)
-    win.sync()
-    logging.info('New geometry=%s' % win.geometry)
-    logging.info('-= End of debug =-')
-
-
 # TODO: new actions
 #   - always on top
 #   - resize (with gravity?)

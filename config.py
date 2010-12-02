@@ -113,8 +113,11 @@ class Config(object):
         self.sections = {}
         for section in self._config.sections():
             key = self.keys.pop(section, None)
-            self.sections[section] = _Section(self, section, key)
+            self.sections[section.lower()] = _Section(self, section, key)
             self._config.remove_section(section)
 
         logging.debug('Loaded configuration file')
+
+    def section(self, name):
+        return self.sections.get(name.lower(), None)
 

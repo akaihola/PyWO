@@ -30,8 +30,6 @@ from core import Window, WM
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
 
-_ACTIONS = {} # {action.name: action, }
-
 TYPE = 1
 STATE = 2
 
@@ -46,6 +44,9 @@ class ActionException(Exception):
 
 
 class Action(object):
+
+    _ACTIONS = {} # {action.name: action, }
+    _LOADED = False
 
     def __init__(self, action, name,
                  check=[], unshade=False):
@@ -72,16 +73,16 @@ class Action(object):
            (Window.TYPE_DESKTOP in type or \
             Window.TYPE_DOCK in type or \
             Window.TYPE_SPLASH in type):
-            error_msg = "Can't perform %s on window of this type." % self.name
-            raise ActionException(error_msg)
+            error = "Can't perform %s on window of this type." % self.name
+            raise ActionException(error)
 
         state = win.state
         if STATE in self.__check and \
            (Window.STATE_FULLSCREEN in state or \
             (Window.STATE_MAXIMIZED_HORZ in state and \
              Window.STATE_MAXIMIZED_VERT in state)):
-            error_msg = "Can't perform %s on maximized/fullscreen window." % self.name
-            raise ActionException(error_msg)
+            error = "Can't perform %s on maximized/fullscreen window." % self.name
+            raise ActionException(error)
 
 
 def register(name, check=[], unshade=False):
@@ -89,8 +90,9 @@ def register(name, check=[], unshade=False):
     def register_action(action):
         doc = action.__doc__
         action = Action(action, name, check, unshade)
-        _ACTIONS[name] = action
+        Action._ACTIONS[name] = action
         return action
+    name = name.lower()
     return register_action
 
 
@@ -109,17 +111,33 @@ def _debug_info(win):
     logging.info('-= End of debug =-')
 
 
+def __load():
+    """Autodiscover actions."""
+    path = os.path.dirname(os.path.abspath(__file__))
+    modules = [file[0:-3] for file in os.listdir(path) 
+                          if file.endswith('.py')]
+    for module in modules:
+        __import__('actions.%s' % module)
+    Action._LOADED = True
+
+
 def get(name):
     """Return action with given name."""
-    return _ACTIONS.get(name, None)
+    if not Action._LOADED:
+        __load()
+    return Action._ACTIONS.get(name.lower(), None)
 
 
 def all():
     """Return set of all actions."""
-    return _ACTIONS.values()
+    if not Action._LOADED:
+        __load()
+    return Action._ACTIONS.values()
 
 
 def get_args(action, config, section=None, options=None):
+    # FIXME: --widths, --heights don't work right now, 
+    #        --sizes is used instead (from options, or default from section)
     kwargs = {}
     for arg in action.args:
         for obj in [options, section, config]:
@@ -135,7 +153,7 @@ def perform(args, config, options={}, win_id=0):
         parser.error('No ACTION provided')
         return
     try:
-        action = _ACTIONS[args.pop(0)]
+        action = get(args.pop(0))
     except:
         raise ActionException('Invalid ACTION provided')
     need_section = 'direction' in action.args or \
@@ -147,7 +165,7 @@ def perform(args, config, options={}, win_id=0):
     elif need_section and args and args[0] not in config.sections:
         raise ActionException('Invalid SECTION provided')
     elif need_section and args:
-        section = config.sections[args.pop(0)]
+        section = config.section(args.pop(0))
     else:
         section = None
 
@@ -173,10 +191,4 @@ def perform(args, config, options={}, win_id=0):
                              for key, value in kwargs.items()])))
     action(window, **kwargs)
 
-
-# Autodiscovery
-path = os.path.dirname(os.path.abspath(__file__))
-modules = [file[0:-3] for file in os.listdir(path) if file.endswith('.py')]
-for module in modules:
-    __import__('actions.%s' % module)
 

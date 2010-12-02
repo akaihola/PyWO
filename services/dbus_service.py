@@ -58,12 +58,12 @@ class DBusService(dbus.service.Object):
     @dbus.service.method("net.kosciak.PyWO", 
                          in_signature='', out_signature='as')
     def Commands(self):
-        return actions.all()
+        return [action.name for action in actions.all()]
 
     @dbus.service.method("net.kosciak.PyWO", 
                          in_signature='', out_signature='as')
     def Sections(self):
-        return self.CONFIG.sections
+        return self.CONFIG.sections.keys()
 
     @dbus.service.method("net.kosciak.PyWO", 
                          in_signature='s', out_signature='a(is)')

@@ -24,7 +24,7 @@ import itertools
 import logging
 
 from actions import register, TYPE, STATE
-from core import Gravity, Geometry, WM
+from core import Gravity, Geometry, Size, WM
 from events import PropertyNotifyHandler
 from resizer import expand_window, shrink_window
 
@@ -94,22 +94,17 @@ class _DummyWindow(object):
     
     gravity = Gravity(0.5, 0.5)
 
-    def __init__(self, workarea, window, x, y, sizes, gravity):
+    def __init__(self, workarea, window, x, y, widths, heights, gravity):
         self.borders = window.borders
         self.desktop = window.desktop
         self.id = window.id
-        try:
-            width = int(workarea.width * min(sizes.width))
-        except TypeError:
-            width = int(workarea.width * sizes.width)
-        try:
-            height = int(workarea.height * min(sizes.height))
-        except TypeError:
-            height = int(workarea.height * sizes.height)
-        self.geometry = Geometry(x, y, width, height, gravity)
+        self.geometry = Geometry(x, y, min(widths), min(heights), gravity)
 
+NO_SIZE = Size(0, 0)
 
-def __grid(win, position, gravity, sizes, invert_on_resize, cycle):
+def __grid(win, position, gravity, 
+           size, width, height, 
+           invert_on_resize=True, cycle='width'):
     """Put window in given position and resize it."""
 
     def get_iterator(sizes, new_size):
@@ -127,14 +122,21 @@ def __grid(win, position, gravity, sizes, invert_on_resize, cycle):
     workarea = WM.workarea_geometry
     x = workarea.x + workarea.width * position.x
     y = workarea.y + workarea.height * position.y
+    if not size and (width == NO_SIZE or height == NO_SIZE):
+        # Use current window's size if no size provided
+        geometry = win.geometry
+        size = Size(float(geometry.width) / workarea.width,
+                    float(geometry.height) / workarea.height)
     try:
-        widths = [int(workarea.width * width) for width in sizes.width]
+        widths = [int(workarea.width * width) 
+                  for width in (width.width or size.width)]
     except TypeError:
-        widths = [int(workarea.width * sizes.width)]
+        widths = [int(workarea.width * (width.width or size.width))]
     try:
-        heights = [int(workarea.height * height) for height in sizes.height]
+        heights = [int(workarea.height * height) 
+                   for height in (height.height or size.height)]
     except TypeError:
-        heights = [int(workarea.height * sizes.height)]
+        heights = [int(workarea.height * (height.height or size.height))]
     if _GRIDED and win.id == _GRIDED['id'] and \
        _GRIDED['placement'] == (position, gravity):
         old = win.geometry
@@ -147,7 +149,7 @@ def __grid(win, position, gravity, sizes, invert_on_resize, cycle):
             new_width = old.width + \
                         min(abs(old.width - width) for width in widths)
     else:
-        dummy = _DummyWindow(workarea, win, x, y, sizes, gravity)
+        dummy = _DummyWindow(workarea, win, x, y, widths, heights, gravity)
         border = expand_window(dummy, dummy.gravity,
                                sticky = False,
                                vertical_first=(cycle is 'height'))
@@ -171,14 +173,20 @@ def __grid(win, position, gravity, sizes, invert_on_resize, cycle):
 
 
 @register(name='grid_width', check=[TYPE])
-def _grid_width(win, position, gravity, sizes, invert_on_resize=True):
+def _grid_width(win, position, gravity, 
+                size=None, width=NO_SIZE, height=NO_SIZE, 
+                invert_on_resize=True):
     """Put window in given position and resize it (cycle widths)."""
-    __grid(win, position, gravity, sizes, invert_on_resize, 'width')
+    __grid(win, position, gravity, 
+           size, width, height, invert_on_resize, 'width')
 
 @register(name='grid_height', check=[TYPE])
-def _grid_height(win, position, gravity, sizes, invert_on_resize=True):
+def _grid_height(win, position, gravity, 
+                 size=None, width=NO_SIZE, height=NO_SIZE, 
+                 invert_on_resize=True):
     """Put window in given position and resize it (cycle heights)."""
-    __grid(win, position, gravity, sizes, invert_on_resize, 'height')
+    __grid(win, position, gravity, 
+           size, width, height, invert_on_resize, 'height')
 
 
 def __switch_cycle(win, keep_active):
@@ -215,11 +223,3 @@ def _cycle(win):
     """Switch contents of windows (focus on new window)."""
     __switch_cycle(win, False)
 
-
-# TODO: new actions
-#   - always on top
-#   - resize (with gravity?)
-#   - move (relative with gravity and +/-length)?
-#   - place (absolute x,y)
-#   - switch desktop/viewport
-#   - move window to desktop/viewport

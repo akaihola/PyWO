@@ -27,6 +27,7 @@ import textwrap
 import sys
 
 from core import Size, Gravity
+import actions
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
@@ -50,35 +51,43 @@ class TextWrapperWithNewLines:
 optparse.textwrap = TextWrapperWithNewLines()
 
 
-def check_gravity(option, opt, value):
-    # TODO: use gravity_callback
+def largs_callback(option, opt_str, value, parser):
+    if parser.largs and not parser.values.action:
+        setattr(parser.values, 'action', parser.largs.pop(0))
+    if parser.largs and not parser.values.section:
+        setattr(parser.values, 'section', parser.largs.pop(0))
+
+
+def gravity_callback(option, opt_str, value, parser):
+    largs_callback(option, opt_str, value, parser)
     try:
-        return Gravity.parse(value)
+        gravity = Gravity.parse(value)
     except ValueError:
         raise OptionValueError(
-            'option %s: error parsing Gravity with value: %s' % (opt, value))
+            'option %s: error parsing Gravity with value: %s' % (opt_str, value))
+    setattr(parser.values, option.dest, gravity)
+    if option.dest == 'gravity' and not parser.values.position:
+        setattr(parser.values, 'position', gravity)
+    if option.dest == 'gravity' and not parser.values.direction:
+        setattr(parser.values, 'direction', gravity)
+    if option.dest == 'position' and not parser.values.gravity:
+        setattr(parser.values, 'gravity', gravity)
+
 
 
 def size_callback(option, opt_str, value, parser):
-    # TODO: use parser.largs to set .action, .section
-    # TODO: -w and -h are not working... only --size (since 'size' attribute is neede by actions, not 'width' and 'height'
+    largs_callback(option, opt_str, value, parser)
     try:
-        if opt_str == '-w' or opt_str == '--width':
+        if option.dest == 'width':
             size = Size.parse(value, '0')
-        elif opt_str == '-h' or opt_str == '--height':
+        elif option.dest == 'height':
             size = Size.parse('0', value)
-        elif opt_str == '-s' or opt_str == '--size':
+        elif option.dest == 'size':
             size = Size.parse(*value)
     except ValueError, TypeError:
         raise OptionValueError(
             'option %s: error parsing Size with value: %s' % (opt_str, value))
     setattr(parser.values, option.dest, size)
-
-
-class GravitySizeOption(Option):
-    TYPES = Option.TYPES + ('gravity',)
-    TYPE_CHECKER = copy(Option.TYPE_CHECKER)
-    TYPE_CHECKER['gravity'] = check_gravity
 
 
 usage = '%prog [OPTIONS]\n   or: %prog ACTION [SECTION] [OPTIONS] WINDOW'
@@ -89,11 +98,11 @@ epilog = ''
 # TODO: add author, webpage, license info
 parser = OptionParser(usage=usage, version=version,
                       #description=description,
-                      conflict_handler='resolve',
-                      option_class=GravitySizeOption)
+                      conflict_handler='resolve')
+parser.set_defaults(action=None, section=None)
 
-parser.add_option('--actions',
-                  action='store_true', dest='list_actions',
+parser.add_option('--help-more',
+                  action='store_true', dest='help_more',
                   help='list all available ACTIONs')
 parser.add_option('--debug', '--verbose',
                   action='store_true', dest='debug', default=False,
@@ -113,30 +122,37 @@ action = OptionGroup(parser, 'Options for Actions',
 #       if not position: position = gravity
 #       if position and not gravity: gravity = position
 #       like in config
+action.add_option('-a', '--add', '--set', '--on',
+                  action='store_const', const=1, dest='mode', default=2,
+                  help='actions\'s MODE [default: toggle]')
+action.add_option('-r', '--remove', '--unset', '--off',
+                  action='store_const', const=0, dest='mode', default=2,
+                  help='actions\'s MODE [default: toggle]')
+                  
 action.add_option('-g', '--gravity',
-                  action='store', dest='gravity', type='gravity',
+                  action='callback', dest='gravity', type='string',
+                  callback=gravity_callback,
                   help='use given gravity\nIf not set POSITION will be used')
 action.add_option('-d', '--direction',
-                  action='store', dest='direction', type='gravity',
+                  action='callback', dest='direction', type='string',
+                  callback=gravity_callback,
                   help='use given direction\nIf not set GRAVITY will be used')
 action.add_option('-p', '--position',
-                  action='store', dest='position', type='gravity',
+                  action='callback', dest='position', type='string',
+                  callback=gravity_callback,
                   help='use given position\nIf not set GRAVITY will be used')
 action.add_option('-w', '--width',
-                  action='callback', dest='widths',
-                  help='use given width sizes', type='string', 
+                  action='callback', dest='width',
                   callback=size_callback,
-                  metavar='WIDTH')
+                  help='use given width sizes', type='string')
 action.add_option('-h', '--height',
-                  action='callback', dest='heights', type='string', 
+                  action='callback', dest='height', type='string', 
                   callback=size_callback,
-                  help='use given height sizes',
-                  metavar='HEIGHT')
+                  help='use given height sizes')
 action.add_option('-s', '--size',
-                  action='callback', dest='sizes', nargs=2, type='string',
+                  action='callback', dest='size', nargs=2, type='string',
                   callback=size_callback,
-                  help='use given sizes - combines WIDTH, and SIZE (used by grid_width, grid_heigt)',
-                  metavar='SIZE')
+                  help='combines WIDTH, and HEIGHT [default: current size]')
 
 action.add_option('-i', '--invert',
                   action='store_true', dest='invert_on_resize', default=True,
@@ -151,6 +167,9 @@ action.add_option('-H', '--horizontal-first',
                   action='store_false', dest='vertical_first')
 parser.add_option_group(action)
 
+#
+# Groups for --help-more
+#
 gravity = OptionGroup(parser, 'GRAVITY',
                       '''\
 Predefined names:
@@ -166,7 +185,6 @@ Predefined names:
 Custom Gravity:
   Provide values from 0.0 to 1.0 for x, and y. 
   Example: --gravity FULL,THIRD*2 --position 0.5,1.0/3*2''')
-parser.add_option_group(gravity)
 
 w_h = OptionGroup(parser, 'WIDTH, HEIGHT',
                   '''\
@@ -178,19 +196,16 @@ Predefined names:
 Custom size:
   Provide value from 0.0 to 1.0 
   Example: --width THIRD*2 --height 1.0/3*2''')
-parser.add_option_group(w_h)
 
 size = OptionGroup(parser, 'SIZE',
                    '''\
 SIZE combines WIDTH and HEIGHT in one option. 
 Example: --size H T*2''')
-parser.add_option_group(size)
 
 window = OptionGroup(parser, 'WINDOW',
                      '''\
 Title of the window. You can use part of window's title - PyWO will try to find \
 best match. Windows on current desktop/viewport have higher priority.''')
-parser.add_option_group(window)
 
 
 
@@ -203,6 +218,23 @@ def print_error(msg):
 
 
 def print_help():
+    parser.print_help()
+
+def print_help_more(config):
+    list = []
+    for action in sorted(actions.all(), key=lambda action: action.name):
+        list.append('%s\n  %s\n  %s' % (action.name, 
+                                        (action.__doc__ or '').split('\n')[0],
+                                        ', '.join(action.args).upper()))
+    actions_list = OptionGroup(parser, 'ACTION', '\n'.join(list))
+    parser.add_option_group(actions_list)
+    sections_list = OptionGroup(parser, 'SECTION', 
+                                '\n'.join(sorted(config.sections, reverse=True)))
+    parser.add_option_group(sections_list)
+    parser.add_option_group(gravity)
+    parser.add_option_group(w_h)
+    parser.add_option_group(size)
+    parser.add_option_group(window)
     parser.print_help()
 
 

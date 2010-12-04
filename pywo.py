@@ -30,7 +30,7 @@ import time
 import sys
 
 import actions
-from commandline import parse_args, print_help, print_error
+import commandline
 from config import Config
 from core import WM
 import services
@@ -110,7 +110,7 @@ signal.signal(signal.SIGINT, interrupt_handler)
 
 if __name__ == '__main__':
     # parse commandline
-    (options, args) = parse_args()
+    (options, args) = commandline.parse_args()
     # setup loggers
     setup_loggers(options.debug)
     global FILENAME
@@ -125,15 +125,16 @@ if __name__ == '__main__':
         while len(threading.enumerate()) > 1: 
             # just keep the MainThread busy for Ctrl-C to work
             time.sleep(0.5)
-    elif args:
+    elif args or options.action:
         try:
             actions.perform(args, config, options)
             WM.flush()
         except actions.ActionException, e:
             # TODO: What about other exceptions?
             #       parser exceptions?
-            print_error(e)
+            commandline.print_error(e)
+    elif options.help_more:
+        commandline.print_help_more(config)
     else:
-        #TODO: implement --actions to print out available actions, with args list and description (from __doc__?)
-        print_help()
+        commandline.print_help()
 

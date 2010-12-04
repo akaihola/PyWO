@@ -53,7 +53,7 @@ class _Section(object):
             self.position = self.gravity
         elif self.position and not self.gravity:
             self.gravity = self.position
-        self.sizes = Size.parse(data.get('widths', ''), 
+        self.size = Size.parse(data.get('widths', ''), 
                                 data.get('heights', ''))
 
 
@@ -65,7 +65,7 @@ class Config(object):
     ON = 1
     IGNORE = 2
 
-    def __init__(self, filename):
+    def __init__(self, filename=''):
         self._config = ConfigParser()
         self.keys = {} # {'action_name': 'key', }
         self.ignored = set()

@@ -149,23 +149,22 @@ def get_args(action, config, section=None, options=None):
 
 
 def perform(args, config, options={}, win_id=0):
-    if len(args) == 0:
-        parser.error('No ACTION provided')
-        return
-    try:
-        action = get(args.pop(0))
-    except:
-        raise ActionException('Invalid ACTION provided')
+    if not options.action and len(args) == 0:
+        raise ActionException('No ACTION provided')
+    name = options.action or args.pop(0)
+    action = get(name)
+    if not action:
+        raise ActionException('Invalid ACTION name: %s' % name)
     need_section = 'direction' in action.args or \
                    'position' in action.args or \
                    'gravity' in action.args
-    # TODO: what if all section options are provided in options?
-    if need_section and not args and not options:
-        raise ActionException('No SECTION provided')
-    elif need_section and args and args[0] not in config.sections:
-        raise ActionException('Invalid SECTION provided')
-    elif need_section and args:
-        section = config.section(args.pop(0))
+    if need_section and (args or options.section):
+        name = options.section or args.pop(0)
+        section = config.section(name)
+        if not section:
+            raise ActionException('Invalid SECTION name: %s' % name)
+    #elif need_section and not args and not options.section:
+    #    raise ActionException('No SECTION provided')
     else:
         section = None
 

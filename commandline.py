@@ -116,10 +116,10 @@ parser.add_option('--daemon',
                   help='run PyWO in daemon mode - register keyboard shortcuts, start D-Bus Service (if turned on in config file) [default: %default]')
 parser.add_option('--windows',
                   action='store_true', dest='list_windows', default=False,
-                  help='list windows') # TODO output format
-parser.add_option('--desktops',
-                  action='store_true', dest='list_desktops', default=False,
-                  help='list dekstops') # TODO output format
+                  help='list all windows <id> <desktop> <name>') # TODO output format
+#parser.add_option('--desktops',
+#                  action='store_true', dest='list_desktops', default=False,
+#                  help='list dekstops') # TODO output format
 
 action = OptionGroup(parser, 'Options for Actions', 
                      'If not provided, default values from config file will be used')
@@ -128,6 +128,10 @@ action = OptionGroup(parser, 'Options for Actions',
 #       if not position: position = gravity
 #       if position and not gravity: gravity = position
 #       like in config
+action.add_option('--id',
+                  action='store', dest='win_id', default='', 
+                  help='perform action on window with given ID',
+                  metavar='ID')
 action.add_option('-a', '--add', '--set', '--on',
                   action='store_const', const=1, dest='mode', default=2,
                   help='actions\'s MODE [default: toggle]')
@@ -171,9 +175,6 @@ action.add_option('-V', '--vertical-first',
                   help='[default: %default]')
 action.add_option('-H', '--horizontal-first',
                   action='store_false', dest='vertical_first')
-action.add_option('--id',
-                  action='store', dest='win_id', default='', 
-                  help='window ID')
 parser.add_option_group(action)
 
 #

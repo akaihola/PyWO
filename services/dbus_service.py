@@ -45,9 +45,9 @@ class DBusService(dbus.service.Object):
     def PerformCommand(self, command, win_id):
         logging.debug('DBUS: command="%s", win_id=%s' % (command, win_id))
         # TODO: try/except parser exceptions?
-        (options, args) = parse_args(command)
+        (options, args) = parse_args(command.split())
         try:
-            actions.perform(args, config, options)
+            actions.perform(args, self.CONFIG, options, win_id)
             WM.flush()
             return ''
         except actions.ActionException, e:
@@ -71,7 +71,7 @@ class DBusService(dbus.service.Object):
         windows = WM.windows(lambda window: 
                                     Window.TYPE_NORMAL in window.type,
                              match=match)
-        return [(win.id, win.name.decode('utf-8')) for win in windows]
+        return [(win.id, win.name) for win in windows]
 
 
 DBusGMainLoop(set_as_default=True)

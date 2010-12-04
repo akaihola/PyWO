@@ -128,9 +128,10 @@ if __name__ == '__main__':
     elif options.list_windows:
         windows = WM.windows(lambda window: Window.TYPE_NORMAL in window.type)
         for window in windows:
-            print window.id, window.desktop, window.geometry, window.class_name, window.name
-    elif options.list_desktops:
-        pass
+            geometry = window.geometry
+            print '%s %s %s' % (window.id, window.desktop, window.name)
+    #elif options.list_desktops:
+    #    print 'Not implemented yet...'
     elif args or options.action:
         try:
             actions.perform(args, config, options)

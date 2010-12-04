@@ -52,6 +52,10 @@ class Action(object):
                  check=[], unshade=False):
         self.name = name
         self.args = action.func_code.co_varnames[1:action.func_code.co_argcount]
+        if action.func_defaults:
+            self.obligatory_args = self.args[:-len(action.func_defaults)]
+        else:
+            self.obligatory_args = self.args
         self.__action = action
         self.__check = check
         self.__unshade = unshade
@@ -163,13 +167,19 @@ def perform(args, config, options={}, win_id=0):
         section = config.section(name)
         if not section:
             raise ActionException('Invalid SECTION name: %s' % name)
-    #elif need_section and not args and not options.section:
-    #    raise ActionException('No SECTION provided')
     else:
         section = None
 
-    if win_id:
-        window = Window(win_id)
+    missing_args = []
+    for arg in action.obligatory_args:
+        if not getattr(options, arg):
+            missing_args.append(arg.upper())
+    if need_section and not section and missing_args:
+        raise ActionException('Missing %s' % ', '.join(missing))
+
+    if win_id or options.win_id:
+        # TODO: try/except invalid options.win_id, or non existatn Window
+        window = Window(win_id or int(options.win_id, 0))
     elif args:
         # TODO: check system encoding?
         args = [arg.decode('utf-8') for arg in args]
@@ -179,7 +189,7 @@ def perform(args, config, options={}, win_id=0):
         try:
             window = windows[0]
         except:
-            raise ActionException('No WINDOW matched: %s' % match)
+            raise ActionException('No WINDOW matching name: %s' % match)
     else:
         window = WM.active_window()
 

@@ -56,7 +56,7 @@ def _shrink(win, direction, vertical_first=True):
 
 
 @register(name='float', check=[TYPE, STATE], unshade=True)
-def _move(win, direction, vertical_first):
+def _move(win, direction, vertical_first=True):
     """Move window in given direction."""
     _GRIDED['id'] = None
     border = expand_window(win, direction, 

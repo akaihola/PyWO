@@ -32,7 +32,7 @@ import sys
 import actions
 import commandline
 from config import Config
-from core import WM
+from core import Window, WM
 import services
 
 
@@ -125,6 +125,12 @@ if __name__ == '__main__':
         while len(threading.enumerate()) > 1: 
             # just keep the MainThread busy for Ctrl-C to work
             time.sleep(0.5)
+    elif options.list_windows:
+        windows = WM.windows(lambda window: Window.TYPE_NORMAL in window.type)
+        for window in windows:
+            print window.id, window.desktop, window.geometry, window.class_name, window.name
+    elif options.list_desktops:
+        pass
     elif args or options.action:
         try:
             actions.perform(args, config, options)

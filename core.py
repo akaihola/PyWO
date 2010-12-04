@@ -420,6 +420,7 @@ class XObject(object):
         self.__root = self.__DISPLAY.screen().root
         if win_id:
             # Normal window
+            # FIXME: Xlib.error.BadWindow if invalid win_id is provided!
             self._win = self.__DISPLAY.create_resource_object('window', win_id)
             self.id = win_id
         else:
@@ -697,11 +698,16 @@ class Window(XObject):
     def class_name(self):
         """Return window's class name."""
         class_name = self._win.get_wm_class()
-        return class_name
+        return '.'.join(class_name)
+
+    @property
+    def client_machine(self):
+        client = self._win.get_wm_client_machine()
+        return client
 
     @property
     def desktop(self):
-        """Return desktop number the window is in."""
+        """Return desktop number the window is on."""
         desktop = self.get_property('_NET_WM_DESKTOP')
         if not desktop:
             return 0
@@ -885,7 +891,7 @@ class Window(XObject):
         self.send_event(data, type, mask)
 
     def blink(self):
-        """For 0.25 second show borderaround window."""
+        """For 0.25 second show border around window."""
         geo = self.geometry
         self.draw_rectangle(geo.x+10, geo.y+10, 
                             geo.width-20, geo.height-20, 20)
@@ -904,8 +910,9 @@ class Window(XObject):
     def debug_info(self):
         """Print full window's info, for debug use only."""
         logging.info('ID=%s' % self.id)
+        logging.info('Client_machine=%s' % self.client_machine)
         logging.info('Name=%s' % self.name)
-        logging.info('Class=%s' % [str(e) for e in self.class_name])
+        logging.info('Class=%s' % self.class_name)
         #logging.info('Type=%s' % [str(e) for e in self.type])
         logging.info('Type=%s' % [self.atom_name(e) for e in self.type])
         #logging.info('State=%s' % [str(e) for e in self.state])
@@ -982,6 +989,8 @@ class WindowManager(XObject):
     def workarea_geometry(self):
         """Return geometry of current workarea (desktop without panels)."""
         workarea = self.get_property('_NET_WORKAREA').value
+        # TODO: this will return geometry for first, not current!
+        # TODO: what about all workareas, not only current one?
         return Geometry(workarea[0], workarea[1], 
                         workarea[2], workarea[3])
 
@@ -1034,6 +1043,8 @@ class WindowManager(XObject):
                 left = name.find(match)
                 right = (name.rfind(match) - len(name) + len(match)) * -1
                 points += 150 - min(left, right)
+            if match in window.class_name.lower():
+                points += 100
             geometry = window.geometry
             if points and \
                (window.desktop == desktop or \

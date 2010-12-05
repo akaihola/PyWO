@@ -89,7 +89,6 @@ def gravity_callback(option, opt_str, value, parser):
         setattr(parser.values, 'gravity', gravity)
 
 
-
 def size_callback(option, opt_str, value, parser):
     largs_callback(option, opt_str, value, parser)
     try:
@@ -132,7 +131,7 @@ parser.add_option('--daemon',
                   help='run PyWO in daemon mode - register keyboard shortcuts, start D-Bus Service (if turned on in config file) [default: %default]')
 parser.add_option('--windows',
                   action='store_true', dest='list_windows', default=False,
-                  help='list all windows <id> <desktop> <name>') # TODO output format
+                  help='list all windows: <id> <desktop> <state> <name>')
 #parser.add_option('--desktops',
 #                  action='store_true', dest='list_desktops', default=False,
 #                  help='list dekstops') # TODO output format

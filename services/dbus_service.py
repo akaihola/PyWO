@@ -42,7 +42,7 @@ class DBusService(dbus.service.Object):
 
     @dbus.service.method("net.kosciak.PyWO", 
                          in_signature='si', out_signature='s')
-    def PerformCommand(self, command, win_id):
+    def PerformAction(self, command, win_id):
         logging.debug('DBUS: command="%s", win_id=%s' % (command, win_id))
         try:
             (options, args) = commandline.parse_args(command.split())
@@ -54,28 +54,41 @@ class DBusService(dbus.service.Object):
             WM.flush()
             return ''
         except actions.ActionException, e:
-            # TODO: What about other exceptions?
-            #       parser exceptions?
             logging.error('ActionException: %s' % e)
             return 'ERROR: %s' % e
 
     @dbus.service.method("net.kosciak.PyWO", 
-                         in_signature='', out_signature='as')
-    def Commands(self):
-        return [action.name for action in actions.all()]
+                         in_signature='', out_signature='a(ssasas)')
+    def GetActions(self):
+        return [(action.name, (action.__doc__ or '').split('\n')[0],
+                 action.args, action.obligatory_args) for action in actions.all()]
 
     @dbus.service.method("net.kosciak.PyWO", 
                          in_signature='', out_signature='as')
-    def Sections(self):
+    def GetSections(self):
         return self.CONFIG.sections.keys()
 
     @dbus.service.method("net.kosciak.PyWO", 
                          in_signature='s', out_signature='a(is)')
-    def Windows(self, match):
+    def GetWindows(self, match):
         windows = WM.windows(lambda window: 
                                     Window.TYPE_NORMAL in window.type,
                              match=match)
         return [(win.id, win.name) for win in windows]
+
+    @dbus.service.method("net.kosciak.PyWO", 
+                         in_signature='i', out_signature='a(issi(ii)(ii))')
+    def GetWindowInfo(self, win_id):
+        win = Window(win_id)
+        geometry = win.geometry
+        return [(win.id, 
+                 win.class_name, win.name,
+                 win.desktop
+                 (geometry.x, geometry.y),
+                 (geometry.width, geometry.height)) for win in windows]
+
+    # TODO: GetDesktops
+    # TODO: GetDesktopInfo
 
 
 DBusGMainLoop(set_as_default=True)

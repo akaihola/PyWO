@@ -131,7 +131,26 @@ if __name__ == '__main__':
         windows = WM.windows(lambda window: Window.TYPE_NORMAL in window.type)
         for window in windows:
             geometry = window.geometry
-            print '%s %s %s' % (window.id, window.desktop, window.name)
+            state = window.state
+            win_desktop = window.desktop
+            desktop = [win_desktop, -1][Window.STATE_STICKY in state or \
+                                         win_desktop == 0xFFFFFFFF]
+            if Window.STATE_FULLSCREEN in state:
+                state_flags = 'F'
+            elif Window.STATE_MAXIMIZED_HORZ in state and \
+                 Window.STATE_MAXIMIZED_VERT in state:
+                state_flags = 'M'
+            elif Window.STATE_MAXIMIZED_VERT in state:
+                state_flags = 'V'
+            elif Window.STATE_MAXIMIZED_HORZ in state:
+                state_flags = 'H'
+            elif Window.STATE_HIDDEN in state:
+                state_flags = 'i'
+            else:
+                state_flags = ' '
+            state_flags += [' ', 's'][Window.STATE_SHADED in state and \
+                                      not Window.STATE_HIDDEN in state]
+            print '%s %s %s %s' % (window.id, desktop, state_flags, window.name)
     #elif options.list_desktops:
     #    print 'Not implemented yet...'
     elif args or options.action:

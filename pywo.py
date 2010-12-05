@@ -94,8 +94,7 @@ def exit_pywo(*args):
     """Stop sevices, and exit PyWO."""
     logging.info('Exiting PyWO...')
     stop() # stop all services
-    WM.unlisten_all()
-    # TODO: it will only unlisten WM's handlers, not others' windows...
+    WM.unlisten_all() # unregister all remaining EventHandlers
 
 
 #atexit.register(stop)
@@ -110,7 +109,10 @@ signal.signal(signal.SIGINT, interrupt_handler)
 
 if __name__ == '__main__':
     # parse commandline
-    (options, args) = commandline.parse_args()
+    try:
+        (options, args) = commandline.parse_args()
+    except commandline.ParserException, e:
+        commandline.print_error(str(e))
     # setup loggers
     setup_loggers(options.debug)
     global FILENAME

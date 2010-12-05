@@ -22,7 +22,7 @@
 
 from copy import copy
 import optparse
-from optparse import Option, OptionParser, OptionGroup, OptionValueError
+from optparse import OptionParser, OptionGroup, OptionValueError
 import textwrap
 import sys
 
@@ -49,6 +49,21 @@ class TextWrapperWithNewLines:
         return "\n".join(result)
 
 optparse.textwrap = TextWrapperWithNewLines()
+
+
+class ParserException(Exception):
+
+    def __init__(self, msg):
+        self.msg = msg
+
+    def __str__(self):
+        return self.msg
+
+
+class Parser(OptionParser):
+
+    def error(self, msg):
+        raise ParserException(msg)
 
 
 def largs_callback(option, opt_str, value, parser):
@@ -96,9 +111,10 @@ description = version
 epilog = '' 
 # TODO: add some examples of usage
 # TODO: add author, webpage, license info
-parser = OptionParser(usage=usage, version=version,
-                      #description=description,
-                      conflict_handler='resolve')
+# TODO: store parser in threading.local to make it thread safe?
+parser = Parser(usage=usage, version=version,
+                #description=description,
+                conflict_handler='resolve')
 parser.set_defaults(action=None, section=None)
 
 parser.add_option('--help-more',
@@ -224,11 +240,15 @@ def parse_args(args=sys.argv[1:]):
 
 
 def print_error(msg):
-    parser.error(msg)
+    parser.print_usage(sys.stderr)
+    if msg:
+        sys.stderr.write("ERROR: %s\n" % (msg))
+    sys.exit(2)
 
 
 def print_help():
     parser.print_help()
+
 
 def print_help_more(config):
     list = []

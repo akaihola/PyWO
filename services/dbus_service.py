@@ -29,7 +29,7 @@ from dbus.mainloop.glib import DBusGMainLoop
 import dbus.service
 
 import actions
-from commandline import parse_args
+import commandline
 from core import WM, Window
 
 
@@ -44,8 +44,11 @@ class DBusService(dbus.service.Object):
                          in_signature='si', out_signature='s')
     def PerformCommand(self, command, win_id):
         logging.debug('DBUS: command="%s", win_id=%s' % (command, win_id))
-        # TODO: try/except parser exceptions?
-        (options, args) = parse_args(command.split())
+        try:
+            (options, args) = commandline.parse_args(command.split())
+        except commandline.ParserException, e:
+            logging.error('ParserException: %s' % e)
+            return 'ERROR: %s' % e
         try:
             actions.perform(args, self.CONFIG, options, win_id)
             WM.flush()
@@ -53,7 +56,8 @@ class DBusService(dbus.service.Object):
         except actions.ActionException, e:
             # TODO: What about other exceptions?
             #       parser exceptions?
-            return str(e)
+            logging.error('ActionException: %s' % e)
+            return 'ERROR: %s' % e
 
     @dbus.service.method("net.kosciak.PyWO", 
                          in_signature='', out_signature='as')

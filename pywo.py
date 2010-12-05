@@ -94,7 +94,7 @@ def exit_pywo(*args):
     """Stop sevices, and exit PyWO."""
     logging.info('Exiting PyWO...')
     stop() # stop all services
-    WM.unlisten() # unregister all remaining handlers (switch/cycle, etc)
+    WM.unlisten_all()
     # TODO: it will only unlisten WM's handlers, not others' windows...
 
 

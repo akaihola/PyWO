@@ -306,7 +306,7 @@ class EventDispatcher(object):
         # gobject.io_add_watch(root.display, gobject.IO_IN, handle_xevent)
         self.__display = display
         self.__root = display.screen().root
-        self.__handlers = {} # {window.id: {handler.type: handler, }, }
+        self.__handlers = {} # {window.id: {handler.type: [handler, ], }, }
         self.__thread = None
 
     def run(self):
@@ -324,49 +324,61 @@ class EventDispatcher(object):
             time.sleep(0.05)
         logging.debug('EventDispatcher stopped')
 
+    def __get_masks(self, window_id):
+        """Return event type masks for given window."""
+        masks = set()
+        for type_handlers in self.__handlers.get(window_id, {}).values():
+            masks.update(set(handler.mask for handler in type_handlers))
+        return masks
+
     def register(self, window, handler):
         """Register event handler and return new window's event mask."""
         logging.debug('Registering %s (mask=%s, types=%s) for %s' %
                       (handler.__class__.__name__, 
                        handler.mask, handler.types, window.id))
-        if not window.id in self.__handlers:
-            self.__handlers[window.id] = {}
+        window_handlers = self.__handlers.setdefault(window.id, {})
         for type in handler.types:
-            self.__handlers[window.id][type] = handler
+            type_handlers = window_handlers.setdefault(type, [])
+            type_handlers.append(handler)
         if not self.__thread or \
            (self.__thread and not self.__thread.isAlive()):
             # start new thread only if needed
             self.__thread = threading.Thread(name='EventDispatcher', 
                                  target=self.run)
-            #t.setDaemon(True)
             self.__thread.start()
-        return set([handler.mask 
-                    for handler in self.__handlers[window.id].values()])
+        return self.__get_masks(window.id)
 
-    def unregister(self, window, handler=None):
+    def unregister(self, window=None, handler=None):
         """Unregister event handler and return new window's event mask.
         
-        If handler is None all handlers will be unregistered.
+        If window is None all handlers for all windows will be unregistered.
+        If handler is None all handlers for this window will be unregistered.
         
         """
-        if not window.id in self.__handlers:
+        if not window:
+            logging.debug('Unregistering all handlers for all windows')
+            self.__handlers.clear()
             return []
+        if not window.id in self.__handlers:
+            logging.error('No handlers registered for window %s' % window.id)
         elif not handler and window.id in self.__handlers:
             logging.debug('Unregistering all handlers for window %s' % 
                           (window.id))
-            self.__handlers[window.id] = {}
+            del self.__handlers[window.id]
         elif window.id in self.__handlers:
             logging.debug('Unregistering %s (mask=%s, types=%s) for %s' %
                           (handler.__class__.__name__, 
                            handler.mask, handler.types, window.id))
+            window_handlers = self.__handlers[window.id]
             for type in handler.types:
-                if type in self.__handlers[window.id]:
-                    del self.__handlers[window.id][type]
-        if not self.__handlers[window.id]:
+                type_handlers = window_handlers.setdefault(type, [])
+                if handler in type_handlers:
+                    type_handlers.remove(handler)
+                if not type_handlers:
+                    del window_handlers[type]
+        if not self.__handlers.setdefault(window.id, {}):
             del self.__handlers[window.id]
-            return []
-        return set([handler.mask 
-                    for handler in self.__handlers[window.id].values()])
+        return self.__get_masks(window.id)
 
     def __dispatch(self, event):
         """Dispatch raw X event to correct handler."""
@@ -385,9 +397,10 @@ class EventDispatcher(object):
             logging.error('No handler for this event')
             return
         if not event.type in handlers:
-            # Just skip unwanted events' types
+            # Just skip unwanted events types
             return
-        handlers[event.type].handle_event(event)
+        for handler in handlers[event.type]:
+            handler.handle_event(event)
 
 
 class XObject(object):
@@ -464,6 +477,11 @@ class XObject(object):
 
         """
         masks = self.__EVENT_DISPATCHER.unregister(self, event_handler)
+        self.__set_event_mask(masks)
+
+    def _unlisten_all(self):
+        """Unregister all event handlers for all windows."""
+        masks = self.__EVENT_DISPATCHER.unregister()
         self.__set_event_mask(masks)
 
     def __set_event_mask(self, masks):
@@ -973,6 +991,8 @@ class WindowManager(XObject):
             return 1
         return number.value[0]
 
+    # TODO: desktop names
+
     @property
     def desktop(self):
         """Return current desktop number."""
@@ -990,7 +1010,7 @@ class WindowManager(XObject):
         """Return geometry of current workarea (desktop without panels)."""
         workarea = self.get_property('_NET_WORKAREA').value
         # TODO: this will return geometry for first, not current!
-        # TODO: what about all workareas, not only current one?
+        # TODO: what about all workareas, not only the current one?
         return Geometry(workarea[0], workarea[1], 
                         workarea[2], workarea[3])
 
@@ -1002,6 +1022,7 @@ class WindowManager(XObject):
 
         """
         viewport = self.get_property('_NET_DESKTOP_VIEWPORT').value
+        # TODO: Might not work correctly on all WMs
         return Position(viewport[0], viewport[1])
 
     def active_window_id(self):
@@ -1060,6 +1081,10 @@ class WindowManager(XObject):
         windows.sort(key=lambda win: win[1])
         windows = [win for win, points in windows if points]
         return windows
+
+    def unlisten_all(self):
+        """Unlisten all."""
+        self._unlisten_all()
 
     def debug_info(self):
         """Print full windows manager's info, for debug use only."""

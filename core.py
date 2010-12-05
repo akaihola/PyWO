@@ -732,6 +732,17 @@ class Window(XObject):
         # returns 0xFFFFFFFF when "show on all desktops"
         return desktop.value[0]
 
+    def set_desktop(self, desktop_id):
+        """Move window to given desktop."""
+        if desktop_id < 0:
+            desktop_id = 0
+        # TODO: check if desktop_id >= WM.desktops?
+        type = self.atom('_NET_WM_DESKTOP')
+        data = [desktop_id, 
+                0, 0, 0, 0]
+        mask = X.PropertyChangeMask
+        self.send_event(data, type, mask)
+
     def __borders(self):
         """Return raw borders info."""
         extents = self.get_property('_NET_FRAME_EXTENTS')
@@ -779,7 +790,7 @@ class Window(XObject):
         """Return window's geometry.
 
         (x, y) coordinates are the top-left corner of the window,
-        relative to the left-top corner of desktop (workarea?).
+        relative to the left-top corner of current viewport.
         Position and size *includes* window's borders!
         Position is translated if needed.
 
@@ -798,6 +809,7 @@ class Window(XObject):
         """Move or resize window using provided geometry.
 
         Postion and size must include window's borders. 
+        Position is relative to current viewport.
 
         """
         left, right, top, bottom = self.__borders()
@@ -848,7 +860,8 @@ class Window(XObject):
         self._win.configure(x=x, y=y, width=width, height=height)
 
     def activate(self):
-        """Make this window active (unshade, unminimize)."""
+        """Make this window active (and unshade, unminimize)."""
+        # NOTE: In Metacity this WON'T change desktop to window's desktop!
         type = self.atom('_NET_ACTIVE_WINDOW')
         mask = X.SubstructureRedirectMask
         data = [0, 0, 0, 0, 0]
@@ -931,9 +944,7 @@ class Window(XObject):
         logging.info('Client_machine=%s' % self.client_machine)
         logging.info('Name=%s' % self.name)
         logging.info('Class=%s' % self.class_name)
-        #logging.info('Type=%s' % [str(e) for e in self.type])
         logging.info('Type=%s' % [self.atom_name(e) for e in self.type])
-        #logging.info('State=%s' % [str(e) for e in self.state])
         logging.info('State=%s' % [self.atom_name(e) for e in self.state])
         logging.info('Desktop=%s' % self.desktop)
         logging.info('Borders=%s' % self.borders)
@@ -957,6 +968,16 @@ class WindowManager(XObject):
 
     # Instance of the WindowManager class, make it Singleton.
     __INSTANCE = None
+
+    # Desktop orientations
+    ORIENTATION_HORZ = 0 #XObject.atom('_NET_WM_ORIENTATION_HORZ')
+    ORIENTATION_VERT = 1 #XObject.atom('_NET_WM_ORIENTATION_VERT')
+
+    # Desktop starting corners
+    TOPLEFT = 0 #XObject.atom('_NET_WM_TOPLEFT')
+    TOPRIGHT = 1 #XObject.atom('_NET_WM_TOPRIGHT')
+    BOTTOMRIGHT = 2 #XObject.atom('_NET_WM_BOTTOMRIGHT')
+    BOTTOMLEFT = 3 #XObject.atom('_NET_WM_BOTTOMLEFT')
 
     def __new__(cls):
         if cls.__INSTANCE:
@@ -986,47 +1007,88 @@ class WindowManager(XObject):
     @property
     def desktops(self):
         """Return number of desktops."""
+        # _NET_NUMBER_OF_DESKTOPS, CARDINAL/32
         number = self.get_property('_NET_NUMBER_OF_DESKTOPS')
         if not number:
             return 1
         return number.value[0]
 
     # TODO: desktop names
+    # _NET_DESKTOP_NAMES, UTF8_STRING[]
 
     @property
     def desktop(self):
         """Return current desktop number."""
+        # _NET_CURRENT_DESKTOP desktop, CARDINAL/32
         desktop = self.get_property('_NET_CURRENT_DESKTOP')
         return desktop.value[0]
+
+    def set_desktop(self, desktop_id):
+        """Change current desktop."""
+        if desktop_id < 0:
+            desktop_id = 0
+        type = self.atom('_NET_CURRENT_DESKTOP')
+        data = [desktop_id, 
+                0, 0, 0, 0]
+        mask = X.PropertyChangeMask
+        self.send_event(data, type, mask)
 
     @property
     def desktop_size(self):
         """Return size of current desktop."""
+        # _NET_DESKTOP_GEOMETRY width, height, CARDINAL[2]/32
         geometry = self.get_property('_NET_DESKTOP_GEOMETRY').value
+        #print geometry
         return Size(geometry[0], geometry[1])
+
+    @property
+    def desktop_layout(self):
+        """Return desktops layout, as set by pager."""
+        # _NET_DESKTOP_LAYOUT, orientation, columns, rows, starting_corner CARDINAL[4]/32
+        layout = self.get_property('_NET_DESKTOP_LAYOUT')
+        orientation, cols, rows, corner = layout.value
+        desktops = self.desktops
+        # NOTE: needs more testing...
+        cols = cols or (desktops / rows + min([1, desktops % rows]))
+        rows = rows or (desktops / cols + min([1, desktops % cols]))
+        return orientation, cols, rows, corner
 
     @property
     def workarea_geometry(self):
         """Return geometry of current workarea (desktop without panels)."""
+        # _NET_WORKAREA, x, y, width, height CARDINAL[][4]/32
         workarea = self.get_property('_NET_WORKAREA').value
         # TODO: this will return geometry for first, not current!
         # TODO: what about all workareas, not only the current one?
+        #print workarea
         return Geometry(workarea[0], workarea[1], 
                         workarea[2], workarea[3])
 
     @property
-    def viewport(self):
+    def viewport_position(self):
         """Return position of current viewport. 
 
         If desktop is large it might be divided into several viewports.
 
         """
+        # _NET_DESKTOP_VIEWPORT x, y, CARDINAL[][2]/32
         viewport = self.get_property('_NET_DESKTOP_VIEWPORT').value
         # TODO: Might not work correctly on all WMs
+        #print viewport
         return Position(viewport[0], viewport[1])
+
+    def set_viewport_position(self, x, y):
+        """Change current viewport."""
+        type = self.atom('_NET_DESKTOP_VIEWPORT')
+        data = [x, 
+                y, 
+                0, 0, 0]
+        mask = X.PropertyChangeMask
+        self.send_event(data, type, mask)
 
     def active_window_id(self):
         """Return only id of active window."""
+        # _NET_ACTIVE_WINDOW, WINDOW/32
         win_id = self.get_property('_NET_ACTIVE_WINDOW').value[0]
         return win_id
 

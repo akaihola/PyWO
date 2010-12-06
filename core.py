@@ -1153,7 +1153,7 @@ class WindowManager(XObject):
         logging.info('WindowManager=%s' % self.name)
         logging.info('Desktops=%s, current=%s' % (self.desktops, self.desktop))
         logging.info('Desktop=%s' % self.desktop_size)
-        logging.info('Viewport=%s' % self.viewport)
+        logging.info('Viewport=%s' % self.viewport_position)
         logging.info('Workarea=%s' % self.workarea_geometry)
 
 WM = WindowManager()

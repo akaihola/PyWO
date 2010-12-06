@@ -34,7 +34,7 @@ import sys
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
 
-def all():
+def all(config):
     """Return all services."""
     path = os.path.dirname(os.path.abspath(__file__))
     modules = [file[0:-3] for file in os.listdir(path) 
@@ -42,7 +42,8 @@ def all():
     logging.debug('Found services: %s' % ', '.join(modules))
     services = []
     for module in modules:
-        __import__('services.%s' % module)
-        services.append(sys.modules['services.%s' % module])
+        if getattr(config, module):
+            __import__('services.%s' % module)
+            services.append(sys.modules['services.%s' % module])
     return services
 

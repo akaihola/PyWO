@@ -64,9 +64,8 @@ def start(config):
     """Setup and start all services."""
     global SERVICES
     SERVICES = []
-    for service in services.all():
-        if getattr(config, service.__name__[9:]):
-            SERVICES.append(service)
+    for service in services.all(config):
+        SERVICES.append(service)
     for service in SERVICES:
         service.setup(config)
         service.start()

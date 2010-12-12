@@ -27,6 +27,11 @@ from core import Window, WM
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
 
+@register(name='iconify', check=[TYPE])
+def _iconify(win):
+    """Iconify (minimize) window."""
+    win.iconify()
+
 @register(name='maximize', check=[TYPE], unshade=True)
 def _maximize(win, mode=Window.MODE_TOGGLE):
     """Maximize window."""
@@ -98,4 +103,10 @@ def _close(win):
 def _blink(win):
     """Blink window (show border around window)."""
     win.blink()
+
+
+# TODO: new actions
+#   - always on top
+#   - switch desktop/viewport
+#   - move window to desktop/viewport (with or without following - switching to that desktop/viewport)
 

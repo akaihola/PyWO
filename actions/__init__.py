@@ -109,7 +109,7 @@ def _debug_info(win):
     win.debug_info()
     logging.info('-= Move with same geometry =-')
     geo =  win.geometry
-    win.move_resize(geo)
+    win.set_geometry(geo)
     win.sync()
     logging.info('New geometry=%s' % win.geometry)
     logging.info('-= End of debug =-')

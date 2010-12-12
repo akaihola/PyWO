@@ -42,7 +42,7 @@ def _expand(win, direction, vertical_first=True):
                            sticky=(not direction.is_middle),
                            vertical_first=vertical_first)
     logging.debug(border)
-    win.move_resize(border, direction)
+    win.set_geometry(border, direction)
 
 
 @register(name='shrink', check=[TYPE, STATE], unshade=True)
@@ -52,7 +52,7 @@ def _shrink(win, direction, vertical_first=True):
     border = shrink_window(win, direction.invert(), 
                            vertical_first=vertical_first)
     logging.debug(border)
-    win.move_resize(border, direction)
+    win.set_geometry(border, direction)
 
 
 @register(name='float', check=[TYPE, STATE], unshade=True)
@@ -71,7 +71,7 @@ def _move(win, direction, vertical_first=True):
     geometry.set_position(x, y, direction)
     logging.debug('x: %s, y: %s, gravity: %s' % 
                   (geometry.x, geometry.y, direction))
-    win.move_resize(geometry)
+    win.set_geometry(geometry)
 
 
 @register(name='put', check=[TYPE, STATE], unshade=True)
@@ -85,7 +85,7 @@ def _put(win, position):
     geometry.set_position(x, y, position)
     logging.debug('x: %s, y: %s, gravity: %s' % 
                   (geometry.x, geometry.y, position))
-    win.move_resize(geometry)
+    win.set_geometry(geometry)
 
 
 class _DummyWindow(object):
@@ -153,6 +153,8 @@ def __grid(win, position, gravity,
         border = expand_window(dummy, dummy.gravity,
                                sticky = False,
                                vertical_first=(cycle is 'height'))
+        #FIXME: max() might get empty sequence! --width F+H
+        #       maybe use current geometry as default in such situation?
         new_width = max([width for width in widths 
                                if border.width - width >= 0 and \
                                   x - width * position.x >= border.x and \
@@ -169,7 +171,7 @@ def __grid(win, position, gravity,
     logging.debug('width: %s, height: %s' % (geometry.width, geometry.height))
     if invert_on_resize: 
         gravity = gravity.invert()
-    win.move_resize(geometry, gravity)
+    win.set_geometry(geometry, gravity)
 
 
 @register(name='grid_width', check=[TYPE])
@@ -200,8 +202,8 @@ def __switch_cycle(win, keep_active):
             _switch_cycle = False
             active = WM.active_window()
             active_geo, win_geo = active.geometry, win.geometry
-            win.move_resize(active_geo)
-            active.move_resize(win_geo)
+            win.set_geometry(active_geo)
+            active.set_geometry(win_geo)
             if keep_active:
                 win.activate()
 
@@ -222,4 +224,10 @@ def _switch(win):
 def _cycle(win):
     """Switch contents of windows (focus on new window)."""
     __switch_cycle(win, False)
+
+
+# TODO: new actions
+#   - resize (with gravity?)
+#   - move (relative with gravity and +/-length)?
+#   - place (absolute x,y)
 

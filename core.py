@@ -32,34 +32,32 @@ import re
 import time
 import threading
 
-from Xlib import X, XK, Xatom, protocol, error
+from Xlib import X, Xutil, XK, Xatom, protocol, error
 from Xlib.display import Display
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
 
-# Pattern matching simple calculations with floating numbers
-_PATTERN = re.compile('^[ 0-9\.\+-/\*]+$')
-
-# Predefined sizes that can be used in config files
-SIZES = {'FULL': '1.0',
-         'HALF': '0.5',
-         'THIRD': '1.0/3',
-         'QUARTER': '0.25',
-        }
-SIZES_SHORT = {'F': '1.0',
-               'H': '0.5',
-               'T': '1.0/3',
-               'Q': '0.25',
-               }
-
-# Predefined gravities, that can be used in config files
-GRAVITIES = {}
-
 class Gravity(object):
 
     """Gravity point as a percentage of width and height of the window."""
+
+    # Predefined gravities, that can be used in config files
+    __GRAVITIES = {}
+    for xy, names in {
+        (0, 0): ['TOP_LEFT', 'UP_LEFT', 'TL', 'UL', 'NW'],
+        (0.5, 0): ['TOP', 'UP', 'T', 'U', 'N'],
+        (1, 0): ['TOP_RIGHT', 'UP_RIGHT', 'TR', 'UR', 'NE'],
+        (0, 0.5): ['LEFT', 'L', 'W'],
+        (0.5, 0.5): ['MIDDLE', 'CENTER', 'M', 'C', 'NSEW', 'NSWE'],
+        (1, 0.5): ['RIGHT', 'R', 'E'],
+        (0, 1): ['BOTTOM_LEFT', 'DOWN_LEFT', 'BL', 'DL', 'SW'],
+        (0.5, 1): ['BOTTOM', 'DOWN', 'B', 'D', 'S'],
+        (1, 1): ['BOTTOM_RIGHT', 'DOWN_RIGHT', 'BR', 'DR', 'SE'],
+    }.items():
+        for name in names:
+            __GRAVITIES[name] = xy
 
     def __init__(self, x, y):
         """
@@ -111,17 +109,12 @@ class Gravity(object):
         """
         if not gravity:
             return None
-        if gravity in GRAVITIES:
-            return GRAVITIES[gravity]
+        if gravity in Gravity.__GRAVITIES:
+            x, y = Gravity.__GRAVITIES[gravity]
+            return Gravity(x, y)
         else:
-            for name, value in SIZES.items():
-                gravity = gravity.replace(name, value)
-            for name, value in SIZES_SHORT.items():
-                gravity = gravity.replace(name, value)
-            x, y = [eval(xy) for xy in gravity.split(',')
-                             if _PATTERN.match(xy)]
+            x, y = [Size.parse_value(xy) for xy in gravity.split(',')]
         return Gravity(x, y)
-
 
     def __eq__(self, other):
         return ((self.x, self.y) ==
@@ -133,57 +126,64 @@ class Gravity(object):
     def __str__(self):
         return '(%.2f, %.2f)' % (self.x, self.y)
 
-for gravity, names in {
-            Gravity(0, 0): ['TOP_LEFT', 'UP_LEFT', 'TL', 'UL', 'NW'],
-            Gravity(0.5, 0): ['TOP', 'UP', 'T', 'U', 'N'],
-            Gravity(1, 0): ['TOP_RIGHT', 'UP_RIGHT', 'TR', 'UR', 'NE'],
-            Gravity(0, 0.5): ['LEFT', 'L', 'W'],
-            Gravity(0.5, 0.5): ['MIDDLE', 'CENTER', 'M', 'C', 'NSEW'],
-            Gravity(1, 0.5): ['RIGHT', 'R', 'E'],
-            Gravity(0, 1): ['BOTTOM_LEFT', 'DOWN_LEFT', 'BL', 'DL', 'SW'],
-            Gravity(0.5, 1): ['BOTTOM', 'DOWN', 'B', 'D', 'S'],
-            Gravity(1, 1): ['BOTTOM_RIGHT', 'DOWN_RIGHT', 'BR', 'DR', 'SE'],
-        }.items():
-    for name in names:
-        GRAVITIES[name] = gravity
-
 
 class Size(object):
 
     """Size encapsulates width and height of the object."""
 
+    # Pattern matching simple calculations with floating numbers
+    __PATTERN = re.compile('^[ 0-9\.\+-/\*]+$')
+
+    # Predefined sizes that can be used in config files
+    __SIZES = {'FULL': '1.0',
+               'HALF': '0.5',
+               'THIRD': '1.0/3',
+               'QUARTER': '0.25', }
+    __SIZES_SHORT = {'F': '1.0',
+                     'H': '0.5',
+                     'T': '1.0/3',
+                     'Q': '0.25', }
+
     def __init__(self, width, height):
         self.width = width
         self.height = height
 
-    @staticmethod
-    def parse(widths, heights):
-        """Parse width and height strings and return Size object.
+    @classmethod
+    def parse_value(cls, size_string):
+        """Parse string representing width or height.
 
-        It can be float number (value will be evaluatedi, so 1.0/2 is valid) 
-        or predefined value in __SIZES.
+        It can be one of the predefined values, float, or expression.
+        If you want to parse list of values separte them with comma.
 
         """
-        if not widths or not heights:
+        if not size_string.strip():
             return None
-        width, height = widths, heights
-        for name, value in SIZES.items():
-            width = width.replace(name, value)
-            height = height.replace(name, value)
-        for name, value in SIZES_SHORT.items():
-            width = width.replace(name, value)
-            height = height.replace(name, value)
-        width = [eval(width) for width in width.split(',') 
-                             if _PATTERN.match(width)]
-        if len(width) == 1:
-            width = width[0]
-        height = [eval(height) for height in height.split(',')
-                               if _PATTERN.match(height)]
-        if len(height) == 1:
-            height = height[0]
-        if width == [] or height == []:
-            raise ValueError('Can\'t parse: %s, %s' % (widths, heights))
-        return Size(width, height)
+        size = size_string
+        for name, value in cls.__SIZES.items():
+            size = size.replace(name, value)
+        for name, value in cls.__SIZES_SHORT.items():
+            size = size.replace(name, value)
+        size = [eval(value) for value in size.split(',')
+                            if value.strip() and \
+                            cls.__PATTERN.match(value)]
+        if size == []:
+            raise ValueError('Can\'t parse: %s' % (size_string))
+        if len(size) == 1:
+            return size[0]
+        return size
+    
+    @staticmethod
+    def parse(width, height):
+        """Parse width and height strings.
+        
+        Check parse_value for details.
+        
+        """
+        width = Size.parse_value(width)
+        height = Size.parse_value(height)
+        if width is not None and height is not None:
+            return Size(width, height)
+        return None
 
     def __eq__(self, other):
         return ((self.width, self.height) == (other.width, other.height))
@@ -208,6 +208,8 @@ class Position(object):
         self.x = x
         self.y = y
 
+    # TODO: add parse for relative and absolute values
+
     def __eq__(self, other):
         return ((self.x, self.y) == (other.x, other.y))
 
@@ -228,6 +230,8 @@ class Geometry(Position, Size):
 
     """
 
+    # TODO: Geometry + Size, Geometry + Position, Geometry * Size
+
     __DEFAULT_GRAVITY = Gravity(0, 0)
 
     def __init__(self, x, y, width, height,
@@ -247,8 +251,11 @@ class Geometry(Position, Size):
 
     def set_position(self, x, y, gravity=__DEFAULT_GRAVITY):
         """Set position with (x,y) as gravity point."""
+        # FIXME: why x,y not position?
         self.x = x - self.width * gravity.x
         self.y = y - self.height * gravity.y
+
+    # TODO: def set_size(self, size, gravity)
 
     def __eq__(self, other):
         return ((self.x, self.y, self.width, self.height) ==
@@ -431,7 +438,7 @@ class XObject(object):
                  Window Manager (root window)
         """
         self.__root = self.__DISPLAY.screen().root
-        if win_id:
+        if win_id and win_id != self.__root.id:
             # Normal window
             # FIXME: Xlib.error.BadWindow if invalid win_id is provided!
             self._win = self.__DISPLAY.create_resource_object('window', win_id)
@@ -659,7 +666,7 @@ class Window(XObject):
     def __init__(self, win_id):
         XObject.__init__(self, win_id)
         # Here comes the hacks for WMs strange behaviours....
-        wm_name = WindowManager().name.lower()
+        wm_name = WM.name.lower()
         if wm_name.startswith('icewm'):
             wm_name = 'icewm'
         self.__translate_coords =  \
@@ -805,7 +812,7 @@ class Window(XObject):
                         width + left + right,
                         height + top + bottom)
 
-    def move_resize(self, geometry, on_resize=Gravity(0, 0)):
+    def set_geometry(self, geometry, on_resize=Gravity(0, 0)):
         """Move or resize window using provided geometry.
 
         Postion and size must include window's borders. 
@@ -870,6 +877,14 @@ class Window(XObject):
         #       Need to test if setting X.Above is needed in various WMs
         #self._win.set_input_focus(X.RevertToNone, X.CurrentTime)
         #self._win.configure(stack_mode=X.Above)
+
+    def iconify(self):
+        """Iconify (minimize) window."""
+        type = self.atom('WM_CHANGE_STATE')
+        mask = X.SubstructureRedirectMask
+        data = [Xutil.IconicState,
+                0, 0, 0, 0]
+        self.send_event(data, type, mask)
 
     def maximize(self, mode,
                  vert=STATE_MAXIMIZED_VERT, 
@@ -1016,6 +1031,8 @@ class WindowManager(XObject):
     # TODO: desktop names
     # _NET_DESKTOP_NAMES, UTF8_STRING[]
 
+    # TODO: add_desktop, remove_desktop
+
     @property
     def desktop(self):
         """Return current desktop number."""
@@ -1128,7 +1145,10 @@ class WindowManager(XObject):
                 points += 150 - min(left, right)
             if match in window.class_name.lower():
                 points += 100
-            geometry = window.geometry
+            try:
+                geometry = window.geometry
+            except:
+                return (window, 0)
             if points and \
                (window.desktop == desktop or \
                 window.desktop == 0xFFFFFFFF):
@@ -1183,4 +1203,7 @@ def normal_on_same_filter(window):
            geometry.y < workarea.y2 and \
            geometry.y2 > workarea.y
 
+
+# TODO: 
+#    consider ability to connect to given screen (so Xvfb can be used) - Display(displayname=':0.0') 
 

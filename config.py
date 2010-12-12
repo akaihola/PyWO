@@ -54,7 +54,7 @@ class _Section(object):
         elif self.position and not self.gravity:
             self.gravity = self.position
         self.size = Size.parse(data.get('widths', ''), 
-                                data.get('heights', ''))
+                               data.get('heights', ''))
 
 
 class Config(object):

@@ -13,6 +13,32 @@ class TestSize(unittest.TestCase):
     def setUp(self):
         self.HALF_FULL = Size(0.5, 1.0)
 
+    def test_parse_value(self):
+        self.assertEquals(Size.parse_value('FULL'), 1.0)
+        self.assertEquals(Size.parse_value('F'), 1.0)
+        self.assertEquals(Size.parse_value('1'), 1.0)
+        self.assertEquals(Size.parse_value('1.0'), 1.0)
+        self.assertEquals(Size.parse_value('H+H'), 1.0)
+        self.assertEquals(Size.parse_value('H+0.5'), 1.0)
+        self.assertEquals(Size.parse_value('0.25*4'), 1.0)
+        self.assertEquals(Size.parse_value('Q*4'), 1.0)
+        self.assertEquals(Size.parse_value('0.25*2+H'), 1.0)
+        self.assertEquals(Size.parse_value('8*HALF/4'), 1.0)
+        self.assertEquals(Size.parse_value('8*HALF/2-FULL'), 1.0)
+        self.assertEquals(Size.parse_value('HALF'), 0.5)
+        self.assertEquals(Size.parse_value('H'), 0.5)
+        self.assertEquals(Size.parse_value('0.5'), 0.5)
+        self.assertEquals(Size.parse_value('THIRD'), 1.0/3)
+        self.assertEquals(Size.parse_value('T'), 1.0/3)
+        self.assertEquals(Size.parse_value('QUARTER'), 0.25)
+        self.assertEquals(Size.parse_value('Q'), 0.25)
+        self.assertEquals(Size.parse_value('0.25'), 0.25)
+        self.assertEquals(Size.parse_value('HALF,FULL'), [0.5, 1])
+        self.assertEquals(Size.parse_value(''), None)
+        self.assertEquals(Size.parse_value(' '), None)
+        self.assertRaises(ValueError, Size.parse_value, 'fasdfa')
+
+
     def test_parse(self):
         self.assertEqual(Size.parse('', ''), None)
         self.assertEqual(Size.parse('', 'FULL'), None)
@@ -28,6 +54,8 @@ class TestSize(unittest.TestCase):
 
 
 class TestGravity(unittest.TestCase):
+
+    # TODO: check changes in Gravity!
 
     def setUp(self):
         self.TOP = Gravity(0.5, 0)
@@ -115,8 +143,10 @@ class TestGravity(unittest.TestCase):
         self.assertEqual(self.MIDDLE.invert(vertical=False), self.MIDDLE)
         self.assertEqual(self.MIDDLE.invert(horizontal=False), self.MIDDLE)
 
-        self.assertEqual(self.BOTTOM_LEFT.invert(vertical=False), self.BOTTOM_RIGHT)
-        self.assertEqual(self.BOTTOM_LEFT.invert(horizontal=False), self.TOP_LEFT)
+        self.assertEqual(self.BOTTOM_LEFT.invert(vertical=False), 
+                         self.BOTTOM_RIGHT)
+        self.assertEqual(self.BOTTOM_LEFT.invert(horizontal=False), 
+                         self.TOP_LEFT)
         self.assertEqual(self.BOTTOM_LEFT.invert(vertical=False, horizontal=False), 
                          self.BOTTOM_LEFT)
 

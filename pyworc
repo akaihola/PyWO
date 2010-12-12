@@ -48,12 +48,13 @@ grid_height = Ctrl-Shift
 switch = Alt-KP_Divide
 cycle = Alt-Shift-KP_Divide
 
-sticky = 
+iconify = 
 maximize = 
 maximize_vert = 
 maximize_horz = 
 fullscreen = 
 shade = 
+sticky = 
 activate = 
 close = 
 

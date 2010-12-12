@@ -26,7 +26,7 @@ from optparse import OptionParser, OptionGroup, OptionValueError
 import textwrap
 import sys
 
-from core import Size, Gravity
+from core import Size, Gravity, Position
 import actions
 
 
@@ -91,16 +91,34 @@ def gravity_callback(option, opt_str, value, parser):
 
 def size_callback(option, opt_str, value, parser):
     largs_callback(option, opt_str, value, parser)
+    # TODO: allow relative size, and absolute size
     try:
         if option.dest == 'width':
-            size = Size.parse(value, '0')
+            width = Size.parse_value(value)
+            size = Size(width, 0)
         elif option.dest == 'height':
-            size = Size.parse('0', value)
+            height = Size.parse_value(value)
+            size = Size(height, 0)
         elif option.dest == 'size':
             size = Size.parse(*value)
     except ValueError, TypeError:
         raise OptionValueError(
             'option %s: error parsing Size with value: %s' % (opt_str, value))
+    setattr(parser.values, option.dest, size)
+
+def position_callback(option, opt_str, value, parser):
+    largs_callback(option, opt_str, value, parser)
+    # TODO: parse it to int, might be relative size
+    try:
+        if option.dest == 'x':
+            size = Position(value, 0)
+        elif option.dest == 'y':
+            size = Position(0, value)
+        elif option.dest == 'coords':
+            size = Position(*value)
+    except ValueError, TypeError:
+        raise OptionValueError(
+            'option %s: error parsing Position with value: %s' % (opt_str, value))
     setattr(parser.values, option.dest, size)
 
 
@@ -147,6 +165,7 @@ action.add_option('--id',
                   action='store', dest='win_id', default='', 
                   help='perform action on window with given ID',
                   metavar='ID')
+
 action.add_option('-a', '--add', '--set', '--on',
                   action='store_const', const=1, dest='mode', default=2,
                   help='actions\'s MODE [default: toggle]')
@@ -157,34 +176,49 @@ action.add_option('-r', '--remove', '--unset', '--off',
 action.add_option('-g', '--gravity',
                   action='callback', dest='gravity', type='string',
                   callback=gravity_callback,
-                  help='use given gravity\nIf not set POSITION will be used')
+                  help='window\'s gravity\nIf not set POSITION will be used')
 action.add_option('-d', '--direction',
                   action='callback', dest='direction', type='string',
                   callback=gravity_callback,
-                  help='use given direction\nIf not set GRAVITY will be used')
+                  help='direction of an action\nIf not set GRAVITY will be used')
 action.add_option('-p', '--position',
                   action='callback', dest='position', type='string',
                   callback=gravity_callback,
-                  help='use given position\nIf not set GRAVITY will be used')
+                  help='window\'s position on screen\nIf not set GRAVITY will be used')
+
 action.add_option('-w', '--width',
-                  action='callback', dest='width',
-                  callback=size_callback,
-                  help='use given width sizes', type='string')
+                  action='callback', dest='width', type='string',
+                  callback=size_callback,)
 action.add_option('-h', '--height',
                   action='callback', dest='height', type='string', 
-                  callback=size_callback,
-                  help='use given height sizes')
+                  callback=size_callback,)
 action.add_option('-s', '--size',
-                  action='callback', dest='size', nargs=2, type='string',
-                  callback=size_callback,
-                  help='combines WIDTH, and HEIGHT [default: current size]')
+                  action='callback', dest='size', type='string',
+                  callback=size_callback, nargs=2,
+                  help='[default: current size]',
+                  metavar='WIDTH HEIGHT')
+
+'''
+# TODO: To be used with move, resize actions
+action.add_option('-x',
+                  action='callback', dest='x', type='string',
+                  callback=position_callback,)
+action.add_option('-y',
+                  action='callback', dest='y', type='string',
+                  callback=position_callback,)
+action.add_option('-c', '--coords',
+                  action='callback', dest='coords', type='string',
+                  callback=position_callback, nargs=2,
+                  metavar='X Y')
+'''
 
 action.add_option('-i', '--invert',
                   action='store_true', dest='invert_on_resize', default=True,
-                  help='invert gravity resizing windows with incremental size [default: %default]')
+                  help='invert gravity when resizing windows with incremental size [default: %default]')
 action.add_option('-I', '--no-invert',
                   action='store_false', dest='invert_on_resize', 
-                  help='DON\'T invert gravity resizing windows with incremental size')
+                  help='DON\'T invert gravity when resizing windows with incremental size')
+
 action.add_option('-V', '--vertical-first',
                   action='store_true', dest='vertical_first', default=True,
                   help='[default: %default]')
@@ -221,11 +255,6 @@ Predefined names:
 Custom size:
   Provide value from 0.0 to 1.0 
   Example: --width THIRD*2 --height 1.0/3*2''')
-
-size = OptionGroup(parser, 'SIZE',
-                   '''\
-SIZE combines WIDTH and HEIGHT in one option. 
-Example: --size H T*2''')
 
 window = OptionGroup(parser, 'WINDOW',
                      '''\

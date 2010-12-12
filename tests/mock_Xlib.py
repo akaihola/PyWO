@@ -3,14 +3,15 @@
 To be used for testing purposes by emulating Xlib behaviour.
 Only methods used by PyWO will be implemented!
 It should be enough to just change the core.XObject._XObject__DISPLAY 
-to mock instance.
+to new mock instance, and initialise new core.WM
 
 """
 
 
 import collections
+import random
 
-from Xlib import X, XK, Xatom, protocol, error
+from Xlib import X, XK, Xatom, Xutil, protocol, error
 import Xlib.display
 
 
@@ -24,6 +25,8 @@ class Value(object):
 
 class Geometry(object):
 
+    """Simple wrapper for get_geometry()"""
+
     def __init__(self, x, y, width, height,
                  depth=32, border_width=0):
         self.x = x
@@ -35,6 +38,9 @@ class Geometry(object):
 
 
 class Extents(object):
+    
+    """Simple wrapper for extents."""
+
 
     def __init__(self, left, right, top, bottom):
         self.left = left
@@ -44,12 +50,14 @@ class Extents(object):
 
 # Extents constants
 EXTENTS_NORMAL = Extents(4, 4, 19, 1)
-EXTENTS_SHADED = None # TODO: check values
-EXTENTS_MAXIMIZED = None
-EXTENTS_FULLSCREEN = None
+#EXTENTS_SHADED = Extents(4, 4, 19, 1)
+EXTENTS_MAXIMIZED = Extents(0, 0, 19, 1)
+EXTENTS_FULLSCREEN = Extents(0, 0, 0, 0)
 
 
 class NormalHints(object):
+
+    """Simple wrapper fot get_wm_normal_hints()"""
 
     def __init__(self,
                  base_width=0, base_height=0,
@@ -74,14 +82,26 @@ HINTS_TERMINAL = NormalHints(2, 2, # base_*
                              30, 32, # min_*
                              0, 0) # max_*
 
+class QueryTree(object):
+
+    """Simple wrapper for query_tree()"""
+
+    def __init__(self, parent, root, children):
+        self.parent = parent
+        self.root = root
+        self.children = children
+
 
 class Display(Xlib.display.Display):
 
-    def __init__(self):
+    def __init__(self, screen_width, screen_height):
         Xlib.display.Display.__init__(self)
-        root_id = Xlib.display.Display.screen(self).root.id
-        self.root = RootWindow(self, root_id)
+        self.screen_width = screen_width
+        self.screen_height = screen_height
         self.windows_stack = collections.deque()
+        root_id = Xlib.display.Display.screen(self).root.id
+        self.root = RootWindow(self, root_id, 
+                               self.screen_width, self.screen_height)
 
     def intern_atom(self, name, only_if_exists=0):
         # Just delegate to real Display
@@ -98,6 +118,8 @@ class Display(Xlib.display.Display):
     def screen(self, sno=None):
         screen = Xlib.display.Display.screen(self, sno)
         screen.root = self.root
+        screen.width_in_pixels = self.screen_width
+        screen.height_in_pixels = self.screen_height
         return screen
 
     def send_event(self, dest, event, event_mask, propagate, onerror):
@@ -110,8 +132,8 @@ class Display(Xlib.display.Display):
             dest._prop('_NET_CURRENT_DESKTOP', [desktop])
         if dest == self.root and \
            event.client_type == self.atom('_NET_NUMBER_OF_DESKTOPS'):
-            number = data[1][0]
-            dest._prop('_NET_NUMBER_OF_DESKTOPS', [number])
+            desktops = max(1, data[1][0])
+            event.window._set_desktops(desktops)
         if dest == self.root and \
            event.client_type == self.atom('_NET_DESKTOP_VIEWPORT'):
             # TODO: set proper x, y
@@ -192,11 +214,13 @@ class AbstractWindow(object):
 
 class Window(AbstractWindow):
 
-    def __init__(self, display, id,
+    def __init__(self, display,
                  class_name, name,
                  geometry, 
                  extents=EXTENTS_NORMAL, 
                  normal_hints=HINTS_NORMAL):
+        root_id = display.root.id
+        id = random.randint(root_id, root_id + 10000)
         AbstractWindow.__init__(self, display, id)
         # Always place windows on current desktop
         desktop = self.display.root._prop('_NET_CURRENT_DESKTOP')
@@ -207,6 +231,7 @@ class Window(AbstractWindow):
             self.atom('_NET_WM_ICON_NAME'): name,
             Xatom.WM_NAME: name,
             Xatom.WM_ICON_NAME: name,
+            self.atom('_NET_WM_WINDOW_TYPE'): [self.atom('_NET_WM_TYPE_NORMAL')],
             self.atom('_NET_WM_STATE'): [],
             self.atom('WM_STATE'): [Xutil.NormalState, X.NONE],
             self.atom('_NET_WM_WINDOW_TYPE'): 
@@ -218,6 +243,7 @@ class Window(AbstractWindow):
         self.properties.update(properties)
         self.geometry = geometry
         self.normal_hints = normal_hints
+        self.display.windows_stack.append(self)
 
     def get_wm_transient_for(self):
         # Parent window
@@ -237,14 +263,15 @@ class Window(AbstractWindow):
         return self.geometry
 
     def query_tree(self):
-        # TODO: parent=self.display.root, root=self.display.root, children=[]
-        raise NotImplementedError()
+        return QueryTree(parent=self.display.root,
+                         root=self.display.root,
+                         children=[])
 
     def get_wm_normal_hints(self):
         return self.normal_hints
 
     def get_attributes(self):
-        # Only need in debug_info
+        # Only need in debug_info, no need to implemet it
         raise None
 
     def change_attributes(self, onerror=None, **keys):
@@ -252,9 +279,41 @@ class Window(AbstractWindow):
         pass
 
     def configure(self, onerror=None, **keys):
-        # TODO: x, y, width, height, border_width?
-        #       use self.normal_hints to check proper values
-        pass
+        x = self.geometry.x
+        y = self.geometry.y
+        width = self.geometry.width
+        height = selg.geometry.height
+        hints = self.normal_hints
+        if hints.win_gravity == X.StaticGravity:
+            x -= self.extents.left
+            y -= self.extents.top
+        # Reduce size to maximal allowed value
+        width = min([width, hints.max_width or width])
+        height = min([height, hints.max_height or height])
+        # Don't try to set size lower then minimal
+        width = max([width, hints.min_width or width])
+        height = max([height, hints.min_height or height])
+        # Set correct size if it is incremental, take base in account
+        if hints and hints.width_inc: 
+            if hints.base_width:
+                base = hints.base_width
+            else:
+                base = width % hints.width_inc
+            width = ((width - base) / hints.width_inc) * hints.width_inc
+            width += base
+            if hints.min_width and width < hints.min_width:
+                width += hints.width_inc
+        if hints and hints.height_inc:
+            if hints.base_height:
+                base = hints.base_height
+            else:
+                base = height % hints.height_inc
+            height = ((height - base) / hints.height_inc) * hints.height_inc
+            height += base
+            if hints.height_inc and height < hints.min_height:
+                height += hints.height_inc
+        self.geometry = Geometry(x, y, width, height, 
+                                 border_width=self.geometry.border_width)
 
     def grab_key(self, key, modifiers, 
                  owner_events, pointer_mode, keyboard_mode, 
@@ -291,28 +350,29 @@ class Window(AbstractWindow):
             self.extents = EXTENTS_MAXIMIZED
         else:
             self.extents = EXTENTS_NORMAL
-        if self.atom('_NET_WM_STATE_SHADED') in state:
-            self.extents = EXTENTS_SHADED
-
 
 
 class RootWindow(AbstractWindow):
 
-    def __init__(self, display, id):
+    def __init__(self, display, id,
+                 screen_width, screen_height,
+                 desktops=1, viewports=[1,1]):
         AbstractWindow.__init__(self, display, id)
+        self.screen_width = screen_width
+        self.screen_height = screen_height
         properties = {
             # 1 desktop, 1 viewport
             self.atom('_NET_SUPPORTING_WM_CHECK'): None, #TODO: ???
-            self.atom('_NET_NUMBER_OF_DESKTOPS'): [1],
             self.atom('_NET_CURRENT_DESKTOP'): [0],
             self.atom('_NET_DESKTOP_LAYOUT'): [0, 0, 1, 0],
-            # TODO: make it dynamic for viewport changing
-            self.atom('_NET_DESKTOP_GEOMETRY'): [1024, 768],
             self.atom('_NET_DESKTOP_VIEWPORT'): [0, 0],
-            # TODO: change to emulate panels, dynamic based on desktop geometry?
-            self.atom('_NET_WORKAREA'): [0, 0, 1024, 768],
+            self.atom('_NET_WORKAREA'): [0, 0, 
+                                         self.screen_width, self.screen_height],
+            self.atom('_NET_DESKTOP_GEOMETRY'): [self.screen_width * viewports[0],
+                                                 self.screen_height * viewports[1]],
         }
         self.properties.update(properties)
+        self._set_desktops(desktops)
 
     def get_full_property(self, property, type, sizehint=10):
         if property == self.atom('_NET_CLIENT_LIST_STACKING'):
@@ -331,6 +391,14 @@ class RootWindow(AbstractWindow):
 
     def create_gc(self, **keys):
         raise NotImplementedError()
+
+    def _set_desktops(self, desktops):
+        self._prop('_NET_NUMBER_OF_DESKTOPS', [desktops])
+        for win in self.display.windows_stack:
+            desktop = win._prop('_NET_WM_DESKTOP')
+            if desktop > desktops -1:
+                win._prop('_NET_WM_DESKTOP', desktops -1)
+
 
 
 # TODO: Use Xvfb to run different window managers headless for tests

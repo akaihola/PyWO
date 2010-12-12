@@ -803,14 +803,14 @@ class Window(XObject):
 
         """
         x, y, width, height = self.__geometry()
-        left, right, top, bottom = self.__borders()
+        borders = self.borders
         if self.__adjust_geometry:
             # Used in Compiz, KWin, E16, IceWM, Blackbox
-            x -= left
-            y -= top
+            x -= borders.left
+            y -= borders.top
         return Geometry(x, y,
-                        width + left + right,
-                        height + top + bottom)
+                        width + borsers.horizontal,
+                        height + borders.vertical)
 
     def set_geometry(self, geometry, on_resize=Gravity(0, 0)):
         """Move or resize window using provided geometry.
@@ -819,18 +819,18 @@ class Window(XObject):
         Position is relative to current viewport.
 
         """
-        left, right, top, bottom = self.__borders()
+        borders = self.borders
         x = geometry.x
         y = geometry.y
-        width = geometry.width - (left + right)
-        height = geometry.height - (top + bottom)
+        width = geometry.width - borders.horizontal
+        height = geometry.height - borders.vertical
         geometry_size = (width, height)
         current = self.__geometry()
         hints = self._win.get_wm_normal_hints()
         # This is a fix for WINE, OpenOffice and KeePassX windows
         if hints and hints.win_gravity == X.StaticGravity:
-            x += left
-            y += top
+            x += borders.left
+            y += borders.top
         # Reduce size to maximal allowed value
         if hints and hints.max_width: 
             width = min([width, hints.max_width])

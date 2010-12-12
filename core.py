@@ -809,7 +809,7 @@ class Window(XObject):
             x -= borders.left
             y -= borders.top
         return Geometry(x, y,
-                        width + borsers.horizontal,
+                        width + borders.horizontal,
                         height + borders.vertical)
 
     def set_geometry(self, geometry, on_resize=Gravity(0, 0)):

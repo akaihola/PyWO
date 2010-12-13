@@ -438,6 +438,7 @@ class XObject(object):
                  Window Manager (root window)
         """
         self.__root = self.__DISPLAY.screen().root
+        self._root_id = self.__root.id
         if win_id and win_id != self.__root.id:
             # Normal window
             # FIXME: Xlib.error.BadWindow if invalid win_id is provided!
@@ -758,6 +759,8 @@ class Window(XObject):
         # Hack for Blackbox, IceWM, Sawfish, Window Maker
         win = self._win
         parent = win.query_tree().parent
+        if parent.id == self._root_id:
+            return (0, 0, 0, 0)
         if win.get_geometry().width == parent.get_geometry().width and \
            win.get_geometry().height == parent.get_geometry().height:
             win, parent = parent, parent.query_tree().parent

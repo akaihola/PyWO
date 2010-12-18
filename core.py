@@ -744,6 +744,7 @@ class Window(XObject):
 
     def set_desktop(self, desktop_id):
         """Move window to given desktop."""
+        desktop_id = int(desktop_id)
         if desktop_id < 0:
             desktop_id = 0
         # TODO: check if desktop_id >= WindowManager.desktops?
@@ -971,6 +972,9 @@ class Window(XObject):
         logging.info('Borders_raw=%s' % [str(e) for e in self.__borders()])
         logging.info('Geometry=%s' % self.geometry)
         logging.info('Geometry_raw=%s' % self._win.get_geometry())
+        geometry = self._win.get_geometry()
+        translated = self._translate_coords(geometry.x, geometry.y)
+        logging.info('Geometry_translated=%s' % translated)
         logging.info('Parent=%s %s' % (self.parent_id, self.parent))
         logging.info('Normal_hints=%s' % self._win.get_wm_normal_hints())
         logging.info('Attributes=%s' % self._win.get_attributes())

@@ -11,7 +11,7 @@ import mock_Xlib
 import core
 
 
-class CoreTest(unittest.TestCase):
+class TestMocked(unittest.TestCase):
 
     WIDTH = 800
     HEIGHT = 600
@@ -23,12 +23,13 @@ class CoreTest(unittest.TestCase):
                                     screen_height=self.HEIGHT,
                                     desktops=self.DESKTOPS,
                                     viewports=self.VIEWPORTS)
+        self.display = display
         core.ClientMessage = mock_Xlib.ClientMessage
         core.XObject._XObject__DISPLAY = display
         self.WM = core.WindowManager()
 
 
-class TestWindowManager(CoreTest):
+class TestWindowManager(TestMocked):
 
     def test_singleton(self):
         self.assertEqual(self.WM, core.WindowManager())
@@ -95,6 +96,60 @@ class TestWindowManager(CoreTest):
 
     def test_windows(self):
         pass
+
+
+class TestWindow(TestMocked):
+
+    def setUp(self):
+        TestMocked.setUp(self)
+        window = mock_Xlib.Window(self.display,
+                                  ['test', 'Window'], 'Test Window',
+                                  #mock_Xlib.Geometry(4, 19, 92, 130))
+                                  mock_Xlib.Geometry(4, 19, 92, 130))
+        window.map()
+
+    def test_name(self):
+        win = self.WM.active_window()
+        self.assertEqual(win.name, 'Test Window')
+        self.assertEqual(win.class_name, 'test.Window')
+
+    def test_type(self):
+        win = self.WM.active_window()
+        self.assertEqual(win.type, [win.TYPE_NORMAL])
+
+    def test_state(self):
+        win = self.WM.active_window()
+        self.assertEqual(win.state, [])
+
+    def test_desktop(self):
+        win = self.WM.active_window()
+        self.assertEqual(win.desktop, 0)
+        win.set_desktop(0)
+        self.assertEqual(win.desktop, 0)
+        # change to last desktop
+        win.set_desktop(self.WM.desktops - 1)
+        self.assertEqual(win.desktop, self.WM.desktops - 1)
+        # change back to first desktop
+        win.set_desktop(0)
+        self.assertEqual(win.desktop, 0)
+        # change to higher than number of desktops
+        win.set_desktop(self.WM.desktops)
+        self.assertEqual(win.desktop, self.WM.desktops - 1)
+        # change to lower than 0
+        win.set_desktop(-1)
+        self.assertEqual(win.desktop, 0)
+        # desktop_id as string
+        win.set_desktop('0')
+        self.assertEqual(win.desktop, 0)
+        # invalid string desktop_id
+        self.assertRaises(ValueError, win.set_desktop, 'a')
+
+    def test_geometry(self):
+        win = self.WM.active_window()
+        self.assertEqual(win.geometry.x, 0)
+        self.assertEqual(win.geometry.y, 0)
+        self.assertEqual(win.geometry.width, 100)
+        self.assertEqual(win.geometry.height, 150)
 
 
 if __name__ == '__main__':

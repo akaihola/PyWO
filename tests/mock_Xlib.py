@@ -37,6 +37,15 @@ class Geometry(object):
         self.border_width = border_width
 
 
+class TranslateCoords(object):
+
+    """Simple wrapper for translate_coords()"""
+
+    def __init__(self, x, y):
+        self.x = -x
+        self.y = -y
+
+
 class Extents(object):
     
     """Simple wrapper for extents."""
@@ -140,7 +149,8 @@ class Display(Xlib.display.Display):
            event.client_type == self.intern_atom('_NET_CURRENT_DESKTOP'):
             desktop = event.data[1][0]
             desktop = max(desktop, 0)
-            desktop = min(desktop, dest._prop('_NET_NUMBER_OF_DESKTOPS')[0] - 1)
+            desktop = min(desktop, 
+                          dest._prop('_NET_NUMBER_OF_DESKTOPS')[0] - 1)
             dest._prop('_NET_CURRENT_DESKTOP', [desktop])
         if dest == self.root and \
            event.client_type == self.intern_atom('_NET_NUMBER_OF_DESKTOPS'):
@@ -156,6 +166,12 @@ class Display(Xlib.display.Display):
                 self.windows_stack.remove(event.window)
                 self.windows_stack.append(event.window)
             # TODO: change viewport, uniconify, unshade
+        if event.client_type == self.intern_atom('_NET_WM_DESKTOP'):
+            desktop = event.data[1][0]
+            desktop = max(desktop, 0)
+            desktop = min(desktop, 
+                          self.root._prop('_NET_NUMBER_OF_DESKTOPS')[0] - 1)
+            event.window._prop('_NET_WM_DESKTOP', [desktop])
         if event.client_type == self.intern_atom('WM_CHANGE_STATE') and \
            event.data[1][0] == Xutil.IconicState:
             # set WM_STATE, _NET_WM_STATE
@@ -230,7 +246,8 @@ class Window(AbstractWindow):
                  class_name, name,
                  geometry, 
                  extents=EXTENTS_NORMAL, 
-                 normal_hints=HINTS_NORMAL):
+                 normal_hints=HINTS_NORMAL,
+                 type=[]):
         root_id = display.root.id
         id = random.randint(root_id, root_id + 10000)
         AbstractWindow.__init__(self, display, id)
@@ -243,7 +260,8 @@ class Window(AbstractWindow):
             self.atom('_NET_WM_ICON_NAME'): name,
             Xatom.WM_NAME: name,
             Xatom.WM_ICON_NAME: name,
-            self.atom('_NET_WM_WINDOW_TYPE'): [self.atom('_NET_WM_TYPE_NORMAL')],
+            self.atom('_NET_WM_WINDOW_TYPE'): type or \
+                                              self.atom('_NET_WM_TYPE_NORMAL'),
             self.atom('_NET_WM_STATE'): [],
             self.atom('WM_STATE'): [Xutil.NormalState, X.NONE],
             self.atom('_NET_WM_WINDOW_TYPE'): 
@@ -256,7 +274,8 @@ class Window(AbstractWindow):
         self.current_geometry = geometry
         self.normal_geometry = geometry
         self.normal_hints = normal_hints
-        # TODO: move it to separate function, not all windows should be on stack
+
+    def map(self, onerror=None):
         self.display.windows_stack.append(self)
 
     def get_wm_transient_for(self):
@@ -272,9 +291,15 @@ class Window(AbstractWindow):
     def get_geometry(self):
         return self.current_geometry
 
+    def _get_extents(self):
+        return Extents(*self._prop('_NET_FRAME_EXTENTS'))
+
     def translate_coords(self, src_window, x, y):
+        # TODO: now PyWO wants to use translate, and get wrong geometry...
         # No translation, just return current geometry
-        return self.geometry
+        extents = self._get_extents()
+        return TranslateCoords(x - extents.left, 
+                               y - extents.top)
 
     def query_tree(self):
         return QueryTree(parent=self.display.root,

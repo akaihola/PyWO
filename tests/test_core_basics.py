@@ -220,7 +220,7 @@ class TestBorders(unittest.TestCase):
 if __name__ == '__main__':
     main_suite = unittest.TestSuite()
     for suite in [TestSize, TestGravity, TestGeometry, TestBorders]:
-        main_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(main_suite))
+        main_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(suite))
     unittest.TextTestRunner(verbosity=2).run(main_suite)
     pass
 

@@ -421,8 +421,7 @@ class RootWindow(AbstractWindow):
         if property == self.atom('_NET_WORKAREA'):
             desktops = self._prop('_NET_NUMBER_OF_DESKTOPS')[0]
             return Value(self._prop('_NET_WORKAREA') * desktops)
-        #return AbstractWindow.get_full_property(self, property, type, sizehint)
-        return super(RootWindow, self).get_full_property(property, type, sizehint)
+        return AbstractWindow.get_full_property(self, property, type, sizehint)
 
     def send_event(self, event, event_mask=0, propagate=0, onerror=None):
         self.display.send_event(self, event, event_mask, propagate, onerror)

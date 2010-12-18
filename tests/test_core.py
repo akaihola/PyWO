@@ -11,7 +11,7 @@ import mock_Xlib
 import core
 
 
-class TestWindowManager(unittest.TestCase):
+class CoreTest(unittest.TestCase):
 
     WIDTH = 800
     HEIGHT = 600
@@ -26,6 +26,9 @@ class TestWindowManager(unittest.TestCase):
         core.ClientMessage = mock_Xlib.ClientMessage
         core.XObject._XObject__DISPLAY = display
         self.WM = core.WindowManager()
+
+
+class TestWindowManager(CoreTest):
 
     def test_singleton(self):
         self.assertEqual(self.WM, core.WindowManager())

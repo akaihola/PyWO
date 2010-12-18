@@ -669,7 +669,7 @@ class Window(XObject):
     def __init__(self, win_id):
         XObject.__init__(self, win_id)
         # Here comes the hacks for WMs strange behaviours....
-        wm_name = WM.name.lower()
+        wm_name = WindowManager().name.lower()
         if wm_name.startswith('icewm'):
             wm_name = 'icewm'
         self.__translate_coords =  \
@@ -746,7 +746,7 @@ class Window(XObject):
         """Move window to given desktop."""
         if desktop_id < 0:
             desktop_id = 0
-        # TODO: check if desktop_id >= WM.desktops?
+        # TODO: check if desktop_id >= WindowManager.desktops?
         type = self.atom('_NET_WM_DESKTOP')
         data = [desktop_id, 
                 0, 0, 0, 0]
@@ -1185,8 +1185,6 @@ class WindowManager(XObject):
         logging.info('Viewport=%s' % self.viewport_position)
         logging.info('Workarea=%s' % self.workarea_geometry)
 
-WM = WindowManager()
-
 
 def normal_on_same_filter(window):
     """Default windows filter.
@@ -1197,6 +1195,7 @@ def normal_on_same_filter(window):
     """
     if not Window.TYPE_NORMAL in window.type:
         return False
+    WM = WindowManager()
     state = window.state
     geometry = window.geometry
     workarea = WM.workarea_geometry

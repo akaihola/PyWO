@@ -32,13 +32,15 @@ import sys
 import actions
 import commandline
 from config import Config
-from core import Window, WM
+from core import Window, WindowManager
 import services
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 __version__ = "0.3"
 
+
+WM = WindowManager()
 
 # TODO: consider moving it to services.main or __init__
 #       it is almost normal service anyway, with setup, start and stop

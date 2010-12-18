@@ -21,7 +21,7 @@
 """state.py - PyWO actions - changing windows state."""
 
 from actions import register, TYPE, STATE
-from core import Window, WM
+from core import Window, WindowManager
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
@@ -85,6 +85,7 @@ def _activate(win, mode=Window.MODE_TOGGLE):
     Unshade, unminimize and switch to it's desktop/viewport.
     
     """
+    WM = WindowManager()
     desktop = win.desktop
     if desktop != WM.desktop:
         WM.set_desktop(desktop)

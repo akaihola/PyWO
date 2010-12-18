@@ -23,12 +23,14 @@
 import logging
 
 import actions
-from core import WM
+from core import WindowManager
 from events import KeyPressHandler
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
+
+WM = WindowManager()
 
 MAPPINGS = {} # {(modifiers, keycode): (action, args), }
 

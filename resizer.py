@@ -23,11 +23,13 @@
 import logging
 import operator
 
-from core import Window, WM, normal_on_same_filter
+from core import Window, WindowManager, normal_on_same_filter
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
+
+WM = WindowManager()
 
 _ATTRGETTERS = {'x': (operator.attrgetter('x'),
                       operator.attrgetter('x2'),

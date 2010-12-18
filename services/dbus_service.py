@@ -30,10 +30,13 @@ import dbus.service
 
 import actions
 import commandline
-from core import WM, Window
+from core import Window, WindowManager
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
+
+
+WM = WindowManager()
 
 
 class DBusService(dbus.service.Object):

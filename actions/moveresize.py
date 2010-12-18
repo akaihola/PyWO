@@ -24,13 +24,15 @@ import itertools
 import logging
 
 from actions import register, TYPE, STATE
-from core import Gravity, Geometry, Size, WM
+from core import Gravity, Geometry, Size, WindowManager
 from events import PropertyNotifyHandler
 from resizer import expand_window, shrink_window
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
+
+WM = WindowManager()
 
 _GRIDED = {} # change to HISTORY
 

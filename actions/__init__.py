@@ -24,11 +24,13 @@ import logging
 import os.path
 import sys
 
-from core import Window, WM
+from core import Window, WindowManager
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
+
+WM = WindowManager()
 
 TYPE = 1
 STATE = 2
@@ -104,7 +106,7 @@ def register(name, check=[], unshade=False):
 def _debug_info(win):
     """Print debug info about Window Manager, and current Window."""
     logging.info('-= Window Manager =-')
-    WM.debug_info()
+    WindowManager().debug_info()
     logging.info('-= Current Window =-')
     win.debug_info()
     logging.info('-= Move with same geometry =-')

@@ -217,11 +217,10 @@ class TestBorders(unittest.TestCase):
         self.assertEqual(borders.vertical, 30)
 
 
-SUITE = unittest.TestSuite()
-for suite in [TestSize, TestGravity, TestGeometry, TestBorders]:
-    SUITE.addTest(unittest.TestLoader().loadTestsFromTestCase(suite))
-
-
 if __name__ == '__main__':
-    unittest.TextTestRunner(verbosity=2).run(SUITE)
+    main_suite = unittest.TestSuite()
+    for suite in [TestSize, TestGravity, TestGeometry, TestBorders]:
+        main_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(main_suite))
+    unittest.TextTestRunner(verbosity=2).run(main_suite)
+    pass
 

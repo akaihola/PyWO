@@ -32,7 +32,8 @@ import re
 import time
 import threading
 
-from Xlib import X, Xutil, XK, Xatom, protocol, error
+from Xlib import X, Xutil, XK, Xatom, error
+from Xlib.protocol.event import ClientMessage
 from Xlib.display import Display
 
 
@@ -237,9 +238,8 @@ class Geometry(Position, Size):
     def __init__(self, x, y, width, height,
                  gravity=__DEFAULT_GRAVITY):
         Size.__init__(self, int(width), int(height))
-        x = int(x) - self.width * gravity.x
-        y = int(y) - self.height * gravity.y
-        Position.__init__(self, x, y)
+        Position.__init__(self, int(x), int(y))
+        self.set_position(x, y, gravity)
 
     @property
     def x2(self):
@@ -252,10 +252,11 @@ class Geometry(Position, Size):
     def set_position(self, x, y, gravity=__DEFAULT_GRAVITY):
         """Set position with (x,y) as gravity point."""
         # FIXME: why x,y not position?
-        self.x = x - self.width * gravity.x
-        self.y = y - self.height * gravity.y
+        self.x = int(x - self.width * gravity.x)
+        self.y = int(y - self.height * gravity.y)
 
     # TODO: def set_size(self, size, gravity)
+    #       int() !!!
 
     def __eq__(self, other):
         return ((self.x, self.y, self.width, self.height) ==
@@ -418,6 +419,7 @@ class XObject(object):
 
     """
 
+    # TODO: setting Display, not only default one
     __DISPLAY = Display()
     __EVENT_DISPATCHER = EventDispatcher(__DISPLAY)
     __BAD_ACCESS = error.CatchError(error.BadAccess)
@@ -466,8 +468,8 @@ class XObject(object):
         return property
 
     def send_event(self, data, type, mask):
-        """Send event from (to?) the root window."""
-        event = protocol.event.ClientMessage(
+        """Send event to the root window."""
+        event = ClientMessage(
                     window=self._win,
                     client_type=type,
                     data=(32, (data)))
@@ -1045,6 +1047,7 @@ class WindowManager(XObject):
 
     def set_desktop(self, desktop_id):
         """Change current desktop."""
+        desktop_id = int(desktop_id)
         if desktop_id < 0:
             desktop_id = 0
         type = self.atom('_NET_CURRENT_DESKTOP')
@@ -1060,6 +1063,8 @@ class WindowManager(XObject):
         geometry = self.get_property('_NET_DESKTOP_GEOMETRY').value
         #print geometry
         return Size(geometry[0], geometry[1])
+
+    # TODO: set_desktop_size, or set_viewports(columns, rows)
 
     @property
     def desktop_layout(self):
@@ -1119,6 +1124,7 @@ class WindowManager(XObject):
 
     def windows_ids(self):
         """Return list of all windows' ids (with bottom-top stacking order)."""
+        # TODO: add sort_order argument to choose stacking, and by age ordering
         windows_ids = self.get_property('_NET_CLIENT_LIST_STACKING').value
         return windows_ids
 

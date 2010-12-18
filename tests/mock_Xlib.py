@@ -92,16 +92,28 @@ class QueryTree(object):
         self.children = children
 
 
+class ClientMessage(object):
+
+    """Xlib.protocol.event.ClientMessage mock."""
+
+    def __init__(self, window, client_type, data):
+        self.window = window
+        self.client_type = client_type
+        self.data = data
+
+
 class Display(Xlib.display.Display):
 
-    def __init__(self, screen_width, screen_height):
+    """Xlib.display.Display mock."""
+
+    def __init__(self, screen_width, screen_height, 
+                 desktops=1, viewports=[1,1]):
         Xlib.display.Display.__init__(self)
         self.screen_width = screen_width
         self.screen_height = screen_height
         self.windows_stack = collections.deque()
-        root_id = Xlib.display.Display.screen(self).root.id
-        self.root = RootWindow(self, root_id, 
-                               self.screen_width, self.screen_height)
+        self.root_id = Xlib.display.Display.screen(self).root.id
+        self.root = RootWindow(self, desktops, viewports)
 
     def intern_atom(self, name, only_if_exists=0):
         # Just delegate to real Display
@@ -125,37 +137,37 @@ class Display(Xlib.display.Display):
     def send_event(self, dest, event, event_mask, propagate, onerror):
         # ROOT related
         if dest == self.root and  \
-           event.client_type == self.atom('_NET_CURRENT_DESKTOP'):
-            desktop = data[1][0]
+           event.client_type == self.intern_atom('_NET_CURRENT_DESKTOP'):
+            desktop = event.data[1][0]
             desktop = max(desktop, 0)
-            desktop = min(dekstop, dest._prop('_NET_NUMBER_OF_DESKTOPS')[0])
+            desktop = min(desktop, dest._prop('_NET_NUMBER_OF_DESKTOPS')[0] - 1)
             dest._prop('_NET_CURRENT_DESKTOP', [desktop])
         if dest == self.root and \
-           event.client_type == self.atom('_NET_NUMBER_OF_DESKTOPS'):
-            desktops = max(1, data[1][0])
+           event.client_type == self.intern_atom('_NET_NUMBER_OF_DESKTOPS'):
+            desktops = max(1, event.data[1][0])
             event.window._set_desktops(desktops)
         if dest == self.root and \
-           event.client_type == self.atom('_NET_DESKTOP_VIEWPORT'):
+           event.client_type == self.intern_atom('_NET_DESKTOP_VIEWPORT'):
             # TODO: set proper x, y
             pass
         # Window related
-        if event.client_type == self.atom('_NET_ACTIVE_WINDOW'):
+        if event.client_type == self.intern_atom('_NET_ACTIVE_WINDOW'):
             if event.window in self.windows_stack:
                 self.windows_stack.remove(event.window)
                 self.windows_stack.append(event.window)
             # TODO: change viewport, uniconify, unshade
-        if event.client_type == self.atom('WM_CHANGE_STATE') and \
+        if event.client_type == self.intern_atom('WM_CHANGE_STATE') and \
            event.data[1][0] == Xutil.IconicState:
             # set WM_STATE, _NET_WM_STATE
             pass
-        if event.client_type == self.atom('_NET_WM_STATE'):
-            mode = data[1][0]
-            atom = data[1][1]
-            atom2 = data[1][2]
+        if event.client_type == self.intern_atom('_NET_WM_STATE'):
+            mode = event.data[1][0]
+            atom = event.data[1][1]
+            atom2 = event.data[1][2]
             event.window._set_state(atom, mode)
             if atom2:
                 event.window._set_state(atom2, mode)
-        if event.client_type == self.atom('_NET_CLOSE_WINDOW'):
+        if event.client_type == self.intern_atom('_NET_CLOSE_WINDOW'):
             if event.window in self.windows_stack:
                 self.windows_stack.remove(win)
 
@@ -188,8 +200,8 @@ class Display(Xlib.display.Display):
             raise NotImplementedError()
 
 
-#class AbstractWindow(Xlib.display.Window):
 class AbstractWindow(object):
+#class AbstractWindow(Xlib.display.Window):
 
     def __init__(self, display, id):
         self.display = display
@@ -237,12 +249,14 @@ class Window(AbstractWindow):
             self.atom('_NET_WM_WINDOW_TYPE'): 
                 [self.atom('_NET_WM_WINDOW_TYPE_NORMAL'),],
             self.atom('_NET_WM_DESKTOP'): desktop,
-            self.atom('_NET_WM_FRAME_EXTENTS'): [extents.left, extents.right,
+            self.atom('_NET_FRAME_EXTENTS'): [extents.left, extents.right,
                                                  extents.top, extents.bottom],
         }
         self.properties.update(properties)
-        self.geometry = geometry
+        self.current_geometry = geometry
+        self.normal_geometry = geometry
         self.normal_hints = normal_hints
+        # TODO: move it to separate function, not all windows should be on stack
         self.display.windows_stack.append(self)
 
     def get_wm_transient_for(self):
@@ -250,13 +264,13 @@ class Window(AbstractWindow):
         return None
 
     def get_wm_client_machine(self):
-        return self.get_full_property(Xatom.WM_CLIENT_MACHINE).value
+        return self.get_full_property(Xatom.WM_CLIENT_MACHINE, 0).value
 
     def get_wm_class(self):
-        return self.get_full_property(Xatom.WM_CLASS).value
+        return self.get_full_property(Xatom.WM_CLASS, 0).value
 
     def get_geometry(self):
-        return geometry
+        return self.current_geometry
 
     def translate_coords(self, src_window, x, y):
         # No translation, just return current geometry
@@ -281,8 +295,8 @@ class Window(AbstractWindow):
     def configure(self, onerror=None, **keys):
         x = self.geometry.x
         y = self.geometry.y
-        width = self.geometry.width
-        height = selg.geometry.height
+        width = self.normal_geometry.width
+        height = selg.normal_geometry.height
         hints = self.normal_hints
         if hints.win_gravity == X.StaticGravity:
             x -= self.extents.left
@@ -312,8 +326,12 @@ class Window(AbstractWindow):
             height += base
             if hints.height_inc and height < hints.min_height:
                 height += hints.height_inc
-        self.geometry = Geometry(x, y, width, height, 
-                                 border_width=self.geometry.border_width)
+        geometry = Geometry(x, y, width, height, 
+                            border_width=self.normal_geometry.border_width)
+        # FIXME: not exactly... when maximized keep normal width, height?
+        #        it is possible to configure maxed_vert/horz
+        self.normal_geometry = geometry
+        self.current_geometry = geometry
 
     def grab_key(self, key, modifiers, 
                  owner_events, pointer_mode, keyboard_mode, 
@@ -324,15 +342,35 @@ class Window(AbstractWindow):
         pass
 
     def _set_state(self, atom, mode):
-        # TODO: prevent changing STATE_HIDDEN?
         state = self._prop('_NET_WM_STATE')
-        if atom == self.atom('_NET_WM_STATE_STICKY') and \
+        if atom == self.atom('_NET_WM_STATE_HIDDEN'):
+            # Just ignore setting HIDDEN
+            return
+        elif atom == self.atom('_NET_WM_STATE_STICKY') and \
            atom not in state and (mode == 1 or mode ==2):
             self._prop('_NET_WM_DESKTOP', [0xFFFFFFFF])
         elif atom == self.atom('_NET_WM_STATE_STICKY') and \
            atom in state and (mode == 0 or mode ==2):
             desktop = self.display.root._prop('_NET_CURRENT_DESKTOP')
             self._prop('_NET_WM_DESKTOP', desktop)
+        elif atom == self.atom('_NET_WM_STATE_MAXIMIZED_HORZ'):
+            geometry = Geometry(x=0, y=self.current_geometry.y,
+                                width=self.root.screen_width,
+                                height=self.current_geometry.height,
+                                border_width=self.current_geometry.border_width)
+            self.current_geometry = geometry
+        elif atom == self.atom('_NET_WM_STATE_MAXIMIZED_VERT'):
+            geometry = Geometry(x=self.current_geometry.x, y=0,
+                                width=self.current_geometry.width,
+                                height=self.root.screen_height,
+                                border_width=self.current_geometry.border_width)
+            self.current_geometry = geometry
+        elif atom == self.atom('_NET_WM_STATE_FULLSCREEN'):
+            geometry = Geometry(x=0, y=0,
+                                width=self.root.screen_width,
+                                height=self.root.screen_height,
+                                border_width=self.current_geometry.border_width)
+            self.current_geometry = geometry
         if atom and atom in state:
             if mode == 0 or mode == 2:
                 state.remove(atom)
@@ -354,12 +392,11 @@ class Window(AbstractWindow):
 
 class RootWindow(AbstractWindow):
 
-    def __init__(self, display, id,
-                 screen_width, screen_height,
+    def __init__(self, display,
                  desktops=1, viewports=[1,1]):
-        AbstractWindow.__init__(self, display, id)
-        self.screen_width = screen_width
-        self.screen_height = screen_height
+        AbstractWindow.__init__(self, display, display.root_id)
+        self.screen_width = display.screen_width
+        self.screen_height = display.screen_height
         properties = {
             # 1 desktop, 1 viewport
             self.atom('_NET_SUPPORTING_WM_CHECK'): None, #TODO: ???
@@ -376,15 +413,16 @@ class RootWindow(AbstractWindow):
 
     def get_full_property(self, property, type, sizehint=10):
         if property == self.atom('_NET_CLIENT_LIST_STACKING'):
-            return Value(self.display.windows_stack)
+            return Value([win.id for win in self.display.windows_stack])
         if property == self.atom('_NET_ACTIVE_WINDOW'):
-            active= self.display.windows_stack.pop()
+            active = self.display.windows_stack.pop()
             self.display.windows_stack.append(active)
-            return Value(active)
+            return Value([active.id])
         if property == self.atom('_NET_WORKAREA'):
-            desktops = self._prop('_NET_NUMBER_OF_DESKTOPS')
+            desktops = self._prop('_NET_NUMBER_OF_DESKTOPS')[0]
             return Value(self._prop('_NET_WORKAREA') * desktops)
-        return AbstractWindow.get_full_property(self, property, type, sizehint)
+        #return AbstractWindow.get_full_property(self, property, type, sizehint)
+        return super(RootWindow, self).get_full_property(property, type, sizehint)
 
     def send_event(self, event, event_mask=0, propagate=0, onerror=None):
         self.display.send_event(self, event, event_mask, propagate, onerror)

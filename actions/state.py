@@ -49,13 +49,11 @@ def _maximize(win, mode=Window.MODE_TOGGLE):
 @register(name='maximize_vert', check=[TYPE], unshade=True)
 def _maximize(win, mode=Window.MODE_TOGGLE):
     """Maximize vertically window."""
-    win.fullscreen(win.MODE_UNSET)
     win.maximize(mode, horz=False)
 
 @register(name='maximize_horz', check=[TYPE], unshade=True)
 def _maximize(win, mode=Window.MODE_TOGGLE):
     """Maximize vertically window."""
-    win.fullscreen(win.MODE_UNSET)
     win.maximize(mode, vert=False)
 
 

@@ -157,6 +157,11 @@ class TestWindow(TestMocked):
         self.assertEqual(geometry.height, 150)
         # TODO: test for incremental windows!
         # TODO: test set_geometry
+        win.set_geometry(geometry)
+        self.assertEqual(geometry.x, 0)
+        self.assertEqual(geometry.y, 0)
+        self.assertEqual(geometry.width, 100)
+        self.assertEqual(geometry.height, 150)
 
     def test_borders(self):
         win = self.WM.active_window()

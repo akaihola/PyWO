@@ -37,7 +37,7 @@ class TestWindowManager(TestMocked):
 
     def test_name(self):
         # TODO: need working _NET_SUPPORTING_WM_CHECK in mock!
-        self.assertEqual(self.WM.name, '')
+        self.assertEqual(self.WM.name, 'mock-wm')
 
     def test_desktop(self):
         self.assertEqual(self.WM.desktop, 0)
@@ -102,16 +102,20 @@ class TestWindow(TestMocked):
 
     def setUp(self):
         TestMocked.setUp(self)
-        window = mock_Xlib.Window(self.display,
-                                  ['test', 'Window'], 'Test Window',
-                                  #mock_Xlib.Geometry(4, 19, 92, 130))
-                                  mock_Xlib.Geometry(4, 19, 92, 130))
+        window = mock_Xlib.Window(display=self.display,
+                                  class_name=['test', 'Window'], 
+                                  name='Test Window',
+                                  geometry=mock_Xlib.Geometry(4, 19, 92, 130))
         window.map()
 
     def test_name(self):
         win = self.WM.active_window()
         self.assertEqual(win.name, 'Test Window')
         self.assertEqual(win.class_name, 'test.Window')
+
+    def test_client_machine(self):
+        win = self.WM.active_window()
+        self.assertEqual(win.client_machine, 'mock')
 
     def test_type(self):
         win = self.WM.active_window()
@@ -146,10 +150,28 @@ class TestWindow(TestMocked):
 
     def test_geometry(self):
         win = self.WM.active_window()
-        self.assertEqual(win.geometry.x, 0)
-        self.assertEqual(win.geometry.y, 0)
-        self.assertEqual(win.geometry.width, 100)
-        self.assertEqual(win.geometry.height, 150)
+        geometry = win.geometry
+        self.assertEqual(geometry.x, 0)
+        self.assertEqual(geometry.y, 0)
+        self.assertEqual(geometry.width, 100)
+        self.assertEqual(geometry.height, 150)
+        # TODO: test for incremental windows!
+        # TODO: test set_geometry
+
+    def test_borders(self):
+        win = self.WM.active_window()
+        borders = win.borders
+        self.assertEqual(borders.left, 4)
+        self.assertEqual(borders.right, 4)
+        self.assertEqual(borders.top, 19)
+        self.assertEqual(borders.bottom, 1)
+
+    def test_close(self):
+        win = self.WM.active_window()
+        self.assertTrue(win is not None)
+        win.close()
+        win = self.WM.active_window()
+        self.assertTrue(win is None)
 
 
 if __name__ == '__main__':

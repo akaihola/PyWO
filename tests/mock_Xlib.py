@@ -1,9 +1,13 @@
 """Xlib related mock objects.
 
-To be used for testing purposes by emulating Xlib behaviour.
+To be used for testing purposes by emulating Xlib and Window Managers behaviour.
 Only methods used by PyWO will be implemented!
 It should be enough to just change the core.XObject._XObject__DISPLAY 
-to new mock instance, and initialise new core.WM
+to new mock instance, and change core.ClientMessage.
+
+First phase is to write working, testable generic behaviour of mock environment, 
+next create emulation of concrete Window Managers to test all the hacks prepared
+for them.
 
 """
 
@@ -42,8 +46,8 @@ class TranslateCoords(object):
     """Simple wrapper for translate_coords()"""
 
     def __init__(self, x, y):
-        self.x = -x
-        self.y = -y
+        self.x = x
+        self.y = y
 
 
 class Extents(object):
@@ -120,6 +124,9 @@ class Display(Xlib.display.Display):
         Xlib.display.Display.__init__(self)
         self.screen_width = screen_width
         self.screen_height = screen_height
+        # list of all created windows, oldest first
+        self.all_windows = []
+        # stack of mapped windows
         self.windows_stack = collections.deque()
         self.root_id = Xlib.display.Display.screen(self).root.id
         self.root = RootWindow(self, desktops, viewports)
@@ -184,8 +191,7 @@ class Display(Xlib.display.Display):
             if atom2:
                 event.window._set_state(atom2, mode)
         if event.client_type == self.intern_atom('_NET_CLOSE_WINDOW'):
-            if event.window in self.windows_stack:
-                self.windows_stack.remove(win)
+            event.window.destroy()
 
     def flush(self):
         # No need to flush or sync, incoming events are processed as they come
@@ -207,7 +213,7 @@ class Display(Xlib.display.Display):
         if type == 'window':
             if id == self.root.id:
                 return self.root
-            for win in self.windows_stack:
+            for win in self.all_windows:
                 if win.id == id:
                     return win
             raise error.BadWindow() # Window with this id not found
@@ -219,10 +225,14 @@ class Display(Xlib.display.Display):
 class AbstractWindow(object):
 #class AbstractWindow(Xlib.display.Window):
 
-    def __init__(self, display, id):
+    def __init__(self, display, id=None):
         self.display = display
+        while not id and \
+              id not in self.display.all_windows:
+            id = random.randint(1000, self.display.root_id + 10000)
         self.id = id
         self.properties = {}
+        self.display.all_windows.append(self)
 
     def get_full_property(self, property, type, sizehint=10):
         value = self.properties.get(property, None)
@@ -243,19 +253,17 @@ class AbstractWindow(object):
 class Window(AbstractWindow):
 
     def __init__(self, display,
-                 class_name, name,
+                 name,
                  geometry, 
+                 class_name=None, 
                  extents=EXTENTS_NORMAL, 
                  normal_hints=HINTS_NORMAL,
                  type=[]):
-        root_id = display.root.id
-        id = random.randint(root_id, root_id + 10000)
-        AbstractWindow.__init__(self, display, id)
-        # Always place windows on current desktop
-        desktop = self.display.root._prop('_NET_CURRENT_DESKTOP')
+        AbstractWindow.__init__(self, display)
+        # Always place windows on FIRST desktop
+        desktop = 0
         properties = {
             Xatom.WM_CLIENT_MACHINE: 'mock',
-            Xatom.WM_CLASS: class_name,
             self.atom('_NET_WM_NAME'): name,
             self.atom('_NET_WM_ICON_NAME'): name,
             Xatom.WM_NAME: name,
@@ -271,12 +279,22 @@ class Window(AbstractWindow):
                                                  extents.top, extents.bottom],
         }
         self.properties.update(properties)
+        if class_name:
+            self.properties[Xatom.WM_CLASS] = class_name
         self.current_geometry = geometry
         self.normal_geometry = geometry
         self.normal_hints = normal_hints
 
     def map(self, onerror=None):
         self.display.windows_stack.append(self)
+
+    def unmap(self, onerror=None):
+        if self in self.display.windows_stack:
+            self.display.windows_stack.remove(self)
+
+    def destroy(self, onerror=None):
+        self.unmap()
+        self.display.all_windows.remove(self)
 
     def get_wm_transient_for(self):
         # Parent window
@@ -295,11 +313,10 @@ class Window(AbstractWindow):
         return Extents(*self._prop('_NET_FRAME_EXTENTS'))
 
     def translate_coords(self, src_window, x, y):
-        # TODO: now PyWO wants to use translate, and get wrong geometry...
-        # No translation, just return current geometry
+        # Now it works like in Metacity
         extents = self._get_extents()
-        return TranslateCoords(x - extents.left, 
-                               y - extents.top)
+        return TranslateCoords((x - extents.left) * -1, 
+                               (y - extents.top) * -1)
 
     def query_tree(self):
         return QueryTree(parent=self.display.root,
@@ -422,9 +439,10 @@ class RootWindow(AbstractWindow):
         AbstractWindow.__init__(self, display, display.root_id)
         self.screen_width = display.screen_width
         self.screen_height = display.screen_height
+        supporting_id = self.__supporting('mock-wm')
         properties = {
             # 1 desktop, 1 viewport
-            self.atom('_NET_SUPPORTING_WM_CHECK'): None, #TODO: ???
+            self.atom('_NET_SUPPORTING_WM_CHECK'): [supporting_id],
             self.atom('_NET_CURRENT_DESKTOP'): [0],
             self.atom('_NET_DESKTOP_LAYOUT'): [0, 0, 1, 0],
             self.atom('_NET_DESKTOP_VIEWPORT'): [0, 0],
@@ -436,10 +454,20 @@ class RootWindow(AbstractWindow):
         self.properties.update(properties)
         self._set_desktops(desktops)
 
+    def __supporting(self, name):
+        win = Window(self.display, name, Geometry(-100, -100, 1, 1, 0))
+        return win.id
+
+
     def get_full_property(self, property, type, sizehint=10):
         if property == self.atom('_NET_CLIENT_LIST_STACKING'):
             return Value([win.id for win in self.display.windows_stack])
+        if property == self.atom('_NET_CLIENT_LIST'):
+            return Value([win.id for win in self.display.all_windows
+                                 if win in self.windows_stack])
         if property == self.atom('_NET_ACTIVE_WINDOW'):
+            if not self.display.windows_stack:
+                return None
             active = self.display.windows_stack.pop()
             self.display.windows_stack.append(active)
             return Value([active.id])

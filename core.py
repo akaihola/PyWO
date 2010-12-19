@@ -726,7 +726,9 @@ class Window(XObject):
     def class_name(self):
         """Return window's class name."""
         class_name = self._win.get_wm_class()
-        return '.'.join(class_name)
+        if class_name:
+            return '.'.join(class_name)
+        return ''
 
     @property
     def client_machine(self):
@@ -1116,15 +1118,19 @@ class WindowManager(XObject):
         self.send_event(data, type, mask)
 
     def active_window_id(self):
-        """Return only id of active window."""
+        """Return id of active window."""
         # _NET_ACTIVE_WINDOW, WINDOW/32
-        win_id = self.get_property('_NET_ACTIVE_WINDOW').value[0]
-        return win_id
+        win_id = self.get_property('_NET_ACTIVE_WINDOW')
+        if win_id:
+            return win_id.value[0]
+        return None
 
     def active_window(self):
         """Return active window."""
         window_id = self.active_window_id()
-        return Window(window_id)
+        if window_id:
+            return Window(window_id)
+        return None
 
     def windows_ids(self):
         """Return list of all windows' ids (with bottom-top stacking order)."""

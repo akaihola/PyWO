@@ -180,11 +180,13 @@ class TestGeometry(unittest.TestCase):
         geo = Geometry(100, 150, 20, 30)
         self.assertEqual(geo.x2, 120)
         self.assertEqual(geo.y2, 180)
+        # relative to gravity
         geo = Geometry(100, 150, 20, 30, Gravity(1, 1))
         self.assertEqual(geo.x2, 100)
         self.assertEqual(geo.y2, 150)
         self.assertEqual(geo.x, 80)
         self.assertEqual(geo.y, 120)
+        # conversion to int
         geo = Geometry(1.1, 2.9, 10.5, 15.2)
         self.assertEqual(geo.x, 1)
         self.assertEqual(geo.y, 2)
@@ -195,9 +197,11 @@ class TestGeometry(unittest.TestCase):
         geo = Geometry(0, 0, 100, 200)
         self.assertEqual(geo.x, 0)
         self.assertEqual(geo.y, 0)
+        # set geometry
         geo.set_position(10, 10)
         self.assertEqual(geo.x, 10)
         self.assertEqual(geo.y, 10)
+        # relative to gravity
         geo.set_position(10, 10, Gravity(0, 0))
         self.assertEqual(geo.x, 10)
         self.assertEqual(geo.y, 10)
@@ -222,5 +226,4 @@ if __name__ == '__main__':
     for suite in [TestSize, TestGravity, TestGeometry, TestBorders]:
         main_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(suite))
     unittest.TextTestRunner(verbosity=2).run(main_suite)
-    pass
 

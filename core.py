@@ -567,21 +567,24 @@ class XObject(object):
         if not splitted:
             masks = masks.split('-')
         modifiers = 0
-        if masks[0]:
+        if len(masks) > 0:
             for mask in masks:
-                if not mask in cls.__KEY_MODIFIERS.keys():
+                if not mask:
                     continue
+                mask = mask.capitalize()
+                if mask not in cls.__KEY_MODIFIERS.keys():
+                    raise ValueError('Invalid modifier: %s' % mask)
                 modifiers = modifiers | cls.__KEY_MODIFIERS[mask]
-        else:
-            modifiers = X.AnyModifier
 
-        return modifiers
+        return modifiers or X.AnyModifier
 
     @classmethod
     def str2keycode(cls, key):
         keysym = XK.string_to_keysym(key)
         keycode = cls.__DISPLAY.keysym_to_keycode(keysym)
         cls.__KEYCODES[keycode] = key
+        if keycode == 0:
+            raise ValueError('No key specified!')
         return keycode
 
     @classmethod
@@ -1132,22 +1135,25 @@ class WindowManager(XObject):
             return Window(window_id)
         return None
 
-    def windows_ids(self):
-        """Return list of all windows' ids (with bottom-top stacking order)."""
+    def windows_ids(self, stacking=True):
+        """Return list of all windows' ids (newest/on top first)."""
         # TODO: add sort_order argument to choose stacking, and by age ordering
-        windows_ids = self.get_property('_NET_CLIENT_LIST_STACKING').value
+        if stacking:
+            windows_ids = self.get_property('_NET_CLIENT_LIST_STACKING').value
+        else:
+            windows_ids = self.get_property('_NET_CLIENT_LIST').value
+        windows_ids.reverse()
         return windows_ids
 
-    def windows(self, filter_method=None, match=''):
-        """Return list of all windows (with top-bottom stacking order)."""
+    def windows(self, filter_method=None, match='', stacking=True):
+        """Return list of all windows (newest/on top first)."""
         # TODO: regexp matching?
-        windows_ids = self.windows_ids()
+        windows_ids = self.windows_ids(stacking)
         windows = [Window(win_id) for win_id in windows_ids]
         if filter_method:
             windows = [window for window in windows if filter_method(window)]
         if match:
             windows = self.__name_matcher(windows, match)
-        windows.reverse()
         return windows
 
     def __name_matcher(self, windows, match):

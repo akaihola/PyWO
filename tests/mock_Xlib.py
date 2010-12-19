@@ -275,8 +275,6 @@ class Window(AbstractWindow):
             self.atom('_NET_WM_WINDOW_TYPE'): 
                 [self.atom('_NET_WM_WINDOW_TYPE_NORMAL'),],
             self.atom('_NET_WM_DESKTOP'): desktop,
-            self.atom('_NET_FRAME_EXTENTS'): [extents.left, extents.right,
-                                                 extents.top, extents.bottom],
         }
         self.properties.update(properties)
         if class_name:
@@ -284,6 +282,7 @@ class Window(AbstractWindow):
         self.current_geometry = geometry
         self.normal_geometry = geometry
         self.normal_hints = normal_hints
+        self._set_extents(extents)
 
     def map(self, onerror=None):
         self.display.windows_stack.append(self)
@@ -309,9 +308,6 @@ class Window(AbstractWindow):
     def get_geometry(self):
         return self.current_geometry
 
-    def _get_extents(self):
-        return Extents(*self._prop('_NET_FRAME_EXTENTS'))
-
     def translate_coords(self, src_window, x, y):
         # Now it works like in Metacity
         extents = self._get_extents()
@@ -328,17 +324,25 @@ class Window(AbstractWindow):
 
     def get_attributes(self):
         # Only need in debug_info, no need to implemet it
-        raise None
+        return None
 
     def change_attributes(self, onerror=None, **keys):
         # used to set event_mask
         pass
 
-    def configure(self, onerror=None, **keys):
-        x = self.geometry.x
-        y = self.geometry.y
-        width = self.normal_geometry.width
-        height = selg.normal_geometry.height
+    def configure(self, onerror=None, 
+                  x=None, y=None, 
+                  width=None, height=None,
+                  **keys):
+        extents = self._get_extents()
+        if x:
+            x = x + extents.left
+        if y:
+            y = y + extents.top
+        x = x or self.current_geometry.x
+        y = y or self.current_geometry.y
+        width = width or self.current_geometry.width
+        height = height or self.current_geometry.height
         hints = self.normal_hints
         if hints.win_gravity == X.StaticGravity:
             x -= self.extents.left
@@ -388,29 +392,29 @@ class Window(AbstractWindow):
         if atom == self.atom('_NET_WM_STATE_HIDDEN'):
             # Just ignore setting HIDDEN
             return
-        elif atom == self.atom('_NET_WM_STATE_STICKY') and \
+        if atom == self.atom('_NET_WM_STATE_STICKY') and \
            atom not in state and (mode == 1 or mode ==2):
             self._prop('_NET_WM_DESKTOP', [0xFFFFFFFF])
-        elif atom == self.atom('_NET_WM_STATE_STICKY') and \
+        if atom == self.atom('_NET_WM_STATE_STICKY') and \
            atom in state and (mode == 0 or mode ==2):
             desktop = self.display.root._prop('_NET_CURRENT_DESKTOP')
             self._prop('_NET_WM_DESKTOP', desktop)
-        elif atom == self.atom('_NET_WM_STATE_MAXIMIZED_HORZ'):
+        if atom == self.atom('_NET_WM_STATE_MAXIMIZED_HORZ'):
             geometry = Geometry(x=0, y=self.current_geometry.y,
-                                width=self.root.screen_width,
+                                width=self.display.root.screen_width,
                                 height=self.current_geometry.height,
                                 border_width=self.current_geometry.border_width)
             self.current_geometry = geometry
-        elif atom == self.atom('_NET_WM_STATE_MAXIMIZED_VERT'):
+        if atom == self.atom('_NET_WM_STATE_MAXIMIZED_VERT'):
             geometry = Geometry(x=self.current_geometry.x, y=0,
                                 width=self.current_geometry.width,
-                                height=self.root.screen_height,
+                                height=self.display.root.screen_height,
                                 border_width=self.current_geometry.border_width)
             self.current_geometry = geometry
-        elif atom == self.atom('_NET_WM_STATE_FULLSCREEN'):
+        if atom == self.atom('_NET_WM_STATE_FULLSCREEN'):
             geometry = Geometry(x=0, y=0,
-                                width=self.root.screen_width,
-                                height=self.root.screen_height,
+                                width=self.display.root.screen_width,
+                                height=self.display.root.screen_height,
                                 border_width=self.current_geometry.border_width)
             self.current_geometry = geometry
         if atom and atom in state:
@@ -421,15 +425,22 @@ class Window(AbstractWindow):
                 state.append(atom)
         self._set_extents()
 
-    def _set_extents(self):
+    def _get_extents(self):
+        return Extents(*self._prop('_NET_FRAME_EXTENTS'))
+
+    def _set_extents(self, extents=None):
         state = self._prop('_NET_WM_STATE')
-        if self.atom('_NET_WM_STATE_FULLSCREEN') in state:
-            self.extents = EXTENTS_FULLSCREEN
+        if extents:
+            extents = extents
+        elif self.atom('_NET_WM_STATE_FULLSCREEN') in state:
+            extents = EXTENTS_FULLSCREEN
         elif self.atom('_NET_WM_STATE_MAXIMIZED_HORZ') in state and \
            self.atom('_NET_WM_STATE_MAXIMIZED_VERT') in state:
-            self.extents = EXTENTS_MAXIMIZED
+            extents = EXTENTS_MAXIMIZED
         else:
-            self.extents = EXTENTS_NORMAL
+            extents = EXTENTS_NORMAL
+        self._prop('_NET_FRAME_EXTENTS', [extents.left, extents.right, 
+                                          extents.top, extents.bottom])
 
 
 class RootWindow(AbstractWindow):
@@ -464,7 +475,7 @@ class RootWindow(AbstractWindow):
             return Value([win.id for win in self.display.windows_stack])
         if property == self.atom('_NET_CLIENT_LIST'):
             return Value([win.id for win in self.display.all_windows
-                                 if win in self.windows_stack])
+                                 if win in self.display.windows_stack])
         if property == self.atom('_NET_ACTIVE_WINDOW'):
             if not self.display.windows_stack:
                 return None

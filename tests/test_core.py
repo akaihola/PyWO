@@ -19,6 +19,7 @@ class TestMocked(unittest.TestCase):
     VIEWPORTS = [1, 1]
 
     def setUp(self):
+        # setup Window Manager
         display = mock_Xlib.Display(screen_width=self.WIDTH, 
                                     screen_height=self.HEIGHT,
                                     desktops=self.DESKTOPS,
@@ -27,6 +28,53 @@ class TestMocked(unittest.TestCase):
         core.ClientMessage = mock_Xlib.ClientMessage
         core.XObject._XObject__DISPLAY = display
         self.WM = core.WindowManager()
+        # setup one Window
+        window = mock_Xlib.Window(display=self.display,
+                                  class_name=['test', 'Window'], 
+                                  name='Test Window',
+                                  geometry=mock_Xlib.Geometry(4, 19, 92, 130))
+        window.map()
+        self.win = self.WM.active_window()
+
+
+class TestXObject(TestMocked):
+
+    def test_atom(self):
+        atom = core.XObject.atom('_NET_WM_NAME')
+        name = core.XObject.atom_name(atom)
+        self.assertEqual(name, '_NET_WM_NAME')
+
+    def test_str2_methods(self):
+        # test if not case sensitive
+        self.assertEqual(core.XObject.str2keycode('a'),
+                         core.XObject.str2keycode('A'))
+        self.assertEqual(core.XObject.str2modifiers('Alt'),
+                         core.XObject.str2modifiers('alt'))
+        self.assertEqual(core.XObject.str2modifiers('Alt'),
+                         core.XObject.str2modifiers('ALT'))
+        self.assertEqual(core.XObject.str2modifiers('alt'),
+                         core.XObject.str2modifiers('ALT'))
+        # modifiers-keycode
+        modifiers = core.XObject.str2modifiers('Alt-Shift')
+        keycode = core.XObject.str2keycode('A')
+        modifiers_keycode = core.XObject.str2modifiers_keycode('Alt-Shift-A')
+        self.assertEqual(modifiers, modifiers_keycode[0])
+        self.assertEqual(keycode, modifiers_keycode[1])
+        modifiers_keycode = core.XObject.str2modifiers_keycode('Alt-Shift', 'A')
+        self.assertEqual(modifiers, modifiers_keycode[0])
+        self.assertEqual(keycode, modifiers_keycode[1])
+        # no modifiers
+        modifiers = core.XObject.str2modifiers('')
+        modifiers_keycode = core.XObject.str2modifiers_keycode('A')
+        self.assertEqual(modifiers, modifiers_keycode[0])
+        self.assertEqual(keycode, modifiers_keycode[1])
+        modifiers_keycode = core.XObject.str2modifiers_keycode('', 'A')
+        self.assertEqual(modifiers, modifiers_keycode[0])
+        self.assertEqual(keycode, modifiers_keycode[1])
+        # invalid input
+        self.assertRaises(ValueError, core.XObject.str2modifiers, 'fsdfd')
+        self.assertRaises(ValueError, core.XObject.str2keycode, 'Alt')
+        self.assertRaises(ValueError, core.XObject.str2modifiers_keycode, 'Alt')
 
 
 class TestWindowManager(TestMocked):
@@ -36,7 +84,6 @@ class TestWindowManager(TestMocked):
         self.assertTrue(self.WM == core.WindowManager())
 
     def test_name(self):
-        # TODO: need working _NET_SUPPORTING_WM_CHECK in mock!
         self.assertEqual(self.WM.name, 'mock-wm')
 
     def test_desktop(self):
@@ -92,88 +139,157 @@ class TestWindowManager(TestMocked):
         self.assertEqual(self.WM.workarea_geometry.height, self.HEIGHT)
 
     def test_active_window(self):
-        pass
+        win = self.WM.active_window()
+        self.assertEqual(win, self.win)
+        # create new window, and check if new is active
+        window = mock_Xlib.Window(display=self.display,
+                                  class_name=['test', 'Window'], 
+                                  name='Test Window 2',
+                                  geometry=mock_Xlib.Geometry(4, 19, 92, 130))
+        window.map()
+        win = self.WM.active_window()
+        self.assertNotEqual(win, self.win)
+        # close second window, check if first is active
+        win.close()
+        win = self.WM.active_window()
+        self.assertEqual(win, self.win)
+        # close all windows, check if active is None
+        self.win.close()
+        win = self.WM.active_window()
+        self.assertEqual(win, None)
 
     def test_windows(self):
-        pass
+        # only one window
+        windows_stacking = self.WM.windows()
+        self.assertEqual(windows_stacking, [self.win])
+        windows_oldest = self.WM.windows(stacking=False)
+        self.assertEqual(windows_stacking, [self.win])
+        # create window
+        window = mock_Xlib.Window(display=self.display,
+                                  class_name=['test', 'Window'], 
+                                  name='Test Window 2',
+                                  geometry=mock_Xlib.Geometry(4, 19, 92, 130))
+        window.map()
+        new_win = self.WM.active_window()
+        # check order (newest/on top first, so same order)
+        windows_stacking_ids = self.WM.windows_ids()
+        self.assertEqual(windows_stacking_ids, [new_win.id, self.win.id])
+        windows_oldest_ids = self.WM.windows_ids(stacking=False)
+        self.assertEqual(windows_oldest_ids, [new_win.id, self.win.id])
+        # activate older, order should differ
+        self.win.activate()
+        windows_stacking_ids = self.WM.windows_ids()
+        self.assertEqual(windows_stacking_ids, [self.win.id, new_win.id])
+        windows_oldest_ids = self.WM.windows_ids(stacking=False)
+        self.assertEqual(windows_oldest_ids, [new_win.id, self.win.id])
+
+    def test_windows_name_matcher(self):
+        # TODO: name matching
+        self.fail('Not implemented!')
 
 
 class TestWindow(TestMocked):
 
-    def setUp(self):
-        TestMocked.setUp(self)
-        window = mock_Xlib.Window(display=self.display,
-                                  class_name=['test', 'Window'], 
-                                  name='Test Window',
-                                  geometry=mock_Xlib.Geometry(4, 19, 92, 130))
-        window.map()
-
     def test_name(self):
-        win = self.WM.active_window()
-        self.assertEqual(win.name, 'Test Window')
-        self.assertEqual(win.class_name, 'test.Window')
+        self.assertEqual(self.win.name, 'Test Window')
+        self.assertEqual(self.win.class_name, 'test.Window')
 
     def test_client_machine(self):
-        win = self.WM.active_window()
-        self.assertEqual(win.client_machine, 'mock')
+        self.assertEqual(self.win.client_machine, 'mock')
 
     def test_type(self):
-        win = self.WM.active_window()
-        self.assertEqual(win.type, [win.TYPE_NORMAL])
+        self.assertEqual(self.win.type, [self.win.TYPE_NORMAL])
 
     def test_state(self):
-        win = self.WM.active_window()
-        self.assertEqual(win.state, [])
+        self.assertEqual(self.win.state, [])
 
     def test_desktop(self):
-        win = self.WM.active_window()
-        self.assertEqual(win.desktop, 0)
-        win.set_desktop(0)
-        self.assertEqual(win.desktop, 0)
+        # check current
+        self.assertEqual(self.win.desktop, 0)
+        # set current
+        self.win.set_desktop(0)
+        self.assertEqual(self.win.desktop, 0)
         # change to last desktop
-        win.set_desktop(self.WM.desktops - 1)
-        self.assertEqual(win.desktop, self.WM.desktops - 1)
+        self.win.set_desktop(self.WM.desktops - 1)
+        self.assertEqual(self.win.desktop, self.WM.desktops - 1)
         # change back to first desktop
-        win.set_desktop(0)
-        self.assertEqual(win.desktop, 0)
+        self.win.set_desktop(0)
+        self.assertEqual(self.win.desktop, 0)
         # change to higher than number of desktops
-        win.set_desktop(self.WM.desktops)
-        self.assertEqual(win.desktop, self.WM.desktops - 1)
+        self.win.set_desktop(self.WM.desktops)
+        self.assertEqual(self.win.desktop, self.WM.desktops - 1)
         # change to lower than 0
-        win.set_desktop(-1)
-        self.assertEqual(win.desktop, 0)
+        self.win.set_desktop(-1)
+        self.assertEqual(self.win.desktop, 0)
         # desktop_id as string
-        win.set_desktop('0')
-        self.assertEqual(win.desktop, 0)
+        self.win.set_desktop('0')
+        self.assertEqual(self.win.desktop, 0)
         # invalid string desktop_id
-        self.assertRaises(ValueError, win.set_desktop, 'a')
+        self.assertRaises(ValueError, self.win.set_desktop, 'a')
 
     def test_geometry(self):
-        win = self.WM.active_window()
-        geometry = win.geometry
+        # initial geometry
+        geometry = self.win.geometry
         self.assertEqual(geometry.x, 0)
         self.assertEqual(geometry.y, 0)
         self.assertEqual(geometry.width, 100)
         self.assertEqual(geometry.height, 150)
-        # TODO: test for incremental windows!
-        # TODO: test set_geometry
-        win.set_geometry(geometry)
+        # set same geometry
+        self.win.set_geometry(geometry)
+        geometry = self.win.geometry
         self.assertEqual(geometry.x, 0)
         self.assertEqual(geometry.y, 0)
         self.assertEqual(geometry.width, 100)
         self.assertEqual(geometry.height, 150)
+        # set new geometry
+        self.win.set_geometry(core.Geometry(50, 75, 138, 45))
+        geometry = self.win.geometry
+        self.assertEqual(geometry.x, 50)
+        self.assertEqual(geometry.y, 75)
+        self.assertEqual(geometry.width, 138)
+        self.assertEqual(geometry.height, 45)
+        # TODO: test with incremental windows!
 
     def test_borders(self):
-        win = self.WM.active_window()
-        borders = win.borders
-        self.assertEqual(borders.left, 4)
-        self.assertEqual(borders.right, 4)
-        self.assertEqual(borders.top, 19)
-        self.assertEqual(borders.bottom, 1)
+        # normal borders
+        borders = self.win.borders
+        self.assertEqual(borders.left, mock_Xlib.EXTENTS_NORMAL.left)
+        self.assertEqual(borders.right, mock_Xlib.EXTENTS_NORMAL.right)
+        self.assertEqual(borders.top, mock_Xlib.EXTENTS_NORMAL.top)
+        self.assertEqual(borders.bottom, mock_Xlib.EXTENTS_NORMAL.bottom)
+        # borders for maximized
+        self.win.maximize(1)
+        borders = self.win.borders
+        self.assertEqual(borders.left, mock_Xlib.EXTENTS_MAXIMIZED.left)
+        self.assertEqual(borders.right, mock_Xlib.EXTENTS_MAXIMIZED.right)
+        self.assertEqual(borders.top, mock_Xlib.EXTENTS_MAXIMIZED.top)
+        self.assertEqual(borders.bottom, mock_Xlib.EXTENTS_MAXIMIZED.bottom)
+        # unmaximize, back to normal borders
+        self.win.maximize(0)
+        borders = self.win.borders
+        self.assertEqual(borders.left, mock_Xlib.EXTENTS_NORMAL.left)
+        self.assertEqual(borders.right, mock_Xlib.EXTENTS_NORMAL.right)
+        self.assertEqual(borders.top, mock_Xlib.EXTENTS_NORMAL.top)
+        self.assertEqual(borders.bottom, mock_Xlib.EXTENTS_NORMAL.bottom)
+        # borders for fullscreen
+        self.win.fullscreen(1)
+        borders = self.win.borders
+        self.assertEqual(borders.left, mock_Xlib.EXTENTS_FULLSCREEN.left)
+        self.assertEqual(borders.right, mock_Xlib.EXTENTS_FULLSCREEN.right)
+        self.assertEqual(borders.top, mock_Xlib.EXTENTS_FULLSCREEN.top)
+        self.assertEqual(borders.bottom, mock_Xlib.EXTENTS_FULLSCREEN.bottom)
+        # and back to normal borders
+        self.win.fullscreen(0)
+        borders = self.win.borders
+        self.assertEqual(borders.left, mock_Xlib.EXTENTS_NORMAL.left)
+        self.assertEqual(borders.right, mock_Xlib.EXTENTS_NORMAL.right)
+        self.assertEqual(borders.top, mock_Xlib.EXTENTS_NORMAL.top)
+        self.assertEqual(borders.bottom, mock_Xlib.EXTENTS_NORMAL.bottom)
 
     def test_close(self):
         win = self.WM.active_window()
         self.assertTrue(win is not None)
+        # close window (this is the only one)
         win.close()
         win = self.WM.active_window()
         self.assertTrue(win is None)

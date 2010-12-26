@@ -7,7 +7,7 @@ import sys
 sys.path.insert(0, '../')
 sys.path.insert(0, './')
 
-from core import Gravity, Size, Geometry, Borders
+from core import Gravity, Size, Geometry, Extents
 
 
 class TestSize(unittest.TestCase):
@@ -213,17 +213,17 @@ class TestGeometry(unittest.TestCase):
         self.assertEqual(geo.y, 10)
 
 
-class TestBorders(unittest.TestCase):
+class TestExtents(unittest.TestCase):
 
     def test_vertical_horizontal(self):
-        borders = Borders(10, 20, 17, 13)
-        self.assertEqual(borders.horizontal, 30)
-        self.assertEqual(borders.vertical, 30)
+        extents = Extents(10, 20, 17, 13)
+        self.assertEqual(extents.horizontal, 30)
+        self.assertEqual(extents.vertical, 30)
 
 
 if __name__ == '__main__':
     main_suite = unittest.TestSuite()
-    for suite in [TestSize, TestGravity, TestGeometry, TestBorders]:
+    for suite in [TestSize, TestGravity, TestGeometry, TestExtents]:
         main_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(suite))
     unittest.TextTestRunner(verbosity=2).run(main_suite)
 

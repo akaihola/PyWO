@@ -265,41 +265,41 @@ class TestWindowProperties(TestMocked):
         self.assertEqual(geometry.height, 45)
         # TODO: test with incremental windows!
 
-    def test_borders(self):
-        # normal borders
-        borders = self.win.borders
-        self.assertEqual(borders.left, mock_Xlib.EXTENTS_NORMAL.left)
-        self.assertEqual(borders.right, mock_Xlib.EXTENTS_NORMAL.right)
-        self.assertEqual(borders.top, mock_Xlib.EXTENTS_NORMAL.top)
-        self.assertEqual(borders.bottom, mock_Xlib.EXTENTS_NORMAL.bottom)
-        # borders for maximized
+    def test_extents(self):
+        # normal extents
+        extents = self.win.extents
+        self.assertEqual(extents.left, mock_Xlib.EXTENTS_NORMAL.left)
+        self.assertEqual(extents.right, mock_Xlib.EXTENTS_NORMAL.right)
+        self.assertEqual(extents.top, mock_Xlib.EXTENTS_NORMAL.top)
+        self.assertEqual(extents.bottom, mock_Xlib.EXTENTS_NORMAL.bottom)
+        # extents for maximized
         self.win.maximize(1)
-        borders = self.win.borders
-        self.assertEqual(borders.left, mock_Xlib.EXTENTS_MAXIMIZED.left)
-        self.assertEqual(borders.right, mock_Xlib.EXTENTS_MAXIMIZED.right)
-        self.assertEqual(borders.top, mock_Xlib.EXTENTS_MAXIMIZED.top)
-        self.assertEqual(borders.bottom, mock_Xlib.EXTENTS_MAXIMIZED.bottom)
-        # unmaximize, back to normal borders
+        extents = self.win.extents
+        self.assertEqual(extents.left, mock_Xlib.EXTENTS_MAXIMIZED.left)
+        self.assertEqual(extents.right, mock_Xlib.EXTENTS_MAXIMIZED.right)
+        self.assertEqual(extents.top, mock_Xlib.EXTENTS_MAXIMIZED.top)
+        self.assertEqual(extents.bottom, mock_Xlib.EXTENTS_MAXIMIZED.bottom)
+        # unmaximize, back to normal extents
         self.win.maximize(0)
-        borders = self.win.borders
-        self.assertEqual(borders.left, mock_Xlib.EXTENTS_NORMAL.left)
-        self.assertEqual(borders.right, mock_Xlib.EXTENTS_NORMAL.right)
-        self.assertEqual(borders.top, mock_Xlib.EXTENTS_NORMAL.top)
-        self.assertEqual(borders.bottom, mock_Xlib.EXTENTS_NORMAL.bottom)
-        # borders for fullscreen
+        extents = self.win.extents
+        self.assertEqual(extents.left, mock_Xlib.EXTENTS_NORMAL.left)
+        self.assertEqual(extents.right, mock_Xlib.EXTENTS_NORMAL.right)
+        self.assertEqual(extents.top, mock_Xlib.EXTENTS_NORMAL.top)
+        self.assertEqual(extents.bottom, mock_Xlib.EXTENTS_NORMAL.bottom)
+        # extents for fullscreen
         self.win.fullscreen(1)
-        borders = self.win.borders
-        self.assertEqual(borders.left, mock_Xlib.EXTENTS_FULLSCREEN.left)
-        self.assertEqual(borders.right, mock_Xlib.EXTENTS_FULLSCREEN.right)
-        self.assertEqual(borders.top, mock_Xlib.EXTENTS_FULLSCREEN.top)
-        self.assertEqual(borders.bottom, mock_Xlib.EXTENTS_FULLSCREEN.bottom)
-        # and back to normal borders
+        extents = self.win.extents
+        self.assertEqual(extents.left, mock_Xlib.EXTENTS_FULLSCREEN.left)
+        self.assertEqual(extents.right, mock_Xlib.EXTENTS_FULLSCREEN.right)
+        self.assertEqual(extents.top, mock_Xlib.EXTENTS_FULLSCREEN.top)
+        self.assertEqual(extents.bottom, mock_Xlib.EXTENTS_FULLSCREEN.bottom)
+        # and back to normal extents
         self.win.fullscreen(0)
-        borders = self.win.borders
-        self.assertEqual(borders.left, mock_Xlib.EXTENTS_NORMAL.left)
-        self.assertEqual(borders.right, mock_Xlib.EXTENTS_NORMAL.right)
-        self.assertEqual(borders.top, mock_Xlib.EXTENTS_NORMAL.top)
-        self.assertEqual(borders.bottom, mock_Xlib.EXTENTS_NORMAL.bottom)
+        extents = self.win.extents
+        self.assertEqual(extents.left, mock_Xlib.EXTENTS_NORMAL.left)
+        self.assertEqual(extents.right, mock_Xlib.EXTENTS_NORMAL.right)
+        self.assertEqual(extents.top, mock_Xlib.EXTENTS_NORMAL.top)
+        self.assertEqual(extents.bottom, mock_Xlib.EXTENTS_NORMAL.bottom)
 
 
 class TestWindowState(TestMocked):
@@ -344,22 +344,22 @@ class TestWindowState(TestMocked):
         self.assertFalse(self.win.STATE_MAXIMIZED_VERT in self.win.state)
         geometry = self.win.geometry
         self.assertNotEqual(geometry, workarea)
-        borders = self.win.borders
-        self.assertEqual(borders.left, mock_Xlib.EXTENTS_NORMAL.left)
-        self.assertEqual(borders.right, mock_Xlib.EXTENTS_NORMAL.right)
-        self.assertEqual(borders.top, mock_Xlib.EXTENTS_NORMAL.top)
-        self.assertEqual(borders.bottom, mock_Xlib.EXTENTS_NORMAL.bottom)
+        extents = self.win.extents
+        self.assertEqual(extents.left, mock_Xlib.EXTENTS_NORMAL.left)
+        self.assertEqual(extents.right, mock_Xlib.EXTENTS_NORMAL.right)
+        self.assertEqual(extents.top, mock_Xlib.EXTENTS_NORMAL.top)
+        self.assertEqual(extents.bottom, mock_Xlib.EXTENTS_NORMAL.bottom)
         # set maximize
         self.win.maximize(1)
         self.assertTrue(self.win.STATE_MAXIMIZED_HORZ in self.win.state)
         self.assertTrue(self.win.STATE_MAXIMIZED_VERT in self.win.state)
         geometry = self.win.geometry
         self.assertEqual(geometry, workarea)
-        borders = self.win.borders
-        self.assertEqual(borders.left, mock_Xlib.EXTENTS_MAXIMIZED.left)
-        self.assertEqual(borders.right, mock_Xlib.EXTENTS_MAXIMIZED.right)
-        self.assertEqual(borders.top, mock_Xlib.EXTENTS_MAXIMIZED.top)
-        self.assertEqual(borders.bottom, mock_Xlib.EXTENTS_MAXIMIZED.bottom)
+        extents = self.win.extents
+        self.assertEqual(extents.left, mock_Xlib.EXTENTS_MAXIMIZED.left)
+        self.assertEqual(extents.right, mock_Xlib.EXTENTS_MAXIMIZED.right)
+        self.assertEqual(extents.top, mock_Xlib.EXTENTS_MAXIMIZED.top)
+        self.assertEqual(extents.bottom, mock_Xlib.EXTENTS_MAXIMIZED.bottom)
         # unset maximize
         self.win.maximize(0)
         self.assertFalse(self.win.STATE_MAXIMIZED_HORZ in self.win.state)
@@ -367,11 +367,11 @@ class TestWindowState(TestMocked):
         geometry = self.win.geometry
         self.assertNotEqual(geometry, workarea)
         self.assertEqual(geometry, win_geometry)
-        borders = self.win.borders
-        self.assertEqual(borders.left, mock_Xlib.EXTENTS_NORMAL.left)
-        self.assertEqual(borders.right, mock_Xlib.EXTENTS_NORMAL.right)
-        self.assertEqual(borders.top, mock_Xlib.EXTENTS_NORMAL.top)
-        self.assertEqual(borders.bottom, mock_Xlib.EXTENTS_NORMAL.bottom)
+        extents = self.win.extents
+        self.assertEqual(extents.left, mock_Xlib.EXTENTS_NORMAL.left)
+        self.assertEqual(extents.right, mock_Xlib.EXTENTS_NORMAL.right)
+        self.assertEqual(extents.top, mock_Xlib.EXTENTS_NORMAL.top)
+        self.assertEqual(extents.bottom, mock_Xlib.EXTENTS_NORMAL.bottom)
         # toggle back and forth
         self.win.maximize(2)
         self.assertTrue(self.win.STATE_MAXIMIZED_HORZ in self.win.state)
@@ -387,11 +387,11 @@ class TestWindowState(TestMocked):
         self.assertFalse(self.win.STATE_MAXIMIZED_VERT in self.win.state)
         geometry = self.win.geometry
         self.assertNotEqual(geometry, workarea)
-        borders = self.win.borders
-        self.assertEqual(borders.left, mock_Xlib.EXTENTS_NORMAL.left)
-        self.assertEqual(borders.right, mock_Xlib.EXTENTS_NORMAL.right)
-        self.assertEqual(borders.top, mock_Xlib.EXTENTS_NORMAL.top)
-        self.assertEqual(borders.bottom, mock_Xlib.EXTENTS_NORMAL.bottom)
+        extents = self.win.extents
+        self.assertEqual(extents.left, mock_Xlib.EXTENTS_NORMAL.left)
+        self.assertEqual(extents.right, mock_Xlib.EXTENTS_NORMAL.right)
+        self.assertEqual(extents.top, mock_Xlib.EXTENTS_NORMAL.top)
+        self.assertEqual(extents.bottom, mock_Xlib.EXTENTS_NORMAL.bottom)
         # set maximize
         self.win.maximize(1, horz=False)
         self.assertFalse(self.win.STATE_MAXIMIZED_HORZ in self.win.state)
@@ -405,10 +405,10 @@ class TestWindowState(TestMocked):
         self.assertNotEqual(win_geometry.y, geometry.y)
         self.assertEqual(win_geometry.width, geometry.width)
         self.assertNotEqual(win_geometry.height, geometry.height)
-        borders = self.win.borders
-        self.assertEqual(borders.left, mock_Xlib.EXTENTS_NORMAL.left)
-        self.assertEqual(borders.right, mock_Xlib.EXTENTS_NORMAL.right)
-        self.assertEqual(borders.top, mock_Xlib.EXTENTS_NORMAL.top)
+        extents = self.win.extents
+        self.assertEqual(extents.left, mock_Xlib.EXTENTS_NORMAL.left)
+        self.assertEqual(extents.right, mock_Xlib.EXTENTS_NORMAL.right)
+        self.assertEqual(extents.top, mock_Xlib.EXTENTS_NORMAL.top)
         # unset maximize
         self.win.maximize(0, horz=False)
         self.assertFalse(self.win.STATE_MAXIMIZED_HORZ in self.win.state)
@@ -416,11 +416,11 @@ class TestWindowState(TestMocked):
         geometry = self.win.geometry
         self.assertNotEqual(geometry, workarea)
         self.assertEqual(geometry, win_geometry)
-        borders = self.win.borders
-        self.assertEqual(borders.left, mock_Xlib.EXTENTS_NORMAL.left)
-        self.assertEqual(borders.right, mock_Xlib.EXTENTS_NORMAL.right)
-        self.assertEqual(borders.top, mock_Xlib.EXTENTS_NORMAL.top)
-        self.assertEqual(borders.bottom, mock_Xlib.EXTENTS_NORMAL.bottom)
+        extents = self.win.extents
+        self.assertEqual(extents.left, mock_Xlib.EXTENTS_NORMAL.left)
+        self.assertEqual(extents.right, mock_Xlib.EXTENTS_NORMAL.right)
+        self.assertEqual(extents.top, mock_Xlib.EXTENTS_NORMAL.top)
+        self.assertEqual(extents.bottom, mock_Xlib.EXTENTS_NORMAL.bottom)
         # toggle back and forth
         self.win.maximize(2, horz=False)
         self.assertFalse(self.win.STATE_MAXIMIZED_HORZ in self.win.state)
@@ -436,11 +436,11 @@ class TestWindowState(TestMocked):
         self.assertFalse(self.win.STATE_MAXIMIZED_VERT in self.win.state)
         geometry = self.win.geometry
         self.assertNotEqual(geometry, workarea)
-        borders = self.win.borders
-        self.assertEqual(borders.left, mock_Xlib.EXTENTS_NORMAL.left)
-        self.assertEqual(borders.right, mock_Xlib.EXTENTS_NORMAL.right)
-        self.assertEqual(borders.top, mock_Xlib.EXTENTS_NORMAL.top)
-        self.assertEqual(borders.bottom, mock_Xlib.EXTENTS_NORMAL.bottom)
+        extents = self.win.extents
+        self.assertEqual(extents.left, mock_Xlib.EXTENTS_NORMAL.left)
+        self.assertEqual(extents.right, mock_Xlib.EXTENTS_NORMAL.right)
+        self.assertEqual(extents.top, mock_Xlib.EXTENTS_NORMAL.top)
+        self.assertEqual(extents.bottom, mock_Xlib.EXTENTS_NORMAL.bottom)
         # set maximize
         self.win.maximize(1, vert=False)
         self.assertTrue(self.win.STATE_MAXIMIZED_HORZ in self.win.state)
@@ -454,11 +454,11 @@ class TestWindowState(TestMocked):
         self.assertEqual(win_geometry.y, geometry.y)
         self.assertNotEqual(win_geometry.width, geometry.width)
         self.assertEqual(win_geometry.height, geometry.height)
-        borders = self.win.borders
-        self.assertEqual(borders.left, mock_Xlib.EXTENTS_NORMAL.left)
-        self.assertEqual(borders.right, mock_Xlib.EXTENTS_NORMAL.right)
-        self.assertEqual(borders.top, mock_Xlib.EXTENTS_NORMAL.top)
-        self.assertEqual(borders.bottom, mock_Xlib.EXTENTS_NORMAL.bottom)
+        extents = self.win.extents
+        self.assertEqual(extents.left, mock_Xlib.EXTENTS_NORMAL.left)
+        self.assertEqual(extents.right, mock_Xlib.EXTENTS_NORMAL.right)
+        self.assertEqual(extents.top, mock_Xlib.EXTENTS_NORMAL.top)
+        self.assertEqual(extents.bottom, mock_Xlib.EXTENTS_NORMAL.bottom)
         # unset maximize
         self.win.maximize(0, vert=False)
         self.assertFalse(self.win.STATE_MAXIMIZED_HORZ in self.win.state)
@@ -466,11 +466,11 @@ class TestWindowState(TestMocked):
         geometry = self.win.geometry
         self.assertNotEqual(geometry, workarea)
         self.assertEqual(geometry, win_geometry)
-        borders = self.win.borders
-        self.assertEqual(borders.left, mock_Xlib.EXTENTS_NORMAL.left)
-        self.assertEqual(borders.right, mock_Xlib.EXTENTS_NORMAL.right)
-        self.assertEqual(borders.top, mock_Xlib.EXTENTS_NORMAL.top)
-        self.assertEqual(borders.bottom, mock_Xlib.EXTENTS_NORMAL.bottom)
+        extents = self.win.extents
+        self.assertEqual(extents.left, mock_Xlib.EXTENTS_NORMAL.left)
+        self.assertEqual(extents.right, mock_Xlib.EXTENTS_NORMAL.right)
+        self.assertEqual(extents.top, mock_Xlib.EXTENTS_NORMAL.top)
+        self.assertEqual(extents.bottom, mock_Xlib.EXTENTS_NORMAL.bottom)
         # toggle back and forth
         self.win.maximize(2, vert=False)
         self.assertTrue(self.win.STATE_MAXIMIZED_HORZ in self.win.state)
@@ -509,11 +509,11 @@ class TestWindowState(TestMocked):
         self.assertNotEqual(geometry.y, 0)
         self.assertNotEqual(geometry.width, self.DESKTOP_WIDTH)
         self.assertNotEqual(geometry.height, self.DESKTOP_HEIGHT)
-        borders = self.win.borders
-        self.assertNotEqual(borders.left, mock_Xlib.EXTENTS_FULLSCREEN.left)
-        self.assertNotEqual(borders.right, mock_Xlib.EXTENTS_FULLSCREEN.right)
-        self.assertNotEqual(borders.top, mock_Xlib.EXTENTS_FULLSCREEN.top)
-        self.assertNotEqual(borders.bottom, mock_Xlib.EXTENTS_FULLSCREEN.bottom)
+        extents = self.win.extents
+        self.assertNotEqual(extents.left, mock_Xlib.EXTENTS_FULLSCREEN.left)
+        self.assertNotEqual(extents.right, mock_Xlib.EXTENTS_FULLSCREEN.right)
+        self.assertNotEqual(extents.top, mock_Xlib.EXTENTS_FULLSCREEN.top)
+        self.assertNotEqual(extents.bottom, mock_Xlib.EXTENTS_FULLSCREEN.bottom)
         # set fullscreen
         self.win.fullscreen(1)
         self.assertTrue(self.win.STATE_FULLSCREEN in self.win.state)
@@ -522,11 +522,11 @@ class TestWindowState(TestMocked):
         self.assertEqual(geometry.y, 0)
         self.assertEqual(geometry.width, self.DESKTOP_WIDTH)
         self.assertEqual(geometry.height, self.DESKTOP_HEIGHT)
-        borders = self.win.borders
-        self.assertEqual(borders.left, mock_Xlib.EXTENTS_FULLSCREEN.left)
-        self.assertEqual(borders.right, mock_Xlib.EXTENTS_FULLSCREEN.right)
-        self.assertEqual(borders.top, mock_Xlib.EXTENTS_FULLSCREEN.top)
-        self.assertEqual(borders.bottom, mock_Xlib.EXTENTS_FULLSCREEN.bottom)
+        extents = self.win.extents
+        self.assertEqual(extents.left, mock_Xlib.EXTENTS_FULLSCREEN.left)
+        self.assertEqual(extents.right, mock_Xlib.EXTENTS_FULLSCREEN.right)
+        self.assertEqual(extents.top, mock_Xlib.EXTENTS_FULLSCREEN.top)
+        self.assertEqual(extents.bottom, mock_Xlib.EXTENTS_FULLSCREEN.bottom)
         # unset fullscreen
         self.win.fullscreen(0)
         self.assertFalse(self.win.STATE_FULLSCREEN in self.win.state)
@@ -539,11 +539,11 @@ class TestWindowState(TestMocked):
         self.assertEqual(win_geometry.y, geometry.y)
         self.assertEqual(win_geometry.width, geometry.width)
         self.assertEqual(win_geometry.height, geometry.height)
-        borders = self.win.borders
-        self.assertNotEqual(borders.left, mock_Xlib.EXTENTS_FULLSCREEN.left)
-        self.assertNotEqual(borders.right, mock_Xlib.EXTENTS_FULLSCREEN.right)
-        self.assertNotEqual(borders.top, mock_Xlib.EXTENTS_FULLSCREEN.top)
-        self.assertNotEqual(borders.bottom, mock_Xlib.EXTENTS_FULLSCREEN.bottom)
+        extents = self.win.extents
+        self.assertNotEqual(extents.left, mock_Xlib.EXTENTS_FULLSCREEN.left)
+        self.assertNotEqual(extents.right, mock_Xlib.EXTENTS_FULLSCREEN.right)
+        self.assertNotEqual(extents.top, mock_Xlib.EXTENTS_FULLSCREEN.top)
+        self.assertNotEqual(extents.bottom, mock_Xlib.EXTENTS_FULLSCREEN.bottom)
         # toggle back and forth
         self.win.fullscreen(2)
         self.assertTrue(self.win.STATE_FULLSCREEN in self.win.state)

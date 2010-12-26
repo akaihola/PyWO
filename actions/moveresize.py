@@ -97,7 +97,7 @@ class _DummyWindow(object):
     gravity = Gravity(0.5, 0.5)
 
     def __init__(self, workarea, window, x, y, widths, heights, gravity):
-        self.borders = window.borders
+        self.extents = window.extents
         self.desktop = window.desktop
         self.id = window.id
         self.geometry = Geometry(x, y, min(widths), min(heights), gravity)

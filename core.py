@@ -23,7 +23,7 @@
 core module (with events module) encapsulates all comunication with X Server.
 It contains objects representing Window Manager, Windows, and other basic
 concepts needed for repositioning and resizing windows (size, position,
-borders, gravity, etc).
+extents, gravity, etc).
 
 """
 
@@ -272,10 +272,9 @@ class Geometry(Position, Size):
                          self.x2, self.y2)
 
 
-class Borders(object):
-    #TODO: consider renaming to Extents to keep consistency with X glossary
+class Extents(object):
 
-    """Borders encapsulate Window borders (frames/decorations)."""
+    """Extents encapsulate Window extents (decorations)."""
 
     def __init__(self, left, right, top, bottom):
         self.top = top
@@ -285,12 +284,12 @@ class Borders(object):
 
     @property
     def horizontal(self):
-        """Return sum of left and right borders."""
+        """Return sum of left and right extents."""
         return self.left + self.right
 
     @property
     def vertical(self):
-        """Return sum of top and bottom borders."""
+        """Return sum of top and bottom extents."""
         return self.top + self.bottom
 
     def __str__(self):
@@ -760,8 +759,8 @@ class Window(XObject):
         mask = X.PropertyChangeMask
         self.send_event(data, type, mask)
 
-    def __borders(self):
-        """Return raw borders info."""
+    def __extents(self):
+        """Return raw extents info."""
         extents = self.get_property('_NET_FRAME_EXTENTS')
         if extents:
             return extents.value
@@ -783,10 +782,10 @@ class Window(XObject):
         return (left, right, top, bottom)
 
     @property
-    def borders(self):
-        """Return window's borders (frames/decorations)."""
-        borders = self.__borders()
-        return Borders(*borders)
+    def extents(self):
+        """Return window's extents (decorations)."""
+        extents = self.__extents()
+        return Extents(*extents)
 
     def __geometry(self):
         """Return raw geometry info (translated if needed)."""
@@ -810,39 +809,39 @@ class Window(XObject):
 
         (x, y) coordinates are the top-left corner of the window,
         relative to the left-top corner of current viewport.
-        Position and size *includes* window's borders!
+        Position and size *includes* window's extents!
         Position is translated if needed.
 
         """
         x, y, width, height = self.__geometry()
-        borders = self.borders
+        extents = self.extents
         if self.__adjust_geometry:
             # Used in Compiz, KWin, E16, IceWM, Blackbox
-            x -= borders.left
-            y -= borders.top
+            x -= extents.left
+            y -= extents.top
         return Geometry(x, y,
-                        width + borders.horizontal,
-                        height + borders.vertical)
+                        width + extents.horizontal,
+                        height + extents.vertical)
 
     def set_geometry(self, geometry, on_resize=Gravity(0, 0)):
         """Move or resize window using provided geometry.
 
-        Postion and size must include window's borders. 
+        Postion and size must include window's extents. 
         Position is relative to current viewport.
 
         """
-        borders = self.borders
+        extents = self.extents
         x = geometry.x
         y = geometry.y
-        width = geometry.width - borders.horizontal
-        height = geometry.height - borders.vertical
+        width = geometry.width - extents.horizontal
+        height = geometry.height - extents.vertical
         geometry_size = (width, height)
         current = self.__geometry()
         hints = self._win.get_wm_normal_hints()
         # This is a fix for WINE, OpenOffice and KeePassX windows
         if hints and hints.win_gravity == X.StaticGravity:
-            x += borders.left
-            y += borders.top
+            x += extents.left
+            y += extents.top
         # Reduce size to maximal allowed value
         if hints and hints.max_width: 
             width = min([width, hints.max_width])
@@ -976,8 +975,8 @@ class Window(XObject):
         logging.info('Type=%s' % [self.atom_name(e) for e in self.type])
         logging.info('State=%s' % [self.atom_name(e) for e in self.state])
         logging.info('Desktop=%s' % self.desktop)
-        logging.info('Borders=%s' % self.borders)
-        logging.info('Borders_raw=%s' % [str(e) for e in self.__borders()])
+        logging.info('Extents=%s' % self.extents)
+        logging.info('Extents=%s' % [str(e) for e in self.__extents()])
         logging.info('Geometry=%s' % self.geometry)
         logging.info('Geometry_raw=%s' % self._win.get_geometry())
         geometry = self._win.get_geometry()

@@ -273,6 +273,7 @@ class Geometry(Position, Size):
 
 
 class Borders(object):
+    #TODO: consider renaming to Extents to keep consistency with X glossary
 
     """Borders encapsulate Window borders (frames/decorations)."""
 
@@ -926,6 +927,8 @@ class Window(XObject):
         self.fullscreen(self.MODE_UNSET)
         self.maximize(self.MODE_UNSET)
         self.shade(self.MODE_UNSET)
+        # TODO: Deiconify?
+        # TODO: unsticky?
 
     def sticky(self, mode):
         """Make window fullscreen (if supported by window manager)."""
@@ -982,6 +985,8 @@ class Window(XObject):
         logging.info('Geometry_translated=%s' % translated)
         logging.info('Parent=%s %s' % (self.parent_id, self.parent))
         logging.info('Normal_hints=%s' % self._win.get_wm_normal_hints())
+        #logging.info('Hints=%s' % self._win.get_wm_hints())
+        logging.info('State=%s' % self._win.get_wm_state())
         logging.info('Attributes=%s' % self._win.get_attributes())
         logging.info('Query_tree=%s' % self._win.query_tree())
 
@@ -1137,7 +1142,6 @@ class WindowManager(XObject):
 
     def windows_ids(self, stacking=True):
         """Return list of all windows' ids (newest/on top first)."""
-        # TODO: add sort_order argument to choose stacking, and by age ordering
         if stacking:
             windows_ids = self.get_property('_NET_CLIENT_LIST_STACKING').value
         else:
@@ -1228,6 +1232,5 @@ def normal_on_same_filter(window):
            geometry.y2 > workarea.y
 
 
-# TODO: 
-#    consider ability to connect to given screen (so Xvfb can be used) - Display(displayname=':0.0') 
+# TODO: consider ability to connect to given screen (so Xvfb can be used) - Display(displayname=':0.0') 
 

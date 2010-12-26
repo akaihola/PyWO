@@ -13,15 +13,19 @@ import core
 
 class TestMocked(unittest.TestCase):
 
-    WIDTH = 800
-    HEIGHT = 600
+    DESKTOP_WIDTH = 800
+    DESKTOP_HEIGHT = 600
     DESKTOPS = 2
     VIEWPORTS = [1, 1]
+    WIN_X = 10
+    WIN_Y = 10
+    WIN_WIDTH = 100
+    WIN_HEIGHT = 150
 
     def setUp(self):
         # setup Window Manager
-        display = mock_Xlib.Display(screen_width=self.WIDTH, 
-                                    screen_height=self.HEIGHT,
+        display = mock_Xlib.Display(screen_width=self.DESKTOP_WIDTH, 
+                                    screen_height=self.DESKTOP_HEIGHT,
                                     desktops=self.DESKTOPS,
                                     viewports=self.VIEWPORTS)
         self.display = display
@@ -29,10 +33,17 @@ class TestMocked(unittest.TestCase):
         core.XObject._XObject__DISPLAY = display
         self.WM = core.WindowManager()
         # setup one Window
+        geometry = mock_Xlib.Geometry(
+            self.WIN_X + mock_Xlib.EXTENTS_NORMAL.left,
+            self.WIN_Y + mock_Xlib.EXTENTS_NORMAL.top,
+            self.WIN_WIDTH - (mock_Xlib.EXTENTS_NORMAL.left +
+                              mock_Xlib.EXTENTS_NORMAL.right),
+            self.WIN_HEIGHT - (mock_Xlib.EXTENTS_NORMAL.top +
+                               mock_Xlib.EXTENTS_NORMAL.bottom))
         window = mock_Xlib.Window(display=self.display,
                                   class_name=['test', 'Window'], 
                                   name='Test Window',
-                                  geometry=mock_Xlib.Geometry(4, 19, 92, 130))
+                                  geometry=geometry)
         window.map()
         self.win = self.WM.active_window()
 
@@ -115,9 +126,9 @@ class TestWindowManager(TestMocked):
 
     def test_desktop_size(self):
         self.assertEqual(self.WM.desktop_size.width, 
-                         self.WIDTH * self.VIEWPORTS[0])
+                         self.DESKTOP_WIDTH * self.VIEWPORTS[0])
         self.assertEqual(self.WM.desktop_size.height, 
-                         self.HEIGHT * self.VIEWPORTS[1])
+                         self.DESKTOP_HEIGHT * self.VIEWPORTS[1])
         # TODO: test with many viewports
 
     def test_desktop_layout(self):
@@ -135,8 +146,8 @@ class TestWindowManager(TestMocked):
         # No panels!
         self.assertEqual(self.WM.workarea_geometry.x, 0)
         self.assertEqual(self.WM.workarea_geometry.y, 0)
-        self.assertEqual(self.WM.workarea_geometry.width, self.WIDTH)
-        self.assertEqual(self.WM.workarea_geometry.height, self.HEIGHT)
+        self.assertEqual(self.WM.workarea_geometry.width, self.DESKTOP_WIDTH)
+        self.assertEqual(self.WM.workarea_geometry.height, self.DESKTOP_HEIGHT)
 
     def test_active_window(self):
         win = self.WM.active_window()
@@ -160,10 +171,10 @@ class TestWindowManager(TestMocked):
 
     def test_windows(self):
         # only one window
-        windows_stacking = self.WM.windows()
-        self.assertEqual(windows_stacking, [self.win])
-        windows_oldest = self.WM.windows(stacking=False)
-        self.assertEqual(windows_stacking, [self.win])
+        self.assertEqual(self.WM.windows(), [self.win])
+        self.assertEqual(self.WM.windows_ids(), [self.win.id])
+        self.assertEqual(self.WM.windows(stacking=False), [self.win])
+        self.assertEqual(self.WM.windows_ids(stacking=False), [self.win.id])
         # create window
         window = mock_Xlib.Window(display=self.display,
                                   class_name=['test', 'Window'], 
@@ -172,23 +183,27 @@ class TestWindowManager(TestMocked):
         window.map()
         new_win = self.WM.active_window()
         # check order (newest/on top first, so same order)
-        windows_stacking_ids = self.WM.windows_ids()
-        self.assertEqual(windows_stacking_ids, [new_win.id, self.win.id])
-        windows_oldest_ids = self.WM.windows_ids(stacking=False)
-        self.assertEqual(windows_oldest_ids, [new_win.id, self.win.id])
+        self.assertEqual(self.WM.windows(), 
+                         [new_win, self.win])
+        self.assertEqual(self.WM.windows_ids(), 
+                         [new_win.id, self.win.id])
+        self.assertEqual(self.WM.windows(stacking=False), 
+                         [new_win, self.win])
+        self.assertEqual(self.WM.windows_ids(stacking=False), 
+                         [new_win.id, self.win.id])
         # activate older, order should differ
         self.win.activate()
-        windows_stacking_ids = self.WM.windows_ids()
-        self.assertEqual(windows_stacking_ids, [self.win.id, new_win.id])
-        windows_oldest_ids = self.WM.windows_ids(stacking=False)
-        self.assertEqual(windows_oldest_ids, [new_win.id, self.win.id])
+        self.assertEqual(self.WM.windows(), 
+                         [self.win, new_win])
+        self.assertEqual(self.WM.windows_ids(), 
+                         [self.win.id, new_win.id])
+        self.assertEqual(self.WM.windows_ids(stacking=False), 
+                         [new_win.id, self.win.id])
+        self.assertEqual(self.WM.windows(stacking=False), 
+                         [new_win, self.win])
 
-    def test_windows_name_matcher(self):
-        # TODO: name matching
-        self.fail('Not implemented!')
 
-
-class TestWindow(TestMocked):
+class TestWindowProperties(TestMocked):
 
     def test_name(self):
         self.assertEqual(self.win.name, 'Test Window')
@@ -230,17 +245,17 @@ class TestWindow(TestMocked):
     def test_geometry(self):
         # initial geometry
         geometry = self.win.geometry
-        self.assertEqual(geometry.x, 0)
-        self.assertEqual(geometry.y, 0)
-        self.assertEqual(geometry.width, 100)
-        self.assertEqual(geometry.height, 150)
+        self.assertEqual(geometry.x, self.WIN_X)
+        self.assertEqual(geometry.y, self.WIN_Y)
+        self.assertEqual(geometry.width, self.WIN_WIDTH)
+        self.assertEqual(geometry.height, self.WIN_HEIGHT)
         # set same geometry
         self.win.set_geometry(geometry)
         geometry = self.win.geometry
-        self.assertEqual(geometry.x, 0)
-        self.assertEqual(geometry.y, 0)
-        self.assertEqual(geometry.width, 100)
-        self.assertEqual(geometry.height, 150)
+        self.assertEqual(geometry.x, self.WIN_X)
+        self.assertEqual(geometry.y, self.WIN_Y)
+        self.assertEqual(geometry.width, self.WIN_WIDTH)
+        self.assertEqual(geometry.height, self.WIN_HEIGHT)
         # set new geometry
         self.win.set_geometry(core.Geometry(50, 75, 138, 45))
         geometry = self.win.geometry
@@ -286,6 +301,9 @@ class TestWindow(TestMocked):
         self.assertEqual(borders.top, mock_Xlib.EXTENTS_NORMAL.top)
         self.assertEqual(borders.bottom, mock_Xlib.EXTENTS_NORMAL.bottom)
 
+
+class TestWindowState(TestMocked):
+
     def test_close(self):
         win = self.WM.active_window()
         self.assertTrue(win is not None)
@@ -294,10 +312,269 @@ class TestWindow(TestMocked):
         win = self.WM.active_window()
         self.assertTrue(win is None)
 
+    def test_activate(self):
+        # create window
+        window = mock_Xlib.Window(display=self.display,
+                                  class_name=['test', 'Window'], 
+                                  name='Test Window 2',
+                                  geometry=mock_Xlib.Geometry(4, 19, 92, 130))
+        window.map()
+        new_win = self.WM.active_window()
+        self.assertNotEqual(self.WM.active_window(), self.win)
+        self.win.activate()
+        self.assertEqual(self.WM.active_window(), self.win)
+
+    def test_iconify(self):
+        win_geometry = self.win.geometry
+        self.assertFalse(self.win.STATE_HIDDEN in self.win.state)
+        self.win.iconify()
+        self.assertTrue(self.win.STATE_HIDDEN in self.win.state)
+        geometry = self.win.geometry
+        self.assertEqual(geometry, win_geometry)
+        # TODO: check self.win._win.get_wm_state() or WM_STATE property
+        self.win.activate()
+        geometry = self.win.geometry
+        self.assertFalse(self.win.STATE_HIDDEN in self.win.state)
+        self.assertEqual(geometry, win_geometry)
+
+    def test_maximize(self):
+        workarea = self.WM.workarea_geometry
+        win_geometry = self.win.geometry
+        self.assertFalse(self.win.STATE_MAXIMIZED_HORZ in self.win.state)
+        self.assertFalse(self.win.STATE_MAXIMIZED_VERT in self.win.state)
+        geometry = self.win.geometry
+        self.assertNotEqual(geometry, workarea)
+        borders = self.win.borders
+        self.assertEqual(borders.left, mock_Xlib.EXTENTS_NORMAL.left)
+        self.assertEqual(borders.right, mock_Xlib.EXTENTS_NORMAL.right)
+        self.assertEqual(borders.top, mock_Xlib.EXTENTS_NORMAL.top)
+        self.assertEqual(borders.bottom, mock_Xlib.EXTENTS_NORMAL.bottom)
+        # set maximize
+        self.win.maximize(1)
+        self.assertTrue(self.win.STATE_MAXIMIZED_HORZ in self.win.state)
+        self.assertTrue(self.win.STATE_MAXIMIZED_VERT in self.win.state)
+        geometry = self.win.geometry
+        self.assertEqual(geometry, workarea)
+        borders = self.win.borders
+        self.assertEqual(borders.left, mock_Xlib.EXTENTS_MAXIMIZED.left)
+        self.assertEqual(borders.right, mock_Xlib.EXTENTS_MAXIMIZED.right)
+        self.assertEqual(borders.top, mock_Xlib.EXTENTS_MAXIMIZED.top)
+        self.assertEqual(borders.bottom, mock_Xlib.EXTENTS_MAXIMIZED.bottom)
+        # unset maximize
+        self.win.maximize(0)
+        self.assertFalse(self.win.STATE_MAXIMIZED_HORZ in self.win.state)
+        self.assertFalse(self.win.STATE_MAXIMIZED_VERT in self.win.state)
+        geometry = self.win.geometry
+        self.assertNotEqual(geometry, workarea)
+        self.assertEqual(geometry, win_geometry)
+        borders = self.win.borders
+        self.assertEqual(borders.left, mock_Xlib.EXTENTS_NORMAL.left)
+        self.assertEqual(borders.right, mock_Xlib.EXTENTS_NORMAL.right)
+        self.assertEqual(borders.top, mock_Xlib.EXTENTS_NORMAL.top)
+        self.assertEqual(borders.bottom, mock_Xlib.EXTENTS_NORMAL.bottom)
+        # toggle back and forth
+        self.win.maximize(2)
+        self.assertTrue(self.win.STATE_MAXIMIZED_HORZ in self.win.state)
+        self.assertTrue(self.win.STATE_MAXIMIZED_VERT in self.win.state)
+        self.win.maximize(2)
+        self.assertFalse(self.win.STATE_MAXIMIZED_HORZ in self.win.state)
+        self.assertFalse(self.win.STATE_MAXIMIZED_VERT in self.win.state)
+
+    def test_maximize_vert(self):
+        workarea = self.WM.workarea_geometry
+        win_geometry = self.win.geometry
+        self.assertFalse(self.win.STATE_MAXIMIZED_HORZ in self.win.state)
+        self.assertFalse(self.win.STATE_MAXIMIZED_VERT in self.win.state)
+        geometry = self.win.geometry
+        self.assertNotEqual(geometry, workarea)
+        borders = self.win.borders
+        self.assertEqual(borders.left, mock_Xlib.EXTENTS_NORMAL.left)
+        self.assertEqual(borders.right, mock_Xlib.EXTENTS_NORMAL.right)
+        self.assertEqual(borders.top, mock_Xlib.EXTENTS_NORMAL.top)
+        self.assertEqual(borders.bottom, mock_Xlib.EXTENTS_NORMAL.bottom)
+        # set maximize
+        self.win.maximize(1, horz=False)
+        self.assertFalse(self.win.STATE_MAXIMIZED_HORZ in self.win.state)
+        self.assertTrue(self.win.STATE_MAXIMIZED_VERT in self.win.state)
+        geometry = self.win.geometry
+        self.assertNotEqual(geometry.x, workarea.x)
+        self.assertEqual(geometry.y, workarea.y)
+        self.assertNotEqual(geometry.width, workarea.width)
+        self.assertEqual(geometry.height, workarea.height)
+        self.assertEqual(win_geometry.x, geometry.x)
+        self.assertNotEqual(win_geometry.y, geometry.y)
+        self.assertEqual(win_geometry.width, geometry.width)
+        self.assertNotEqual(win_geometry.height, geometry.height)
+        borders = self.win.borders
+        self.assertEqual(borders.left, mock_Xlib.EXTENTS_NORMAL.left)
+        self.assertEqual(borders.right, mock_Xlib.EXTENTS_NORMAL.right)
+        self.assertEqual(borders.top, mock_Xlib.EXTENTS_NORMAL.top)
+        # unset maximize
+        self.win.maximize(0, horz=False)
+        self.assertFalse(self.win.STATE_MAXIMIZED_HORZ in self.win.state)
+        self.assertFalse(self.win.STATE_MAXIMIZED_VERT in self.win.state)
+        geometry = self.win.geometry
+        self.assertNotEqual(geometry, workarea)
+        self.assertEqual(geometry, win_geometry)
+        borders = self.win.borders
+        self.assertEqual(borders.left, mock_Xlib.EXTENTS_NORMAL.left)
+        self.assertEqual(borders.right, mock_Xlib.EXTENTS_NORMAL.right)
+        self.assertEqual(borders.top, mock_Xlib.EXTENTS_NORMAL.top)
+        self.assertEqual(borders.bottom, mock_Xlib.EXTENTS_NORMAL.bottom)
+        # toggle back and forth
+        self.win.maximize(2, horz=False)
+        self.assertFalse(self.win.STATE_MAXIMIZED_HORZ in self.win.state)
+        self.assertTrue(self.win.STATE_MAXIMIZED_VERT in self.win.state)
+        self.win.maximize(2, horz=False)
+        self.assertFalse(self.win.STATE_MAXIMIZED_HORZ in self.win.state)
+        self.assertFalse(self.win.STATE_MAXIMIZED_VERT in self.win.state)
+
+    def test_maximize_horz(self):
+        workarea = self.WM.workarea_geometry
+        win_geometry = self.win.geometry
+        self.assertFalse(self.win.STATE_MAXIMIZED_HORZ in self.win.state)
+        self.assertFalse(self.win.STATE_MAXIMIZED_VERT in self.win.state)
+        geometry = self.win.geometry
+        self.assertNotEqual(geometry, workarea)
+        borders = self.win.borders
+        self.assertEqual(borders.left, mock_Xlib.EXTENTS_NORMAL.left)
+        self.assertEqual(borders.right, mock_Xlib.EXTENTS_NORMAL.right)
+        self.assertEqual(borders.top, mock_Xlib.EXTENTS_NORMAL.top)
+        self.assertEqual(borders.bottom, mock_Xlib.EXTENTS_NORMAL.bottom)
+        # set maximize
+        self.win.maximize(1, vert=False)
+        self.assertTrue(self.win.STATE_MAXIMIZED_HORZ in self.win.state)
+        self.assertFalse(self.win.STATE_MAXIMIZED_VERT in self.win.state)
+        geometry = self.win.geometry
+        self.assertEqual(geometry.x, workarea.x)
+        self.assertNotEqual(geometry.y, workarea.y)
+        self.assertEqual(geometry.width, workarea.width)
+        self.assertNotEqual(geometry.height, workarea.height)
+        self.assertNotEqual(win_geometry.x, geometry.x)
+        self.assertEqual(win_geometry.y, geometry.y)
+        self.assertNotEqual(win_geometry.width, geometry.width)
+        self.assertEqual(win_geometry.height, geometry.height)
+        borders = self.win.borders
+        self.assertEqual(borders.left, mock_Xlib.EXTENTS_NORMAL.left)
+        self.assertEqual(borders.right, mock_Xlib.EXTENTS_NORMAL.right)
+        self.assertEqual(borders.top, mock_Xlib.EXTENTS_NORMAL.top)
+        self.assertEqual(borders.bottom, mock_Xlib.EXTENTS_NORMAL.bottom)
+        # unset maximize
+        self.win.maximize(0, vert=False)
+        self.assertFalse(self.win.STATE_MAXIMIZED_HORZ in self.win.state)
+        self.assertFalse(self.win.STATE_MAXIMIZED_VERT in self.win.state)
+        geometry = self.win.geometry
+        self.assertNotEqual(geometry, workarea)
+        self.assertEqual(geometry, win_geometry)
+        borders = self.win.borders
+        self.assertEqual(borders.left, mock_Xlib.EXTENTS_NORMAL.left)
+        self.assertEqual(borders.right, mock_Xlib.EXTENTS_NORMAL.right)
+        self.assertEqual(borders.top, mock_Xlib.EXTENTS_NORMAL.top)
+        self.assertEqual(borders.bottom, mock_Xlib.EXTENTS_NORMAL.bottom)
+        # toggle back and forth
+        self.win.maximize(2, vert=False)
+        self.assertTrue(self.win.STATE_MAXIMIZED_HORZ in self.win.state)
+        self.assertFalse(self.win.STATE_MAXIMIZED_VERT in self.win.state)
+        self.win.maximize(2, vert=False)
+        self.assertFalse(self.win.STATE_MAXIMIZED_HORZ in self.win.state)
+        self.assertFalse(self.win.STATE_MAXIMIZED_VERT in self.win.state)
+
+    def test_shade(self):
+        win_geometry = self.win.geometry
+        self.assertFalse(self.win.STATE_SHADED in self.win.state)
+        self.assertFalse(self.win.STATE_HIDDEN in self.win.state)
+        self.win.shade(1)
+        self.assertTrue(self.win.STATE_SHADED in self.win.state)
+        self.assertTrue(self.win.STATE_HIDDEN in self.win.state)
+        geometry = self.win.geometry
+        self.assertEqual(geometry, win_geometry)
+        # TODO: check self.win._win.get_wm_state() or WM_STATE property
+        self.win.shade(0)
+        geometry = self.win.geometry
+        self.assertFalse(self.win.STATE_SHADED in self.win.state)
+        self.assertFalse(self.win.STATE_HIDDEN in self.win.state)
+        self.assertEqual(geometry, win_geometry)
+        self.win.shade(2)
+        self.assertTrue(self.win.STATE_SHADED in self.win.state)
+        self.assertTrue(self.win.STATE_HIDDEN in self.win.state)
+        self.win.shade(2)
+        self.assertFalse(self.win.STATE_SHADED in self.win.state)
+        self.assertFalse(self.win.STATE_HIDDEN in self.win.state)
+
+    def test_fullscreen(self):
+        win_geometry = self.win.geometry
+        self.assertFalse(self.win.STATE_FULLSCREEN in self.win.state)
+        geometry = self.win.geometry
+        self.assertNotEqual(geometry.x, 0)
+        self.assertNotEqual(geometry.y, 0)
+        self.assertNotEqual(geometry.width, self.DESKTOP_WIDTH)
+        self.assertNotEqual(geometry.height, self.DESKTOP_HEIGHT)
+        borders = self.win.borders
+        self.assertNotEqual(borders.left, mock_Xlib.EXTENTS_FULLSCREEN.left)
+        self.assertNotEqual(borders.right, mock_Xlib.EXTENTS_FULLSCREEN.right)
+        self.assertNotEqual(borders.top, mock_Xlib.EXTENTS_FULLSCREEN.top)
+        self.assertNotEqual(borders.bottom, mock_Xlib.EXTENTS_FULLSCREEN.bottom)
+        # set fullscreen
+        self.win.fullscreen(1)
+        self.assertTrue(self.win.STATE_FULLSCREEN in self.win.state)
+        geometry = self.win.geometry
+        self.assertEqual(geometry.x, 0)
+        self.assertEqual(geometry.y, 0)
+        self.assertEqual(geometry.width, self.DESKTOP_WIDTH)
+        self.assertEqual(geometry.height, self.DESKTOP_HEIGHT)
+        borders = self.win.borders
+        self.assertEqual(borders.left, mock_Xlib.EXTENTS_FULLSCREEN.left)
+        self.assertEqual(borders.right, mock_Xlib.EXTENTS_FULLSCREEN.right)
+        self.assertEqual(borders.top, mock_Xlib.EXTENTS_FULLSCREEN.top)
+        self.assertEqual(borders.bottom, mock_Xlib.EXTENTS_FULLSCREEN.bottom)
+        # unset fullscreen
+        self.win.fullscreen(0)
+        self.assertFalse(self.win.STATE_FULLSCREEN in self.win.state)
+        geometry = self.win.geometry
+        self.assertNotEqual(geometry.x, 0)
+        self.assertNotEqual(geometry.y, 0)
+        self.assertNotEqual(geometry.width, self.DESKTOP_WIDTH)
+        self.assertNotEqual(geometry.height, self.DESKTOP_HEIGHT)
+        self.assertEqual(win_geometry.x, geometry.x)
+        self.assertEqual(win_geometry.y, geometry.y)
+        self.assertEqual(win_geometry.width, geometry.width)
+        self.assertEqual(win_geometry.height, geometry.height)
+        borders = self.win.borders
+        self.assertNotEqual(borders.left, mock_Xlib.EXTENTS_FULLSCREEN.left)
+        self.assertNotEqual(borders.right, mock_Xlib.EXTENTS_FULLSCREEN.right)
+        self.assertNotEqual(borders.top, mock_Xlib.EXTENTS_FULLSCREEN.top)
+        self.assertNotEqual(borders.bottom, mock_Xlib.EXTENTS_FULLSCREEN.bottom)
+        # toggle back and forth
+        self.win.fullscreen(2)
+        self.assertTrue(self.win.STATE_FULLSCREEN in self.win.state)
+        self.win.fullscreen(2)
+        self.assertFalse(self.win.STATE_FULLSCREEN in self.win.state)
+
+    def test_sticky(self):
+        self.assertNotEqual(self.win.desktop, 0xFFFFFFFF)
+        self.win.sticky(1)
+        self.assertEqual(self.win.desktop, 0xFFFFFFFF)
+        self.win.sticky(0)
+        self.assertEqual(self.win.desktop, self.WM.desktop)
+        self.win.sticky(2)
+        self.assertEqual(self.win.desktop, 0xFFFFFFFF)
+        self.win.sticky(2)
+        self.assertEqual(self.win.desktop, self.WM.desktop)
+
+    def test_reset(self):
+        pass
+
+
+class TestWindowsNameMatcher(TestMocked):
+
+    def __init__(self):
+        TestMocked.__init__(self)
+        # TODO: create bunch of windows, on different desktops, viewports
+
 
 if __name__ == '__main__':
     main_suite = unittest.TestSuite()
-    for suite in [TestWindowManager, ]:
+    for suite in [TestXObject, TestWindowManager, TestWindowProperties, TestWindowState, TestWindowsNameMatcher, ]:
         main_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(suite))
     unittest.TextTestRunner(verbosity=2).run(main_suite)
 

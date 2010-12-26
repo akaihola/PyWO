@@ -119,7 +119,7 @@ def __grid(win, position, gravity,
                  sizes[:sizes.index(new_size)+1]
         return itertools.cycle(sizes)
 
-    win.reset() 
+    win.reset() # TODO: is it necessary
     win.sync() 
     workarea = WM.workarea_geometry
     x = workarea.x + workarea.width * position.x

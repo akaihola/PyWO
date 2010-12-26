@@ -172,7 +172,13 @@ class Display(Xlib.display.Display):
             if event.window in self.windows_stack:
                 self.windows_stack.remove(event.window)
                 self.windows_stack.append(event.window)
-            # TODO: change viewport, uniconify, unshade
+                event.window._prop('WM_STATE', [Xutil.NormalState, X.NONE])
+                state = event.window._prop('_NET_WM_STATE')
+                atom = self.intern_atom('_NET_WM_STATE_HIDDEN')
+                if atom in state:
+                    state.remove(atom)
+                    event.window._prop('_NET_WM_STATE', state)
+            # TODO: change viewport
         if event.client_type == self.intern_atom('_NET_WM_DESKTOP'):
             desktop = event.data[1][0]
             desktop = max(desktop, 0)
@@ -181,13 +187,18 @@ class Display(Xlib.display.Display):
             event.window._prop('_NET_WM_DESKTOP', [desktop])
         if event.client_type == self.intern_atom('WM_CHANGE_STATE') and \
            event.data[1][0] == Xutil.IconicState:
-            # set WM_STATE, _NET_WM_STATE
-            pass
+            event.window._prop('WM_STATE', [Xutil.IconicState, X.NONE])
+            state = event.window._prop('_NET_WM_STATE')
+            atom = self.intern_atom('_NET_WM_STATE_HIDDEN')
+            if not atom in state:
+                state.append(atom)
+                event.window._prop('_NET_WM_STATE', state)
         if event.client_type == self.intern_atom('_NET_WM_STATE'):
             mode = event.data[1][0]
             atom = event.data[1][1]
             atom2 = event.data[1][2]
-            event.window._set_state(atom, mode)
+            if atom:
+                event.window._set_state(atom, mode)
             if atom2:
                 event.window._set_state(atom2, mode)
         if event.client_type == self.intern_atom('_NET_CLOSE_WINDOW'):
@@ -389,41 +400,69 @@ class Window(AbstractWindow):
 
     def _set_state(self, atom, mode):
         state = self._prop('_NET_WM_STATE')
+        if atom and atom in state:
+            if mode == 0 or mode == 2:
+                state.remove(atom)
+                set = False
+        elif atom and atom not in state:
+            if mode == 1 or mode == 2:
+                state.append(atom)
+                set = True
+        self._set_extents()
+        extents = self._get_extents()
+        geometry = self.current_geometry
         if atom == self.atom('_NET_WM_STATE_HIDDEN'):
             # Just ignore setting HIDDEN
             return
         if atom == self.atom('_NET_WM_STATE_STICKY') and \
-           atom not in state and (mode == 1 or mode ==2):
+           set and (mode == 1 or mode ==2):
             self._prop('_NET_WM_DESKTOP', [0xFFFFFFFF])
         if atom == self.atom('_NET_WM_STATE_STICKY') and \
-           atom in state and (mode == 0 or mode ==2):
+           not set and (mode == 0 or mode ==2):
             desktop = self.display.root._prop('_NET_CURRENT_DESKTOP')
             self._prop('_NET_WM_DESKTOP', desktop)
-        if atom == self.atom('_NET_WM_STATE_MAXIMIZED_HORZ'):
-            geometry = Geometry(x=0, y=self.current_geometry.y,
-                                width=self.display.root.screen_width,
-                                height=self.current_geometry.height,
+        if set and atom == self.atom('_NET_WM_STATE_SHADED'):
+            state.append(self.atom('_NET_WM_STATE_HIDDEN'))
+        elif not set and atom == self.atom('_NET_WM_STATE_SHADED'):
+            state.remove(self.atom('_NET_WM_STATE_HIDDEN'))
+        if atom == self.atom('_NET_WM_STATE_MAXIMIZED_HORZ') or \
+           atom == self.atom('_NET_WM_STATE_MAXIMIZED_VERT'):
+            geometry = self._maximized_geometry()
+        if set and atom == self.atom('_NET_WM_STATE_FULLSCREEN'):
+            geometry = Geometry(x=0 + extents.left, 
+                                y=0 + extents.top,
+                                width=self.display.root.screen_width - 
+                                      (extents.left + extents.right),
+                                height=self.display.root.screen_height - 
+                                       (extents.top + extents.bottom),
                                 border_width=self.current_geometry.border_width)
-            self.current_geometry = geometry
-        if atom == self.atom('_NET_WM_STATE_MAXIMIZED_VERT'):
-            geometry = Geometry(x=self.current_geometry.x, y=0,
-                                width=self.current_geometry.width,
-                                height=self.display.root.screen_height,
-                                border_width=self.current_geometry.border_width)
-            self.current_geometry = geometry
-        if atom == self.atom('_NET_WM_STATE_FULLSCREEN'):
-            geometry = Geometry(x=0, y=0,
-                                width=self.display.root.screen_width,
-                                height=self.display.root.screen_height,
-                                border_width=self.current_geometry.border_width)
-            self.current_geometry = geometry
-        if atom and atom in state:
-            if mode == 0 or mode == 2:
-                state.remove(atom)
-        elif atom and atom not in state:
-            if mode == 1 or mode == 2:
-                state.append(atom)
-        self._set_extents()
+        elif not set and atom == self.atom('_NET_WM_STATE_FULLSCREEN'):
+            geometry = self.normal_geometry
+        self.current_geometry = geometry
+
+    def _maximized_geometry(self):
+        state = self._prop('_NET_WM_STATE')
+        extents = self._get_extents()
+        current_geometry = self.current_geometry
+        x = current_geometry.x
+        y = current_geometry.y
+        width = current_geometry.width
+        height = current_geometry.height
+        if self.atom('_NET_WM_STATE_MAXIMIZED_HORZ') in state:
+            x = 0 + extents.left
+            width = self.display.root._prop('_NET_WORKAREA')[2] - \
+                    (extents.left + extents.right)
+        else:
+            x = self.normal_geometry.x
+            width = self.normal_geometry.width
+        if self.atom('_NET_WM_STATE_MAXIMIZED_VERT') in state:
+            y = 0 + extents.top
+            height = self.display.root._prop('_NET_WORKAREA')[3] - \
+                     (extents.top + extents.bottom)
+        else:
+            y = self.normal_geometry.y
+            height = self.normal_geometry.height
+        return Geometry(x, y, width, height, current_geometry.border_width)
 
     def _get_extents(self):
         return Extents(*self._prop('_NET_FRAME_EXTENTS'))
@@ -500,7 +539,5 @@ class RootWindow(AbstractWindow):
             if desktop > desktops -1:
                 win._prop('_NET_WM_DESKTOP', desktops -1)
 
-
-
-# TODO: Use Xvfb to run different window managers headless for tests
+# Use Xvfb to run different window managers headless for tests
 

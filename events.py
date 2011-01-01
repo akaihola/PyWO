@@ -66,6 +66,8 @@ class EventHandler(object):
 
     """Abstract base class for event handlers."""
 
+    _EVENT_TYPE = Event
+
     def __init__(self, mask, mapping):
         """
         mask - X.EventMask

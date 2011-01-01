@@ -819,6 +819,7 @@ class Window(XObject):
             # Used in Compiz, KWin, E16, IceWM, Blackbox
             x -= extents.left
             y -= extents.top
+        # FIXME: invalid geometry if border_width > 0 in raw_geometry
         return Geometry(x, y,
                         width + extents.horizontal,
                         height + extents.vertical)
@@ -830,6 +831,7 @@ class Window(XObject):
         Position is relative to current viewport.
 
         """
+        # FIXME: probabely doesn't work correctly with windows with border_width
         extents = self.extents
         x = geometry.x
         y = geometry.y
@@ -891,6 +893,7 @@ class Window(XObject):
 
     def iconify(self):
         """Iconify (minimize) window."""
+        # TODO: mode like in other state changing methods
         type = self.atom('WM_CHANGE_STATE')
         mask = X.SubstructureRedirectMask
         data = [Xutil.IconicState,
@@ -1188,7 +1191,7 @@ class WindowManager(XObject):
                     points += 100
             return (window, points)
         windows = map(mapper, windows)
-        windows.sort(key=lambda win: win[1])
+        windows.sort(key=lambda win: win[1], reverse=True)
         windows = [win for win, points in windows if points]
         return windows
 
@@ -1203,6 +1206,10 @@ class WindowManager(XObject):
         logging.info('Desktop=%s' % self.desktop_size)
         logging.info('Viewport=%s' % self.viewport_position)
         logging.info('Workarea=%s' % self.workarea_geometry)
+
+
+# TODO: WindowFilter class instead of normal_on_same_filter
+# TODO: Window.is_fullscreen?
 
 
 def normal_on_same_filter(window):

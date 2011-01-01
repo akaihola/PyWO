@@ -11,16 +11,12 @@ import mock_Xlib
 import core
 
 
-class TestMocked(unittest.TestCase):
+class TestWithMockWM(unittest.TestCase):
 
     DESKTOP_WIDTH = 800
     DESKTOP_HEIGHT = 600
     DESKTOPS = 2
     VIEWPORTS = [1, 1]
-    WIN_X = 10
-    WIN_Y = 10
-    WIN_WIDTH = 100
-    WIN_HEIGHT = 150
 
     def setUp(self):
         # setup Window Manager
@@ -32,6 +28,18 @@ class TestMocked(unittest.TestCase):
         core.ClientMessage = mock_Xlib.ClientMessage
         core.XObject._XObject__DISPLAY = display
         self.WM = core.WindowManager()
+
+
+class TestWithMockWindow(TestWithMockWM):
+
+    WIN_X = 10
+    WIN_Y = 10
+    WIN_WIDTH = 100
+    WIN_HEIGHT = 150
+
+    def setUp(self):
+        # setup Window Manager
+        TestWithMockWM.setUp(self)
         # setup one Window
         geometry = mock_Xlib.Geometry(
             self.WIN_X + mock_Xlib.EXTENTS_NORMAL.left,
@@ -48,7 +56,7 @@ class TestMocked(unittest.TestCase):
         self.win = self.WM.active_window()
 
 
-class TestXObject(TestMocked):
+class TestXObject(TestWithMockWM):
 
     def test_atom(self):
         atom = core.XObject.atom('_NET_WM_NAME')
@@ -88,7 +96,7 @@ class TestXObject(TestMocked):
         self.assertRaises(ValueError, core.XObject.str2modifiers_keycode, 'Alt')
 
 
-class TestWindowManager(TestMocked):
+class TestWindowManager(TestWithMockWindow):
 
     def test_singleton(self):
         self.assertEqual(self.WM, core.WindowManager())
@@ -203,7 +211,7 @@ class TestWindowManager(TestMocked):
                          [new_win, self.win])
 
 
-class TestWindowProperties(TestMocked):
+class TestWindowProperties(TestWithMockWindow):
 
     def test_name(self):
         self.assertEqual(self.win.name, 'Test Window')
@@ -302,7 +310,7 @@ class TestWindowProperties(TestMocked):
         self.assertEqual(extents.bottom, mock_Xlib.EXTENTS_NORMAL.bottom)
 
 
-class TestWindowState(TestMocked):
+class TestWindowState(TestWithMockWindow):
 
     def test_close(self):
         win = self.WM.active_window()
@@ -565,10 +573,10 @@ class TestWindowState(TestMocked):
         pass
 
 
-class TestWindowsNameMatcher(TestMocked):
+class TestWindowsNameMatcher(TestWithMockWM):
 
-    def __init__(self):
-        TestMocked.__init__(self)
+    def setUp(self):
+        TestWithMockWM.setUp(self)
         # TODO: create bunch of windows, on different desktops, viewports
 
 

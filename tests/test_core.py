@@ -16,7 +16,7 @@ class TestWithMockWM(unittest.TestCase):
     DESKTOP_WIDTH = 800
     DESKTOP_HEIGHT = 600
     DESKTOPS = 2
-    VIEWPORTS = [1, 1]
+    VIEWPORTS = [2, 1]
 
     def setUp(self):
         # setup Window Manager
@@ -53,7 +53,7 @@ class TestWithMockWindow(TestWithMockWM):
                                   name='Test Window',
                                   geometry=geometry)
         window.map()
-        self.win = self.WM.active_window()
+        self.win = core.Window(window.id)
 
 
 class TestXObject(TestWithMockWM):
@@ -210,6 +210,128 @@ class TestWindowManager(TestWithMockWindow):
         self.assertEqual(self.WM.windows(stacking=False), 
                          [new_win, self.win])
 
+    def test_windows_filter(self):
+        def fullscreen_filter(window):
+            return core.Window.STATE_FULLSCREEN in window.state
+
+        windows = self.WM.windows(filter_method=fullscreen_filter)
+        self.assertEqual(len(windows), 0)
+        self.win.fullscreen(1)
+        windows = self.WM.windows(filter_method=fullscreen_filter)
+        self.assertEqual(len(windows), 1)
+
+
+class TestWindowsNameMatcher(TestWithMockWM):
+
+    def _map_window(self, name, class_name=['', ''], desktop=0):
+        window = mock_Xlib.Window(display=self.display,
+                                  class_name=class_name,
+                                  name=name,
+                                  geometry=mock_Xlib.Geometry(50, 50, 100, 100))
+        window.map()
+        win = core.Window(window.id)
+        win.set_desktop(desktop)
+        return win
+
+    def test_no_match(self):
+        self._map_window('Foo bar')
+        windows = self.WM.windows(match='ABCD')
+        self.assertEqual(len(windows), 0)
+
+    def test_match(self):
+        self._map_window('Foo')
+        self._map_window('Foo', desktop=1)
+        self._map_window('foo')
+        self._map_window('Foo bar')
+        self._map_window('Bar Foo')
+        self._map_window('Bar Foo Baz')
+        self._map_window('ABC')
+        self._map_window('ABC', ['foo', 'qwe'])
+        self._map_window('ABC', ['abc', 'foo'])
+        windows = self.WM.windows(match='Foo')
+        self.assertEqual(len(windows), 8)
+
+    def test_match_case_insensitive(self):
+        self._map_window('abc')
+        self._map_window('ABC')
+        self._map_window('XYZ')
+        windows = self.WM.windows(match='ABC')
+        self.assertEqual(len(windows), 2)
+        windows = self.WM.windows(match='abc')
+        self.assertEqual(len(windows), 2)
+
+    def test_match_order(self):
+        win1 = self._map_window('abc')
+        win2 = self._map_window('ABC')
+        windows = self.WM.windows(match='abc')
+        self.assertEqual(windows[0], win2)
+        windows = self.WM.windows(match='abc', stacking=False)
+        self.assertEqual(windows[0], win2)
+        win1.activate()
+        windows = self.WM.windows(match='abc')
+        self.assertEqual(windows[0], win1)
+        windows = self.WM.windows(match='abc', stacking=False)
+        self.assertEqual(windows[0], win2)
+
+    def test_exact_match(self):
+        win1 = self._map_window('Foo')
+        win2 = self._map_window('Foo bar')
+        windows = self.WM.windows(match='Foo')
+        self.assertEqual(windows, [win1, win2])
+
+    def test_left_match(self):
+        win1 = self._map_window('baz Foo bar')
+        win2 = self._map_window('a Foo bar')
+        win3 = self._map_window('az Foo bar')
+        windows = self.WM.windows(match='Foo')
+        self.assertEqual(windows, [win2, win3, win1])
+
+    def test_right_match(self):
+        win1 = self._map_window('qwertyuiop Foo bazbar')
+        win2 = self._map_window('qwertyuiop Foo a')
+        win3 = self._map_window('qwertyuiop Foo bar')
+        windows = self.WM.windows(match='Foo')
+        self.assertEqual(windows, [win2, win3, win1])
+
+    def test_right_match(self):
+        win1 = self._map_window('qwertyuiop Foo bazbar')
+        win2 = self._map_window('qwertyuiop Foo a')
+        win3 = self._map_window('qwertyuiop Foo bar')
+        windows = self.WM.windows(match='Foo')
+        self.assertEqual(windows, [win2, win3, win1])
+
+    def test_left_right_match(self):
+        win1 = self._map_window('baz Foo a')
+        win2 = self._map_window('baz Foo bar')
+        win3 = self._map_window('az Foo bar')
+        windows = self.WM.windows(match='Foo')
+        self.assertEqual(windows, [win1, win3, win2])
+
+    def test_class_name_match(self):
+        win1 = self._map_window('abc', ['foo', 'bar']) # class match
+        win2 = self._map_window('xyz', ['qwe', 'asd']) # no match
+        win3 = self._map_window('foo bar', ['xyz', 'iop']) # name match
+        win4 = self._map_window('bar foo', ['foo', 'iop']) # name and class match
+        windows = self.WM.windows(match='Foo')
+        self.assertEqual(windows, [win4, win3, win1])
+
+    def test_match_same_desktop_first(self):
+        win1 = self._map_window('abc', desktop=1)
+        win2 = self._map_window('abc')
+        windows = self.WM.windows(match='abc')
+        self.assertEqual(windows, [win2, win1])
+
+    def test_match_same_viewport_first(self):
+        win1 = self._map_window('abc', desktop=1) # other desktop
+        win2 = self._map_window('abc') # same viewport, desktop
+        win3 = self._map_window('abc')
+        geometry = win3.geometry
+        geometry.x += self.WM.workarea_geometry.width
+        win3.set_geometry(geometry) # move to other viewport
+        win4 = self._map_window('qwe abc xyz') # same viewport, desktop
+        windows = self.WM.windows(match='abc')
+        self.assertEqual(windows, [win2, win4, win3, win1])
+
 
 class TestWindowProperties(TestWithMockWindow):
 
@@ -272,6 +394,7 @@ class TestWindowProperties(TestWithMockWindow):
         self.assertEqual(geometry.width, 138)
         self.assertEqual(geometry.height, 45)
         # TODO: test with incremental windows!
+        # TODO: test with windows with border_width > 0
 
     def test_extents(self):
         # normal extents
@@ -571,13 +694,6 @@ class TestWindowState(TestWithMockWindow):
 
     def test_reset(self):
         pass
-
-
-class TestWindowsNameMatcher(TestWithMockWM):
-
-    def setUp(self):
-        TestWithMockWM.setUp(self)
-        # TODO: create bunch of windows, on different desktops, viewports
 
 
 if __name__ == '__main__':

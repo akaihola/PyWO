@@ -424,6 +424,8 @@ class Window(AbstractWindow):
 
     def _set_state(self, atom, mode):
         state = self._prop('_NET_WM_STATE')
+        print mode, atom, state
+        set = False
         if atom and atom in state:
             if mode == 0 or mode == 2:
                 state.remove(atom)
@@ -432,6 +434,7 @@ class Window(AbstractWindow):
             if mode == 1 or mode == 2:
                 state.append(atom)
                 set = True
+        print set
         self._set_extents()
         extents = self._get_extents()
         geometry = self.current_geometry
@@ -449,7 +452,8 @@ class Window(AbstractWindow):
             state.append(self.atom('_NET_WM_STATE_HIDDEN'))
             self._prop('WM_STATE', [Xutil.IconicState, X.NONE])
         elif not set and atom == self.atom('_NET_WM_STATE_SHADED'):
-            state.remove(self.atom('_NET_WM_STATE_HIDDEN'))
+            if self.atom('_NET_WM_STATE_HIDDEN') in state:
+                state.remove(self.atom('_NET_WM_STATE_HIDDEN'))
             self._prop('WM_STATE', [Xutil.NormalState, X.NONE])
         if atom == self.atom('_NET_WM_STATE_MAXIMIZED_HORZ') or \
            atom == self.atom('_NET_WM_STATE_MAXIMIZED_VERT'):

@@ -710,7 +710,35 @@ class TestWindowState(TestWithMockWindow):
         self.assertEqual(self.win.desktop, self.WM.desktop)
 
     def test_reset(self):
-        pass
+        self.win.maximize(1)
+        self.assertNotEqual(self.win.state, [])
+        self.win.reset()
+        self.assertEqual(self.win.state, [])
+        self.win.fullscreen(1)
+        self.assertNotEqual(self.win.state, [])
+        self.win.reset()
+        self.assertEqual(self.win.state, [])
+        self.win.iconify(1)
+        self.assertNotEqual(self.win.state, [])
+        self.win.reset()
+        self.assertEqual(self.win.state, [])
+        self.win.sticky(1)
+        self.assertNotEqual(self.win.state, [])
+        self.win.reset()
+        self.assertEqual(self.win.state, [])
+        self.win.shade(1)
+        self.assertNotEqual(self.win.state, [])
+        self.win.reset()
+        self.assertEqual(self.win.state, [])
+        self.win.maximize(1)
+        self.win.fullscreen(1)
+        self.win.sticky(1)
+        self.win.shade(1)
+        self.win.iconify(1)
+        self.assertNotEqual(self.win.state, [])
+        self.win.reset()
+        self.assertEqual(self.win.state, [])
+
 
 
 if __name__ == '__main__':

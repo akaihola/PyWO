@@ -930,20 +930,20 @@ class Window(XObject):
                 0, 0, 0]
         self.__change_state(data)
 
-    def reset(self):
-        """Unmaximize (horizontally and vertically), unshade, unfullscreen."""
-        self.fullscreen(self.MODE_UNSET)
-        self.maximize(self.MODE_UNSET)
-        self.shade(self.MODE_UNSET)
-        # TODO: Deiconify?
-        # TODO: unsticky?
-
     def sticky(self, mode):
         """Make window fullscreen (if supported by window manager)."""
         data = [mode, 
                 Window.STATE_STICKY,
                 0, 0, 0]
         self.__change_state(data)
+
+    def reset(self):
+        """Unmaximize (horizontally and vertically), unshade, unfullscreen."""
+        self.iconify(self.MODE_UNSET)
+        self.fullscreen(self.MODE_UNSET)
+        self.maximize(self.MODE_UNSET)
+        self.shade(self.MODE_UNSET)
+        self.sticky(self.MODE_UNSET)
 
     def close(self):
         """Close window."""

@@ -752,7 +752,6 @@ class Window(XObject):
         desktop_id = int(desktop_id)
         if desktop_id < 0:
             desktop_id = 0
-        # TODO: check if desktop_id >= WindowManager.desktops?
         type = self.atom('_NET_WM_DESKTOP')
         data = [desktop_id, 
                 0, 0, 0, 0]
@@ -891,12 +890,19 @@ class Window(XObject):
         #self._win.set_input_focus(X.RevertToNone, X.CurrentTime)
         #self._win.configure(stack_mode=X.Above)
 
-    def iconify(self):
+    def iconify(self, mode):
         """Iconify (minimize) window."""
         # TODO: mode like in other state changing methods
+        state = self._win.get_wm_state().state
+        if mode == 1 or \
+           mode == 2 and state == Xutil.NormalState:
+            set_state = Xutil.IconicState
+        if mode == 0 or \
+           mode == 2 and state == Xutil.IconicState:
+            set_state = Xutil.NormalState
         type = self.atom('WM_CHANGE_STATE')
         mask = X.SubstructureRedirectMask
-        data = [Xutil.IconicState,
+        data = [set_state,
                 0, 0, 0, 0]
         self.send_event(data, type, mask)
 
@@ -977,6 +983,7 @@ class Window(XObject):
         logging.info('Class=%s' % self.class_name)
         logging.info('Type=%s' % [self.atom_name(e) for e in self.type])
         logging.info('State=%s' % [self.atom_name(e) for e in self.state])
+        logging.info('WM State=%s' % self._win.get_wm_state())
         logging.info('Desktop=%s' % self.desktop)
         logging.info('Extents=%s' % self.extents)
         logging.info('Extents=%s' % [str(e) for e in self.__extents()])
@@ -988,7 +995,6 @@ class Window(XObject):
         logging.info('Parent=%s %s' % (self.parent_id, self.parent))
         logging.info('Normal_hints=%s' % self._win.get_wm_normal_hints())
         #logging.info('Hints=%s' % self._win.get_wm_hints())
-        logging.info('State=%s' % self._win.get_wm_state())
         logging.info('Attributes=%s' % self._win.get_attributes())
         logging.info('Query_tree=%s' % self._win.query_tree())
 

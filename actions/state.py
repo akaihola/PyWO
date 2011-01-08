@@ -28,9 +28,9 @@ __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
 
 @register(name='iconify', check=[TYPE])
-def _iconify(win):
+def _iconify(win, mode=Window.MODE_TOGGLE):
     """Iconify (minimize) window."""
-    win.iconify()
+    win.iconify(mode)
 
 @register(name='maximize', check=[TYPE], unshade=True)
 def _maximize(win, mode=Window.MODE_TOGGLE):

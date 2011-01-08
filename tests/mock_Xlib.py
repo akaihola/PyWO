@@ -105,6 +105,18 @@ class QueryTree(object):
         self.children = children
 
 
+class WM_State(object):
+
+    """Simple wrapper for get_wm_state()"""
+
+    def __init__(self, state, icon):
+        self.state = state
+        self.icon = icon
+
+WM_STATE_NORMAL = WM_State(Xutil.NormalState, X.NONE)
+WM_STATE_ICONIC = WM_State(Xutil.IconicState, X.NONE)
+
+
 class ClientMessage(object):
 
     """Xlib.protocol.event.ClientMessage mock."""
@@ -173,6 +185,7 @@ class Display(Xlib.display.Display):
                 self.windows_stack.remove(event.window)
                 self.windows_stack.append(event.window)
                 event.window._prop('WM_STATE', [Xutil.NormalState, X.NONE])
+                event.window.wm_state = WM_STATE_NORMAL
                 state = event.window._prop('_NET_WM_STATE')
                 atom = self.intern_atom('_NET_WM_STATE_HIDDEN')
                 if atom in state:
@@ -192,6 +205,14 @@ class Display(Xlib.display.Display):
             atom = self.intern_atom('_NET_WM_STATE_HIDDEN')
             if not atom in state:
                 state.append(atom)
+                event.window._prop('_NET_WM_STATE', state)
+        if event.client_type == self.intern_atom('WM_CHANGE_STATE') and \
+           event.data[1][0] == Xutil.NormalState:
+            event.window._prop('WM_STATE', [Xutil.NormalState, X.NONE])
+            state = event.window._prop('_NET_WM_STATE')
+            atom = self.intern_atom('_NET_WM_STATE_HIDDEN')
+            if atom in state:
+                state.remove(atom)
                 event.window._prop('_NET_WM_STATE', state)
         if event.client_type == self.intern_atom('_NET_WM_STATE'):
             mode = event.data[1][0]
@@ -316,6 +337,9 @@ class Window(AbstractWindow):
     def get_wm_class(self):
         return self.get_full_property(Xatom.WM_CLASS, 0).value
 
+    def get_wm_state(self):
+        return WM_State(*self._prop('WM_STATE'))
+
     def get_geometry(self):
         return self.current_geometry
 
@@ -423,8 +447,10 @@ class Window(AbstractWindow):
             self._prop('_NET_WM_DESKTOP', desktop)
         if set and atom == self.atom('_NET_WM_STATE_SHADED'):
             state.append(self.atom('_NET_WM_STATE_HIDDEN'))
+            self._prop('WM_STATE', [Xutil.IconicState, X.NONE])
         elif not set and atom == self.atom('_NET_WM_STATE_SHADED'):
             state.remove(self.atom('_NET_WM_STATE_HIDDEN'))
+            self._prop('WM_STATE', [Xutil.NormalState, X.NONE])
         if atom == self.atom('_NET_WM_STATE_MAXIMIZED_HORZ') or \
            atom == self.atom('_NET_WM_STATE_MAXIMIZED_VERT'):
             geometry = self._maximized_geometry()

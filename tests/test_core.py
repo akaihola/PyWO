@@ -10,6 +10,8 @@ sys.path.insert(0, './')
 import mock_Xlib
 import core
 
+from Xlib import Xutil
+
 
 class TestWithMockWM(unittest.TestCase):
 
@@ -137,7 +139,6 @@ class TestWindowManager(TestWithMockWindow):
                          self.DESKTOP_WIDTH * self.VIEWPORTS[0])
         self.assertEqual(self.WM.desktop_size.height, 
                          self.DESKTOP_HEIGHT * self.VIEWPORTS[1])
-        # TODO: test with many viewports
 
     def test_desktop_layout(self):
         self.assertEqual(self.WM.desktop_layout, 
@@ -458,15 +459,27 @@ class TestWindowState(TestWithMockWindow):
     def test_iconify(self):
         win_geometry = self.win.geometry
         self.assertFalse(self.win.STATE_HIDDEN in self.win.state)
-        self.win.iconify()
+        self.assertEqual(self.win._win.get_wm_state().state, Xutil.NormalState)
+        self.win.iconify(1)
         self.assertTrue(self.win.STATE_HIDDEN in self.win.state)
         geometry = self.win.geometry
         self.assertEqual(geometry, win_geometry)
-        # TODO: check self.win._win.get_wm_state() or WM_STATE property
-        self.win.activate()
+        self.assertEqual(self.win._win.get_wm_state().state, Xutil.IconicState)
+        self.win.iconify(0)
         geometry = self.win.geometry
         self.assertFalse(self.win.STATE_HIDDEN in self.win.state)
         self.assertEqual(geometry, win_geometry)
+        self.assertEqual(self.win._win.get_wm_state().state, Xutil.NormalState)
+        self.win.iconify(2)
+        self.assertTrue(self.win.STATE_HIDDEN in self.win.state)
+        geometry = self.win.geometry
+        self.assertEqual(geometry, win_geometry)
+        self.assertEqual(self.win._win.get_wm_state().state, Xutil.IconicState)
+        self.win.iconify(2)
+        geometry = self.win.geometry
+        self.assertFalse(self.win.STATE_HIDDEN in self.win.state)
+        self.assertEqual(geometry, win_geometry)
+        self.assertEqual(self.win._win.get_wm_state().state, Xutil.NormalState)
 
     def test_maximize(self):
         workarea = self.WM.workarea_geometry
@@ -614,23 +627,27 @@ class TestWindowState(TestWithMockWindow):
         win_geometry = self.win.geometry
         self.assertFalse(self.win.STATE_SHADED in self.win.state)
         self.assertFalse(self.win.STATE_HIDDEN in self.win.state)
+        self.assertEqual(self.win._win.get_wm_state().state, Xutil.NormalState)
         self.win.shade(1)
         self.assertTrue(self.win.STATE_SHADED in self.win.state)
         self.assertTrue(self.win.STATE_HIDDEN in self.win.state)
+        self.assertEqual(self.win._win.get_wm_state().state, Xutil.IconicState)
         geometry = self.win.geometry
         self.assertEqual(geometry, win_geometry)
-        # TODO: check self.win._win.get_wm_state() or WM_STATE property
         self.win.shade(0)
         geometry = self.win.geometry
         self.assertFalse(self.win.STATE_SHADED in self.win.state)
         self.assertFalse(self.win.STATE_HIDDEN in self.win.state)
+        self.assertEqual(self.win._win.get_wm_state().state, Xutil.NormalState)
         self.assertEqual(geometry, win_geometry)
         self.win.shade(2)
         self.assertTrue(self.win.STATE_SHADED in self.win.state)
         self.assertTrue(self.win.STATE_HIDDEN in self.win.state)
+        self.assertEqual(self.win._win.get_wm_state().state, Xutil.IconicState)
         self.win.shade(2)
         self.assertFalse(self.win.STATE_SHADED in self.win.state)
         self.assertFalse(self.win.STATE_HIDDEN in self.win.state)
+        self.assertEqual(self.win._win.get_wm_state().state, Xutil.NormalState)
 
     def test_fullscreen(self):
         win_geometry = self.win.geometry

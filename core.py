@@ -892,7 +892,6 @@ class Window(XObject):
 
     def iconify(self, mode):
         """Iconify (minimize) window."""
-        # TODO: mode like in other state changing methods
         state = self._win.get_wm_state().state
         if mode == 1 or \
            mode == 2 and state == Xutil.NormalState:

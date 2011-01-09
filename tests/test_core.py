@@ -2,63 +2,18 @@
 
 import unittest
 
-import os
 import sys
 sys.path.insert(0, '../')
 sys.path.insert(0, './')
 
-import mock_Xlib
-import core
-
 from Xlib import Xutil
 
-
-class TestWithMockWM(unittest.TestCase):
-
-    DESKTOP_WIDTH = 800
-    DESKTOP_HEIGHT = 600
-    DESKTOPS = 2
-    VIEWPORTS = [2, 1]
-
-    def setUp(self):
-        # setup Window Manager
-        display = mock_Xlib.Display(screen_width=self.DESKTOP_WIDTH, 
-                                    screen_height=self.DESKTOP_HEIGHT,
-                                    desktops=self.DESKTOPS,
-                                    viewports=self.VIEWPORTS)
-        self.display = display
-        core.ClientMessage = mock_Xlib.ClientMessage
-        core.XObject._XObject__DISPLAY = display
-        self.WM = core.WindowManager()
+from tests import mock_Xlib
+from tests.test_common import TestMockedCore
+import core
 
 
-class TestWithMockWindow(TestWithMockWM):
-
-    WIN_X = 10
-    WIN_Y = 10
-    WIN_WIDTH = 100
-    WIN_HEIGHT = 150
-
-    def setUp(self):
-        # setup Window Manager
-        TestWithMockWM.setUp(self)
-        # setup one Window
-        geometry = mock_Xlib.Geometry(
-            self.WIN_X + mock_Xlib.EXTENTS_NORMAL.left,
-            self.WIN_Y + mock_Xlib.EXTENTS_NORMAL.top,
-            self.WIN_WIDTH - (mock_Xlib.EXTENTS_NORMAL.left +
-                              mock_Xlib.EXTENTS_NORMAL.right),
-            self.WIN_HEIGHT - (mock_Xlib.EXTENTS_NORMAL.top +
-                               mock_Xlib.EXTENTS_NORMAL.bottom))
-        window = mock_Xlib.Window(display=self.display,
-                                  class_name=['test', 'Window'], 
-                                  name='Test Window',
-                                  geometry=geometry)
-        window.map()
-        self.win = core.Window(window.id)
-
-
-class TestXObject(TestWithMockWM):
+class TestXObject(TestMockedCore):
 
     def test_atom(self):
         atom = core.XObject.atom('_NET_WM_NAME')
@@ -98,7 +53,7 @@ class TestXObject(TestWithMockWM):
         self.assertRaises(ValueError, core.XObject.str2modifiers_keycode, 'Alt')
 
 
-class TestWindowManager(TestWithMockWindow):
+class TestWindowManager(TestMockedCore):
 
     def test_singleton(self):
         self.assertEqual(self.WM, core.WindowManager())
@@ -162,15 +117,10 @@ class TestWindowManager(TestWithMockWindow):
         win = self.WM.active_window()
         self.assertEqual(win, self.win)
         # create new window, and check if new is active
-        window = mock_Xlib.Window(display=self.display,
-                                  class_name=['test', 'Window'], 
-                                  name='Test Window 2',
-                                  geometry=mock_Xlib.Geometry(4, 19, 92, 130))
-        window.map()
-        win = self.WM.active_window()
-        self.assertNotEqual(win, self.win)
+        new_win = self.map_window(name='Test Window 2')
+        self.assertNotEqual(new_win, self.win)
         # close second window, check if first is active
-        win.close()
+        new_win.close()
         win = self.WM.active_window()
         self.assertEqual(win, self.win)
         # close all windows, check if active is None
@@ -185,12 +135,7 @@ class TestWindowManager(TestWithMockWindow):
         self.assertEqual(self.WM.windows(stacking=False), [self.win])
         self.assertEqual(self.WM.windows_ids(stacking=False), [self.win.id])
         # create window
-        window = mock_Xlib.Window(display=self.display,
-                                  class_name=['test', 'Window'], 
-                                  name='Test Window 2',
-                                  geometry=mock_Xlib.Geometry(4, 19, 92, 130))
-        window.map()
-        new_win = self.WM.active_window()
+        new_win = self.map_window(name='Test Window 2')
         # check order (newest/on top first, so same order)
         self.assertEqual(self.WM.windows(), 
                          [new_win, self.win])
@@ -222,48 +167,38 @@ class TestWindowManager(TestWithMockWindow):
         self.assertEqual(len(windows), 1)
 
 
-class TestWindowsNameMatcher(TestWithMockWM):
-
-    def _map_window(self, name, class_name=['', ''], desktop=0):
-        window = mock_Xlib.Window(display=self.display,
-                                  class_name=class_name,
-                                  name=name,
-                                  geometry=mock_Xlib.Geometry(50, 50, 100, 100))
-        window.map()
-        win = core.Window(window.id)
-        win.set_desktop(desktop)
-        return win
+class TestWindowsNameMatcher(TestMockedCore):
 
     def test_no_match(self):
-        self._map_window('Foo bar')
+        self.map_window(name='Foo bar')
         windows = self.WM.windows(match='ABCD')
         self.assertEqual(len(windows), 0)
 
     def test_match(self):
-        self._map_window('Foo')
-        self._map_window('Foo', desktop=1)
-        self._map_window('foo')
-        self._map_window('Foo bar')
-        self._map_window('Bar Foo')
-        self._map_window('Bar Foo Baz')
-        self._map_window('ABC')
-        self._map_window('ABC', ['foo', 'qwe'])
-        self._map_window('ABC', ['abc', 'foo'])
+        self.map_window(name='Foo')
+        self.map_window(name='Foo', desktop=1)
+        self.map_window(name='foo')
+        self.map_window(name='Foo bar')
+        self.map_window(name='Bar Foo')
+        self.map_window(name='Bar Foo Baz')
+        self.map_window(name='ABC')
+        self.map_window(name='ABC', class_name=['foo', 'qwe'])
+        self.map_window(name='ABC', class_name=['abc', 'foo'])
         windows = self.WM.windows(match='Foo')
         self.assertEqual(len(windows), 8)
 
     def test_match_case_insensitive(self):
-        self._map_window('abc')
-        self._map_window('ABC')
-        self._map_window('XYZ')
+        self.map_window(name='abc')
+        self.map_window(name='ABC')
+        self.map_window(name='XYZ')
         windows = self.WM.windows(match='ABC')
         self.assertEqual(len(windows), 2)
         windows = self.WM.windows(match='abc')
         self.assertEqual(len(windows), 2)
 
     def test_match_order(self):
-        win1 = self._map_window('abc')
-        win2 = self._map_window('ABC')
+        win1 = self.map_window(name='abc')
+        win2 = self.map_window(name='ABC')
         windows = self.WM.windows(match='abc')
         self.assertEqual(windows[0], win2)
         windows = self.WM.windows(match='abc', stacking=False)
@@ -275,66 +210,70 @@ class TestWindowsNameMatcher(TestWithMockWM):
         self.assertEqual(windows[0], win2)
 
     def test_exact_match(self):
-        win1 = self._map_window('Foo')
-        win2 = self._map_window('Foo bar')
+        win1 = self.map_window(name='Foo')
+        win2 = self.map_window(name='Foo bar')
         windows = self.WM.windows(match='Foo')
         self.assertEqual(windows, [win1, win2])
 
     def test_left_match(self):
-        win1 = self._map_window('baz Foo bar')
-        win2 = self._map_window('a Foo bar')
-        win3 = self._map_window('az Foo bar')
+        win1 = self.map_window(name='baz Foo bar')
+        win2 = self.map_window(name='a Foo bar')
+        win3 = self.map_window(name='az Foo bar')
         windows = self.WM.windows(match='Foo')
         self.assertEqual(windows, [win2, win3, win1])
 
     def test_right_match(self):
-        win1 = self._map_window('qwertyuiop Foo bazbar')
-        win2 = self._map_window('qwertyuiop Foo a')
-        win3 = self._map_window('qwertyuiop Foo bar')
+        win1 = self.map_window(name='qwertyuiop Foo bazbar')
+        win2 = self.map_window(name='qwertyuiop Foo a')
+        win3 = self.map_window(name='qwertyuiop Foo bar')
         windows = self.WM.windows(match='Foo')
         self.assertEqual(windows, [win2, win3, win1])
 
     def test_right_match(self):
-        win1 = self._map_window('qwertyuiop Foo bazbar')
-        win2 = self._map_window('qwertyuiop Foo a')
-        win3 = self._map_window('qwertyuiop Foo bar')
+        win1 = self.map_window(name='qwertyuiop Foo bazbar')
+        win2 = self.map_window(name='qwertyuiop Foo a')
+        win3 = self.map_window(name='qwertyuiop Foo bar')
         windows = self.WM.windows(match='Foo')
         self.assertEqual(windows, [win2, win3, win1])
 
     def test_left_right_match(self):
-        win1 = self._map_window('baz Foo a')
-        win2 = self._map_window('baz Foo bar')
-        win3 = self._map_window('az Foo bar')
+        win1 = self.map_window(name='baz Foo a')
+        win2 = self.map_window(name='baz Foo bar')
+        win3 = self.map_window(name='az Foo bar')
         windows = self.WM.windows(match='Foo')
         self.assertEqual(windows, [win1, win3, win2])
 
     def test_class_name_match(self):
-        win1 = self._map_window('abc', ['foo', 'bar']) # class match
-        win2 = self._map_window('xyz', ['qwe', 'asd']) # no match
-        win3 = self._map_window('foo bar', ['xyz', 'iop']) # name match
-        win4 = self._map_window('bar foo', ['foo', 'iop']) # name and class match
+        win1 = self.map_window(name='abc', 
+                               class_name=['foo', 'bar']) # class match
+        win2 = self.map_window(name='xyz', 
+                               class_name=['qwe', 'asd']) # no match
+        win3 = self.map_window(name='foo bar', 
+                               class_name=['xyz', 'iop']) # name match
+        win4 = self.map_window(name='bar foo', 
+                               class_name=['foo', 'iop']) # name and class match
         windows = self.WM.windows(match='Foo')
         self.assertEqual(windows, [win4, win3, win1])
 
     def test_match_same_desktop_first(self):
-        win1 = self._map_window('abc', desktop=1)
-        win2 = self._map_window('abc')
+        win1 = self.map_window(name='abc', desktop=1)
+        win2 = self.map_window(name='abc')
         windows = self.WM.windows(match='abc')
         self.assertEqual(windows, [win2, win1])
 
     def test_match_same_viewport_first(self):
-        win1 = self._map_window('abc', desktop=1) # other desktop
-        win2 = self._map_window('abc') # same viewport, desktop
-        win3 = self._map_window('abc')
+        win1 = self.map_window(name='abc', desktop=1) # other desktop
+        win2 = self.map_window(name='abc') # same viewport, desktop
+        win3 = self.map_window(name='abc')
         geometry = win3.geometry
         geometry.x += self.WM.workarea_geometry.width
         win3.set_geometry(geometry) # move to other viewport
-        win4 = self._map_window('qwe abc xyz') # same viewport, desktop
+        win4 = self.map_window(name='qwe abc xyz') # same viewport, desktop
         windows = self.WM.windows(match='abc')
         self.assertEqual(windows, [win2, win4, win3, win1])
 
 
-class TestWindowProperties(TestWithMockWindow):
+class TestWindowProperties(TestMockedCore):
 
     def test_name(self):
         self.assertEqual(self.win.name, 'Test Window')
@@ -395,6 +334,7 @@ class TestWindowProperties(TestWithMockWindow):
         self.assertEqual(geometry.width, 138)
         self.assertEqual(geometry.height, 45)
         # TODO: test with incremental windows!
+        # TODO: test windows with maximal, and minimal size
         # TODO: test with windows with border_width > 0
 
     def test_extents(self):
@@ -434,7 +374,7 @@ class TestWindowProperties(TestWithMockWindow):
         self.assertEqual(extents.bottom, mock_Xlib.EXTENTS_NORMAL.bottom)
 
 
-class TestWindowState(TestWithMockWindow):
+class TestWindowState(TestMockedCore):
 
     def test_close(self):
         win = self.WM.active_window()
@@ -446,12 +386,7 @@ class TestWindowState(TestWithMockWindow):
 
     def test_activate(self):
         # create window
-        window = mock_Xlib.Window(display=self.display,
-                                  class_name=['test', 'Window'], 
-                                  name='Test Window 2',
-                                  geometry=mock_Xlib.Geometry(4, 19, 92, 130))
-        window.map()
-        new_win = self.WM.active_window()
+        new_win = self.map_window(name='Test Window 2')
         self.assertNotEqual(self.WM.active_window(), self.win)
         self.win.activate()
         self.assertEqual(self.WM.active_window(), self.win)
@@ -738,7 +673,6 @@ class TestWindowState(TestWithMockWindow):
         self.assertNotEqual(self.win.state, [])
         self.win.reset()
         self.assertEqual(self.win.state, [])
-
 
 
 if __name__ == '__main__':

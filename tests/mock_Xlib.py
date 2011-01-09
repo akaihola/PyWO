@@ -300,12 +300,10 @@ class Window(AbstractWindow):
             self.atom('_NET_WM_ICON_NAME'): name,
             Xatom.WM_NAME: name,
             Xatom.WM_ICON_NAME: name,
-            self.atom('_NET_WM_WINDOW_TYPE'): type or \
-                                              self.atom('_NET_WM_TYPE_NORMAL'),
+            self.atom('_NET_WM_WINDOW_TYPE'): 
+                type or [self.atom('_NET_WM_WINDOW_TYPE_NORMAL'),],
             self.atom('_NET_WM_STATE'): [],
             self.atom('WM_STATE'): [Xutil.NormalState, X.NONE],
-            self.atom('_NET_WM_WINDOW_TYPE'): 
-                [self.atom('_NET_WM_WINDOW_TYPE_NORMAL'),],
             self.atom('_NET_WM_DESKTOP'): desktop,
         }
         self.properties.update(properties)

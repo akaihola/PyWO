@@ -291,7 +291,6 @@ def print_help_more(config):
     parser.add_option_group(sections_list)
     parser.add_option_group(gravity)
     parser.add_option_group(w_h)
-    parser.add_option_group(size)
     parser.add_option_group(window)
     parser.print_help()
 

@@ -368,9 +368,9 @@ class Window(AbstractWindow):
                   width=None, height=None,
                   **keys):
         extents = self._get_extents()
-        if x:
+        if x is not None:
             x = x + extents.left
-        if y:
+        if y is not None:
             y = y + extents.top
         x = x or self.current_geometry.x
         y = y or self.current_geometry.y
@@ -422,7 +422,6 @@ class Window(AbstractWindow):
 
     def _set_state(self, atom, mode):
         state = self._prop('_NET_WM_STATE')
-        print mode, atom, state
         set = False
         if atom and atom in state:
             if mode == 0 or mode == 2:
@@ -432,7 +431,6 @@ class Window(AbstractWindow):
             if mode == 1 or mode == 2:
                 state.append(atom)
                 set = True
-        print set
         self._set_extents()
         extents = self._get_extents()
         geometry = self.current_geometry

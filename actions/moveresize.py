@@ -77,16 +77,17 @@ def _move(win, direction, vertical_first=True):
 
 
 @register(name='put', check=[TYPE, STATE], unshade=True)
-def _put(win, position):
+def _put(win, position, gravity=None):
     """Put window in given position (without resizing)."""
     _GRIDED['id'] = None
+    gravity = gravity or position
     workarea = WM.workarea_geometry
     geometry = win.geometry
     x = workarea.x + workarea.width * position.x
     y = workarea.y + workarea.height * position.y
-    geometry.set_position(x, y, position)
+    geometry.set_position(x, y, gravity)
     logging.debug('x: %s, y: %s, gravity: %s' % 
-                  (geometry.x, geometry.y, position))
+                  (geometry.x, geometry.y, gravity))
     win.set_geometry(geometry)
 
 

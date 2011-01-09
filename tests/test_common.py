@@ -2,7 +2,11 @@
 
 import unittest
 
-import mock_Xlib
+import sys
+sys.path.insert(0, '../')
+sys.path.insert(0, './')
+
+from tests import mock_Xlib
 
 import core
 

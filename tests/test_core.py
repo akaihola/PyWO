@@ -333,6 +333,13 @@ class TestWindowProperties(TestMockedCore):
         self.assertEqual(geometry.y, 75)
         self.assertEqual(geometry.width, 138)
         self.assertEqual(geometry.height, 45)
+        # set position to (0, 0)
+        self.win.set_geometry(core.Geometry(0, 0, 138, 45))
+        geometry = self.win.geometry
+        self.assertEqual(geometry.x, 0)
+        self.assertEqual(geometry.y, 0)
+        self.assertEqual(geometry.width, 138)
+        self.assertEqual(geometry.height, 45)
         # TODO: test with incremental windows!
         # TODO: test windows with maximal, and minimal size
         # TODO: test with windows with border_width > 0

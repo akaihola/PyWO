@@ -10,6 +10,8 @@ from Xlib import Xutil
 
 from tests import mock_Xlib
 from tests.test_common import TestMockedCore
+from tests.test_common import DESKTOPS, DESKTOP_WIDTH, DESKTOP_HEIGHT, VIEWPORTS
+from tests.test_common import WIN_X, WIN_Y, WIN_WIDTH, WIN_HEIGHT
 import core
 
 
@@ -86,14 +88,14 @@ class TestWindowManager(TestMockedCore):
         self.assertRaises(ValueError, self.WM.set_desktop, 'a')
 
     def test_desktops(self):
-        self.assertEqual(self.WM.desktops, self.DESKTOPS)
+        self.assertEqual(self.WM.desktops, DESKTOPS)
         # TODO: add/remove_desktop
 
     def test_desktop_size(self):
         self.assertEqual(self.WM.desktop_size.width, 
-                         self.DESKTOP_WIDTH * self.VIEWPORTS[0])
+                         DESKTOP_WIDTH * VIEWPORTS[0])
         self.assertEqual(self.WM.desktop_size.height, 
-                         self.DESKTOP_HEIGHT * self.VIEWPORTS[1])
+                         DESKTOP_HEIGHT * VIEWPORTS[1])
 
     def test_desktop_layout(self):
         self.assertEqual(self.WM.desktop_layout, 
@@ -110,8 +112,8 @@ class TestWindowManager(TestMockedCore):
         # No panels!
         self.assertEqual(self.WM.workarea_geometry.x, 0)
         self.assertEqual(self.WM.workarea_geometry.y, 0)
-        self.assertEqual(self.WM.workarea_geometry.width, self.DESKTOP_WIDTH)
-        self.assertEqual(self.WM.workarea_geometry.height, self.DESKTOP_HEIGHT)
+        self.assertEqual(self.WM.workarea_geometry.width, DESKTOP_WIDTH)
+        self.assertEqual(self.WM.workarea_geometry.height, DESKTOP_HEIGHT)
 
     def test_active_window(self):
         win = self.WM.active_window()
@@ -315,17 +317,17 @@ class TestWindowProperties(TestMockedCore):
     def test_geometry(self):
         # initial geometry
         geometry = self.win.geometry
-        self.assertEqual(geometry.x, self.WIN_X)
-        self.assertEqual(geometry.y, self.WIN_Y)
-        self.assertEqual(geometry.width, self.WIN_WIDTH)
-        self.assertEqual(geometry.height, self.WIN_HEIGHT)
+        self.assertEqual(geometry.x, WIN_X)
+        self.assertEqual(geometry.y, WIN_Y)
+        self.assertEqual(geometry.width, WIN_WIDTH)
+        self.assertEqual(geometry.height, WIN_HEIGHT)
         # set same geometry
         self.win.set_geometry(geometry)
         geometry = self.win.geometry
-        self.assertEqual(geometry.x, self.WIN_X)
-        self.assertEqual(geometry.y, self.WIN_Y)
-        self.assertEqual(geometry.width, self.WIN_WIDTH)
-        self.assertEqual(geometry.height, self.WIN_HEIGHT)
+        self.assertEqual(geometry.x, WIN_X)
+        self.assertEqual(geometry.y, WIN_Y)
+        self.assertEqual(geometry.width, WIN_WIDTH)
+        self.assertEqual(geometry.height, WIN_HEIGHT)
         # set new geometry
         self.win.set_geometry(core.Geometry(50, 75, 138, 45))
         geometry = self.win.geometry
@@ -597,8 +599,8 @@ class TestWindowState(TestMockedCore):
         geometry = self.win.geometry
         self.assertNotEqual(geometry.x, 0)
         self.assertNotEqual(geometry.y, 0)
-        self.assertNotEqual(geometry.width, self.DESKTOP_WIDTH)
-        self.assertNotEqual(geometry.height, self.DESKTOP_HEIGHT)
+        self.assertNotEqual(geometry.width, DESKTOP_WIDTH)
+        self.assertNotEqual(geometry.height, DESKTOP_HEIGHT)
         extents = self.win.extents
         self.assertNotEqual(extents.left, mock_Xlib.EXTENTS_FULLSCREEN.left)
         self.assertNotEqual(extents.right, mock_Xlib.EXTENTS_FULLSCREEN.right)
@@ -610,8 +612,8 @@ class TestWindowState(TestMockedCore):
         geometry = self.win.geometry
         self.assertEqual(geometry.x, 0)
         self.assertEqual(geometry.y, 0)
-        self.assertEqual(geometry.width, self.DESKTOP_WIDTH)
-        self.assertEqual(geometry.height, self.DESKTOP_HEIGHT)
+        self.assertEqual(geometry.width, DESKTOP_WIDTH)
+        self.assertEqual(geometry.height, DESKTOP_HEIGHT)
         extents = self.win.extents
         self.assertEqual(extents.left, mock_Xlib.EXTENTS_FULLSCREEN.left)
         self.assertEqual(extents.right, mock_Xlib.EXTENTS_FULLSCREEN.right)
@@ -623,8 +625,8 @@ class TestWindowState(TestMockedCore):
         geometry = self.win.geometry
         self.assertNotEqual(geometry.x, 0)
         self.assertNotEqual(geometry.y, 0)
-        self.assertNotEqual(geometry.width, self.DESKTOP_WIDTH)
-        self.assertNotEqual(geometry.height, self.DESKTOP_HEIGHT)
+        self.assertNotEqual(geometry.width, DESKTOP_WIDTH)
+        self.assertNotEqual(geometry.height, DESKTOP_HEIGHT)
         self.assertEqual(win_geometry.x, geometry.x)
         self.assertEqual(win_geometry.y, geometry.y)
         self.assertEqual(win_geometry.width, geometry.width)

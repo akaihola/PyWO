@@ -287,7 +287,7 @@ class Window(AbstractWindow):
     def __init__(self, display,
                  name,
                  geometry, 
-                 class_name=None, 
+                 class_name=['', ''], 
                  extents=EXTENTS_NORMAL, 
                  normal_hints=HINTS_NORMAL,
                  type=[]):

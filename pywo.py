@@ -21,7 +21,6 @@
 
 """pywo.py - main module for PyWO."""
 
-#import atexit
 import logging
 from logging.handlers import RotatingFileHandler
 
@@ -34,9 +33,6 @@ from services import daemon
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 __version__ = "0.3"
-
-
-WM = WindowManager()
 
 
 def setup_loggers(debug=False):
@@ -72,6 +68,7 @@ if __name__ == '__main__':
         daemon.setup(config)
         daemon.start(loop=True)
     elif options.list_windows:
+        WM = WindowManager()
         windows = WM.windows(lambda window: Window.TYPE_NORMAL in window.type)
         for window in windows:
             geometry = window.geometry
@@ -95,8 +92,6 @@ if __name__ == '__main__':
             state_flags += [' ', 's'][Window.STATE_SHADED in state and \
                                       not Window.STATE_HIDDEN in state]
             print '%s %s %s %s' % (window.id, desktop, state_flags, window.name)
-    #elif options.list_desktops:
-    #    print 'Not implemented yet...'
     elif args or options.action:
         try:
             actions.perform(args, config, options)

@@ -11,26 +11,27 @@ from tests import mock_Xlib
 import core
 
 
+DESKTOP_WIDTH = 800
+DESKTOP_HEIGHT = 600
+DESKTOPS = 2
+VIEWPORTS = [2, 1]
+
+WIN_NAME = 'Test Window'
+WIN_CLASS_NAME = ['test', 'Window']
+WIN_X = 10
+WIN_Y = 10
+WIN_WIDTH = 100
+WIN_HEIGHT = 150
+
+
 class TestMockedCore(unittest.TestCase):
-
-    DESKTOP_WIDTH = 800
-    DESKTOP_HEIGHT = 600
-    DESKTOPS = 2
-    VIEWPORTS = [2, 1]
-
-    WIN_NAME = 'Test Window'
-    WIN_CLASS_NAME = ['test', 'Window']
-    WIN_X = 10
-    WIN_Y = 10
-    WIN_WIDTH = 100
-    WIN_HEIGHT = 150
 
     def setUp(self):
         # setup Window Manager
-        display = mock_Xlib.Display(screen_width=self.DESKTOP_WIDTH, 
-                                    screen_height=self.DESKTOP_HEIGHT,
-                                    desktops=self.DESKTOPS,
-                                    viewports=self.VIEWPORTS)
+        display = mock_Xlib.Display(screen_width=DESKTOP_WIDTH, 
+                                    screen_height=DESKTOP_HEIGHT,
+                                    desktops=DESKTOPS,
+                                    viewports=VIEWPORTS)
         self.display = display
         core.ClientMessage = mock_Xlib.ClientMessage
         core.XObject._XObject__DISPLAY = display

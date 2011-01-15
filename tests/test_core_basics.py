@@ -6,7 +6,7 @@ import sys
 sys.path.insert(0, '../')
 sys.path.insert(0, './')
 
-from core import Gravity, Size, Geometry, Extents
+from core import Gravity, Size, Position, Geometry, Extents
 
 
 class TestSize(unittest.TestCase):
@@ -52,6 +52,14 @@ class TestSize(unittest.TestCase):
         self.assertEqual(Size.parse('1.0/2', '0.1*6-0.1+HALF'), self.HALF_FULL)
         self.assertEqual(Size.parse('HALF, FULL', '1'), Size([0.5, 1], 1))
         self.assertRaises(ValueError, Size.parse, 'tttgf', '0')
+
+
+class TestPostion(unittest.TestCase):
+
+    def test_equal(self):
+        self.assertEqual(Position(1, 1), Position(1.0, 1.0))
+        self.assertNotEqual(Position(1, 1), Position(1, 2))
+        self.assertNotEqual(Position(1, 1), Position(2, 1))
 
 
 class TestGravity(unittest.TestCase):
@@ -152,6 +160,7 @@ class TestGravity(unittest.TestCase):
                          self.BOTTOM_LEFT)
 
     def test_parse(self):
+        self.assertEqual(Gravity.parse(''), None)
         self.assertEqual(Gravity.parse('TOP'), self.TOP)
         self.assertEqual(Gravity.parse('UP'), self.TOP)
         self.assertEqual(Gravity.parse('N'), self.TOP)
@@ -222,7 +231,7 @@ class TestExtents(unittest.TestCase):
 
 if __name__ == '__main__':
     main_suite = unittest.TestSuite()
-    for suite in [TestSize, TestGravity, TestGeometry, TestExtents]:
+    for suite in [TestSize, TestPostion, TestGravity, TestGeometry, TestExtents]:
         main_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(suite))
     unittest.TextTestRunner(verbosity=2).run(main_suite)
 

@@ -141,7 +141,7 @@ if __name__ == '__main__':
             state = window.state
             win_desktop = window.desktop
             desktop = [win_desktop, -1][Window.STATE_STICKY in state or \
-                                         win_desktop == 0xFFFFFFFF]
+                                         win_desktop == Window.ALL_DESKTOPS]
             if Window.STATE_FULLSCREEN in state:
                 state_flags = 'F'
             elif Window.STATE_MAXIMIZED_HORZ in state and \

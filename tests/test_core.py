@@ -641,13 +641,13 @@ class TestWindowState(TestMockedCore):
         self.assertFalse(self.win.STATE_FULLSCREEN in self.win.state)
 
     def test_sticky(self):
-        self.assertNotEqual(self.win.desktop, 0xFFFFFFFF)
+        self.assertNotEqual(self.win.desktop, core.Window.ALL_DESKTOPS)
         self.win.sticky(1)
-        self.assertEqual(self.win.desktop, 0xFFFFFFFF)
+        self.assertEqual(self.win.desktop, core.Window.ALL_DESKTOPS)
         self.win.sticky(0)
         self.assertEqual(self.win.desktop, self.WM.desktop)
         self.win.sticky(2)
-        self.assertEqual(self.win.desktop, 0xFFFFFFFF)
+        self.assertEqual(self.win.desktop, core.Window.ALL_DESKTOPS)
         self.win.sticky(2)
         self.assertEqual(self.win.desktop, self.WM.desktop)
 

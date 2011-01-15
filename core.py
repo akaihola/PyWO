@@ -669,6 +669,9 @@ class Window(XObject):
     MODE_SET = 1
     MODE_TOGGLE = 2
 
+    # _NET_WM_DESKTOP returns this value when in STATE_STICKY
+    ALL_DESKTOPS = 0xFFFFFFFF
+
     def __init__(self, win_id):
         XObject.__init__(self, win_id)
         # Here comes the hacks for WMs strange behaviours....
@@ -1187,7 +1190,7 @@ class WindowManager(XObject):
                 return (window, 0)
             if points and \
                (window.desktop == desktop or \
-                window.desktop == 0xFFFFFFFF):
+                window.desktop == Window.ALL_DESKTOPS):
                 points += 50
                 if geometry.x < workarea.x2 and \
                    geometry.x2 > workarea.x and \
@@ -1236,7 +1239,7 @@ def normal_on_same_filter(window):
            not (Window.STATE_MAXIMIZED_VERT in state and \
                 Window.STATE_MAXIMIZED_HORZ in state) and \
            (window.desktop == WM.desktop or \
-            window.desktop == 0xFFFFFFFF) and \
+            window.desktop == Window.ALL_DESKTOPS) and \
            geometry.x < workarea.x2 and \
            geometry.x2 > workarea.x and \
            geometry.y < workarea.y2 and \

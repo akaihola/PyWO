@@ -54,7 +54,6 @@ def key_press(event):
         logging.error(e)
     except Exception, err:
         logging.exception(err)
-    WM.flush()
 
 
 HANDLER = KeyPressHandler(key_press)

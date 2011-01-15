@@ -70,6 +70,7 @@ class Config(object):
         self.keys = {} # {'action_name': 'key', }
         self.ignored = set()
         self.sections = {} # {section.name: section, }
+        self.filename = filename
         self.load(filename)
 
     def __parse_settings(self):
@@ -86,6 +87,7 @@ class Config(object):
     def load(self, filename):
         """Load configuration file"""
         logging.debug('Loading configuration file')
+        self.filename = filename
         # Load config file (load default first)
         self._config.read([os.path.join(os.path.dirname(__file__), 'pyworc'),
                            os.path.expanduser(filename)])

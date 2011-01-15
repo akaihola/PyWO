@@ -36,9 +36,6 @@ from core import Window, WindowManager
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
 
-WM = WindowManager()
-
-
 class DBusService(dbus.service.Object):
 
     CONFIG = None
@@ -54,7 +51,6 @@ class DBusService(dbus.service.Object):
             return 'ERROR: %s' % e
         try:
             actions.perform(args, self.CONFIG, options, win_id)
-            WM.flush()
             return ''
         except actions.ActionException, e:
             logging.error('ActionException: %s' % e)
@@ -74,6 +70,7 @@ class DBusService(dbus.service.Object):
     @dbus.service.method("net.kosciak.PyWO", 
                          in_signature='s', out_signature='a(is)')
     def GetWindows(self, match):
+        WM = WindowManager()
         windows = WM.windows(lambda window: 
                                     Window.TYPE_NORMAL in window.type,
                              match=match)

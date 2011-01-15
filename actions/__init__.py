@@ -201,5 +201,6 @@ def perform(args, config, options={}, win_id=0):
                   ', '.join(['%s=%s' % (key, str(value)) 
                              for key, value in kwargs.items()])))
     action(window, **kwargs)
+    WM.flush()
 
 

@@ -1216,35 +1216,7 @@ class WindowManager(XObject):
         logging.info('Workarea=%s' % self.workarea_geometry)
 
 
-# TODO: WindowFilter class instead of normal_on_same_filter
 # TODO: Window.is_fullscreen?
-
-
-def normal_on_same_filter(window):
-    """Default windows filter.
-
-    Returns normal, not hidde, not shaded, not fullscreen, not maximized,
-    placed on the same desktop (or sticky), and on the same workarea.
-
-    """
-    if not Window.TYPE_NORMAL in window.type:
-        return False
-    WM = WindowManager()
-    state = window.state
-    geometry = window.geometry
-    workarea = WM.workarea_geometry
-    return Window.STATE_HIDDEN not in state and \
-           Window.STATE_SHADED not in state and \
-           Window.STATE_FULLSCREEN not in state and \
-           not (Window.STATE_MAXIMIZED_VERT in state and \
-                Window.STATE_MAXIMIZED_HORZ in state) and \
-           (window.desktop == WM.desktop or \
-            window.desktop == Window.ALL_DESKTOPS) and \
-           geometry.x < workarea.x2 and \
-           geometry.x2 > workarea.x and \
-           geometry.y < workarea.y2 and \
-           geometry.y2 > workarea.y
-
 
 # TODO: consider ability to connect to given screen (so Xvfb can be used) - Display(displayname=':0.0') 
 

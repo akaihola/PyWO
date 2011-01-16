@@ -25,6 +25,7 @@ import os.path
 import sys
 
 from core import Window, WindowManager
+import filters
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
@@ -186,8 +187,7 @@ def perform(args, config, options={}, win_id=0):
         # TODO: check system encoding?
         args = [arg.decode('utf-8') for arg in args]
         match = u' '.join(args)
-        windows = WM.windows(lambda window: Window.TYPE_NORMAL in window.type,
-                             match=match)
+        windows = WM.windows(filters.NORMAL_TYPE, match=match)
         try:
             window = windows[0]
         except:

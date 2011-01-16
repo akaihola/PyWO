@@ -88,8 +88,7 @@ class TestExpandWindow(TestMockedCore):
         self.assertEqual(resized.y2, DESKTOP_HEIGHT)
 
     def test_maximal_size(self):
-        max_geometry = core.Geometry(0, 0, 
-                                     DESKTOP_WIDTH, DESKTOP_HEIGHT)
+        max_geometry = core.Geometry(0, 0, DESKTOP_WIDTH, DESKTOP_HEIGHT)
         self.win.set_geometry(max_geometry)
         resized = self.resize(self.win, ALL)
         self.assertEqual(resized.x, 0)

@@ -31,6 +31,7 @@ import dbus.service
 import actions
 import commandline
 from core import Window, WindowManager
+import filters
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
@@ -71,9 +72,7 @@ class DBusService(dbus.service.Object):
                          in_signature='s', out_signature='a(is)')
     def GetWindows(self, match):
         WM = WindowManager()
-        windows = WM.windows(lambda window: 
-                                    Window.TYPE_NORMAL in window.type,
-                             match=match)
+        windows = WM.windows(filters.NORMAL_TYPE, match=match)
         return [(win.id, win.name) for win in windows]
 
     @dbus.service.method("net.kosciak.PyWO", 

@@ -29,6 +29,7 @@ import commandline
 from config import Config
 from core import Window, WindowManager
 from services import daemon
+import filters
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
@@ -69,7 +70,7 @@ if __name__ == '__main__':
         daemon.start(loop=True)
     elif options.list_windows:
         WM = WindowManager()
-        windows = WM.windows(lambda window: Window.TYPE_NORMAL in window.type)
+        windows = WM.windows(filters.NORMAL_TYPE)
         for window in windows:
             geometry = window.geometry
             state = window.state

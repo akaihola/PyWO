@@ -33,7 +33,6 @@ import utils
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
 
-print __name__
 log = logging.getLogger(__name__)
 log.addHandler(utils.NullHandler())
 

@@ -24,15 +24,13 @@ import logging
 import os
 from ConfigParser import ConfigParser
 
-from core import Gravity, Size
-import utils
+from pywo.core import Gravity, Size
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
 
 log = logging.getLogger(__name__)
-log.addHandler(utils.NullHandler())
 
 
 class _Section(object):
@@ -91,19 +89,29 @@ class Config(object):
 
     def load(self, filename):
         """Load configuration file"""
-        log.debug('Loading configuration file')
+        log.info('Loading configuration file %s' % filename)
         self.filename = filename
         # Load config file (load default first)
-        self._config.read([os.path.join(os.path.dirname(__file__), 'pyworc'),
-                           os.path.expanduser(filename)])
+        self._config.read(
+            [os.path.join('/', 'etc', 'pywo', 'pyworc'),
+             os.path.join(os.path.dirname(__file__), '..', 'pyworc'),
+             os.path.join(os.path.expanduser('~'), '.config', 'pywo', 'pyworc'),
+             os.path.join(os.path.expanduser('~'), '.pyworc')])
         self.keys = dict(self._config.items('KEYS'))
         self._config.remove_section('KEYS')
         # Parse SETTINGS section
         if self._config.has_option('SETTINGS', 'layout'):
             # Load layout definition
             layout = self._config.get('SETTINGS', 'layout')
-            self._config.read([os.path.join(os.path.dirname(__file__), layout),
-                                os.path.join(os.path.expanduser('~'), layout)])
+            self._config.read(
+                [os.path.join('/', 'etc', 'pywo', 'pyworc', 'layouts'),
+                 os.path.join('/', 'etc', 'pywo', 'pyworc'),
+                 os.path.join(os.path.dirname(__file__), '..', layout),
+                 os.path.join(os.path.expanduser('~'), '.config', 
+                              'pywo', 'layouts', layout),
+                 os.path.join(os.path.expanduser('~'), '.config', 
+                              'pywo', layout),
+                 os.path.join(os.path.expanduser('~'), layout)])
             self._config.remove_option('SETTINGS', 'layout')
         self.ignored = set()
         if self._config.has_option('SETTINGS', 'ignore_actions'):

@@ -22,17 +22,14 @@
 
 import logging
 
-import actions
-from core import WindowManager
-import events
-import utils
+from pywo import actions, events
+from pywo.core import WindowManager
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
 
 log = logging.getLogger(__name__)
-log.addHandler(utils.NullHandler())
 
 WM = WindowManager()
 

@@ -31,14 +31,11 @@ import logging
 import os.path
 import sys
 
-import utils
-
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
 
 log = logging.getLogger(__name__)
-log.addHandler(utils.NullHandler())
 
 
 def all(config):
@@ -50,7 +47,7 @@ def all(config):
     services = []
     for module in modules:
         if getattr(config, module):
-            __import__('services.%s' % module)
-            services.append(sys.modules['services.%s' % module])
+            __import__('pywo.services.%s' % module)
+            services.append(sys.modules['pywo.services.%s' % module])
     return services
 

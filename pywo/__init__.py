@@ -18,7 +18,7 @@
 # along with PyWO.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-"""utils.py - misc utilities."""
+"""pywo - package containing Python Window Organizer."""
 
 import logging
 
@@ -29,3 +29,5 @@ class NullHandler(logging.Handler):
         pass
 
 
+# Set NullHandler for whole pywo.* loggers hierarchy
+logging.getLogger('pywo').addHandler(NullHandler())

@@ -23,16 +23,14 @@
 import logging
 import operator
 
-from core import Window, WindowManager
-import filters
-import utils
+from pywo.core import Window, WindowManager
+from pywo import filters
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
 
 log = logging.getLogger(__name__)
-log.addHandler(utils.NullHandler())
 
 WM = WindowManager()
 

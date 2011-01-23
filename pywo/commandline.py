@@ -27,16 +27,14 @@ from optparse import OptionParser, OptionGroup, OptionValueError
 import textwrap
 import sys
 
-from core import Size, Gravity, Position
-import actions
-import utils
+from pywo.core import Size, Gravity, Position
+from pywo import actions
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
 
 log = logging.getLogger(__name__)
-log.addHandler(utils.NullHandler())
 
 
 # Hack for textwrap so newline characters can be used

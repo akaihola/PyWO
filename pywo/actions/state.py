@@ -22,17 +22,14 @@
 
 import logging
 
-from actions import register, TYPE, STATE
-from core import Window, WindowManager, State, Mode
-
-import utils
+from pywo.actions import register, TYPE, STATE
+from pywo.core import Window, WindowManager, State, Mode
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
 
 log = logging.getLogger(__name__)
-log.addHandler(utils.NullHandler())
 
 
 @register(name='iconify', check=[TYPE], unshade=True)

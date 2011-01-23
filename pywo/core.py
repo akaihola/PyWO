@@ -36,14 +36,11 @@ from Xlib import X, Xutil, XK, Xatom, error
 from Xlib.protocol.event import ClientMessage
 from Xlib.display import Display
 
-import utils
-
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
 
 log = logging.getLogger(__name__)
-log.addHandler(utils.NullHandler())
 
 
 class Gravity(object):

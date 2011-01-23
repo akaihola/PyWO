@@ -24,16 +24,14 @@ import logging
 import os.path
 import sys
 
-from core import Window, WindowManager, Type, State, Mode
-import filters
-import utils
+from pywo.core import Window, WindowManager, Type, State, Mode
+from pywo import filters
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
 
 log = logging.getLogger(__name__)
-log.addHandler(utils.NullHandler())
 
 WM = WindowManager()
 
@@ -129,7 +127,7 @@ def __load():
     modules = [file[0:-3] for file in os.listdir(path) 
                           if file.endswith('.py')]
     for module in modules:
-        __import__('actions.%s' % module)
+        __import__('pywo.actions.%s' % module)
     Action._LOADED = True
 
 

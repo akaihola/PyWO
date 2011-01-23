@@ -29,18 +29,15 @@ import signal
 import time
 import threading
 
-from core import WindowManager
-from config import Config
-import actions
-import services
-import utils
+from pywo.core import WindowManager
+from pywo.config import Config
+from pywo import actions, services
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
 
 log = logging.getLogger(__name__)
-log.addHandler(utils.NullHandler())
 
 
 SERVICES = []

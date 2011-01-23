@@ -28,18 +28,14 @@ import dbus
 from dbus.mainloop.glib import DBusGMainLoop
 import dbus.service
 
-import actions
-import commandline
-from core import Window, WindowManager
-import filters
-import utils
+from pywo import actions, commandline, filters
+from pywo.core import Window, WindowManager
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
 
 log = logging.getLogger(__name__)
-log.addHandler(utils.NullHandler())
 
 
 class DBusService(dbus.service.Object):

@@ -24,12 +24,10 @@
 import logging
 from logging.handlers import RotatingFileHandler
 
-import actions
-import commandline
-from config import Config
-from core import Window, WindowManager, State
-from services import daemon
-import filters
+from pywo import actions, commandline, filters
+from pywo.config import Config
+from pywo.core import Window, WindowManager, State
+from pywo.services import daemon
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"

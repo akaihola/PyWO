@@ -23,18 +23,16 @@
 import itertools
 import logging
 
-from actions import register, TYPE, STATE
-from core import Gravity, Geometry, Size, WindowManager
-from events import PropertyNotifyHandler
-from resizer import expand_window, shrink_window
-import utils
+from pywo.actions import register, TYPE, STATE
+from pywo.core import Gravity, Geometry, Size, WindowManager
+from pywo.events import PropertyNotifyHandler
+from pywo.resizer import expand_window, shrink_window
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
 
 log = logging.getLogger(__name__)
-log.addHandler(utils.NullHandler())
 
 WM = WindowManager()
 

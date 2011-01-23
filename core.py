@@ -637,38 +637,50 @@ class XObject(object):
         cls.__DISPLAY.sync()
 
 
+class Type(object):
+
+    """Enum of window types."""
+
+    DESKTOP = XObject.atom('_NET_WM_WINDOW_TYPE_DESKTOP')
+    DOCK = XObject.atom('_NET_WM_WINDOW_TYPE_DOCK')
+    TOOLBAR = XObject.atom('_NET_WM_WINDOW_TYPE_TOOLBAR')
+    MENU = XObject.atom('_NET_WM_WINDOW_TYPE_MENU')
+    UTILITY = XObject.atom('_NET_WM_WINDOW_TYPE_UTILITY')
+    SPLASH = XObject.atom('_NET_WM_WINDOW_TYPE_SPLASH')
+    DIALOG = XObject.atom('_NET_WM_WINDOW_TYPE_DIALOG')
+    NORMAL = XObject.atom('_NET_WM_WINDOW_TYPE_NORMAL')
+
+
+class State(object):
+
+    """Enum of window states."""
+
+    MODAL = XObject.atom('_NET_WM_STATE_MODAL')
+    STICKY = XObject.atom('_NET_WM_STATE_STICKY')
+    MAXIMIZED_VERT = XObject.atom('_NET_WM_STATE_MAXIMIZED_VERT')
+    MAXIMIZED_HORZ = XObject.atom('_NET_WM_STATE_MAXIMIZED_HORZ')
+    SHADED = XObject.atom('_NET_WM_STATE_SHADED')
+    SKIP_TASKBAR = XObject.atom('_NET_WM_STATE_SKIP_TASKBAR')
+    SKIP_PAGER = XObject.atom('_NET_WM_STATE_SKIP_PAGER')
+    HIDDEN = XObject.atom('_NET_WM_STATE_HIDDEN')
+    FULLSCREEN = XObject.atom('_NET_WM_STATE_FULLSCREEN')
+    ABOVE = XObject.atom('_NET_WM_STATE_ABOVE')
+    BELOW = XObject.atom('_NET_WM_STATE_BELOW')
+    DEMANDS_ATTENTION = XObject.atom('_NET_WM_STATE_DEMANDS_ATTENTION')
+
+
+class Mode(object):
+
+    """Enum of mode values."""
+
+    UNSET = 0
+    SET = 1
+    TOGGLE = 2
+
+
 class Window(XObject):
 
     """Window object (X Server client?)."""
-
-    # List of window types
-    TYPE_DESKTOP = XObject.atom('_NET_WM_WINDOW_TYPE_DESKTOP')
-    TYPE_DOCK = XObject.atom('_NET_WM_WINDOW_TYPE_DOCK')
-    TYPE_TOOLBAR = XObject.atom('_NET_WM_WINDOW_TYPE_TOOLBAR')
-    TYPE_MENU = XObject.atom('_NET_WM_WINDOW_TYPE_MENU')
-    TYPE_UTILITY = XObject.atom('_NET_WM_WINDOW_TYPE_UTILITY')
-    TYPE_SPLASH = XObject.atom('_NET_WM_WINDOW_TYPE_SPLASH')
-    TYPE_DIALOG = XObject.atom('_NET_WM_WINDOW_TYPE_DIALOG')
-    TYPE_NORMAL = XObject.atom('_NET_WM_WINDOW_TYPE_NORMAL')
-
-    # List of window states
-    STATE_MODAL = XObject.atom('_NET_WM_STATE_MODAL')
-    STATE_STICKY = XObject.atom('_NET_WM_STATE_STICKY')
-    STATE_MAXIMIZED_VERT = XObject.atom('_NET_WM_STATE_MAXIMIZED_VERT')
-    STATE_MAXIMIZED_HORZ = XObject.atom('_NET_WM_STATE_MAXIMIZED_HORZ')
-    STATE_SHADED = XObject.atom('_NET_WM_STATE_SHADED')
-    STATE_SKIP_TASKBAR = XObject.atom('_NET_WM_STATE_SKIP_TASKBAR')
-    STATE_SKIP_PAGER = XObject.atom('_NET_WM_STATE_SKIP_PAGER')
-    STATE_HIDDEN = XObject.atom('_NET_WM_STATE_HIDDEN')
-    STATE_FULLSCREEN = XObject.atom('_NET_WM_STATE_FULLSCREEN')
-    STATE_ABOVE = XObject.atom('_NET_WM_STATE_ABOVE')
-    STATE_BELOW = XObject.atom('_NET_WM_STATE_BELOW')
-    STATE_DEMANDS_ATTENTION = XObject.atom('_NET_WM_STATE_DEMANDS_ATTENTION')
-
-    # Mode values (for maximize and shade functions)
-    MODE_UNSET = 0
-    MODE_SET = 1
-    MODE_TOGGLE = 2
 
     # _NET_WM_DESKTOP returns this value when in STATE_STICKY
     ALL_DESKTOPS = 0xFFFFFFFF
@@ -910,8 +922,8 @@ class Window(XObject):
         self.send_event(data, type, mask)
 
     def maximize(self, mode,
-                 vert=STATE_MAXIMIZED_VERT, 
-                 horz=STATE_MAXIMIZED_HORZ):
+                 vert=State.MAXIMIZED_VERT, 
+                 horz=State.MAXIMIZED_HORZ):
         """Maximize window (both vertically and horizontally)."""
         data = [mode, 
                 horz,
@@ -922,31 +934,31 @@ class Window(XObject):
     def shade(self, mode):
         """Shade window (if supported by window manager)."""
         data = [mode, 
-                Window.STATE_SHADED,
+                State.SHADED,
                 0, 0, 0]
         self.__change_state(data)
 
     def fullscreen(self, mode):
         """Make window fullscreen (if supported by window manager)."""
         data = [mode, 
-                Window.STATE_FULLSCREEN,
+                State.FULLSCREEN,
                 0, 0, 0]
         self.__change_state(data)
 
     def sticky(self, mode):
         """Make window fullscreen (if supported by window manager)."""
         data = [mode, 
-                Window.STATE_STICKY,
+                State.STICKY,
                 0, 0, 0]
         self.__change_state(data)
 
     def reset(self):
         """Unmaximize (horizontally and vertically), unshade, unfullscreen."""
-        self.iconify(self.MODE_UNSET)
-        self.fullscreen(self.MODE_UNSET)
-        self.maximize(self.MODE_UNSET)
-        self.shade(self.MODE_UNSET)
-        self.sticky(self.MODE_UNSET)
+        self.iconify(Mode.UNSET)
+        self.fullscreen(Mode.UNSET)
+        self.maximize(Mode.UNSET)
+        self.shade(Mode.UNSET)
+        self.sticky(Mode.UNSET)
 
     def close(self):
         """Close window."""

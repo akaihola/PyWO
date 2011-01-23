@@ -20,7 +20,7 @@
 
 """filters.py - window filters."""
 
-from core import Window, WindowManager
+from core import Window, WindowManager, Type, State
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
@@ -37,21 +37,21 @@ class IncludeType(object):
                  dialog=False, normal=False):
         self.allowed_types = []
         if desktop:
-            self.allowed_types.append(Window.TYPE_DESKTOP)
+            self.allowed_types.append(Type.DESKTOP)
         if dock:
-            self.allowed_types.append(Window.TYPE_DOCK)
+            self.allowed_types.append(Type.DOCK)
         if toolbar:
-            self.allowed_types.append(Window.TYPE_TOOLBAR)
+            self.allowed_types.append(Type.TOOLBAR)
         if menu:
-            self.allowed_types.append(Window.TYPE_MENU)
+            self.allowed_types.append(Type.MENU)
         if utility:
-            self.allowed_types.append(Window.TYPE_UTILITY)
+            self.allowed_types.append(Type.UTILITY)
         if splash:
-            self.allowed_types.append(Window.TYPE_SPLASH)
+            self.allowed_types.append(Type.SPLASH)
         if dialog:
-            self.allowed_types.append(Window.TYPE_DIALOG)
+            self.allowed_types.append(Type.DIALOG)
         if normal:
-            self.allowed_types.append(Window.TYPE_NORMAL)
+            self.allowed_types.append(Type.NORMAL)
 
     def __call__(self, window):
         type = window.type
@@ -76,25 +76,25 @@ class IncludeState(object):
                  demands_attention = False):
         self.allowed_states = []
         if modal:
-            self.allowed_states.append(Window.STATE_MODAL)
+            self.allowed_states.append(State.MODAL)
         if sticky:
-            self.allowed_states.append(Window.STATE_STICKY)
+            self.allowed_states.append(State.STICKY)
         if maximized or maximized_vert:
-            self.allowed_states.append(Window.STATE_MAXIMIZED_VERT)
+            self.allowed_states.append(State.MAXIMIZED_VERT)
         if maximized or maximized_horz:
-            self.allowed_states.append(Window.STATE_MAXIMIZED_HORZ)
+            self.allowed_states.append(State.MAXIMIZED_HORZ)
         if fullscreen:
-            self.allowed_states.append(Window.STATE_FULLSCREEN)
+            self.allowed_states.append(State.FULLSCREEN)
         if shaded:
-            self.allowed_states.append(Window.STATE_SHADED)
+            self.allowed_states.append(State.SHADED)
         if hidden:
-            self.allowed_states.append(Window.STATE_HIDDEN)
+            self.allowed_states.append(State.HIDDEN)
         if skip_pager:
-            self.allowed_states.append(Window.STATE_SKIP_PAGER)
+            self.allowed_states.append(State.SKIP_PAGER)
         if skip_taskbar:
-            self.allowed_states.append(Window.STATE_SKIP_TASKBAR)
+            self.allowed_states.append(State.SKIP_TASKBAR)
         if demands_attention:
-            self.allowed_states.append(Window.STATE_DEMANDS_ATTENTION)
+            self.allowed_states.append(State.DEMANDS_ATTENTION)
 
     def __call__(self, window):
         for state in window.state:
@@ -128,29 +128,28 @@ class ExcludeState(object):
 
     def __call__(self, window):
         state = window.state
-        if self.modal and Window.STATE_MODAL in state:
+        if self.modal and State.MODAL in state:
             return False
-        if self.sticky and Window.STATE_STICKY in state:
+        if self.sticky and State.STICKY in state:
             return False
         if self.maximized and \
-           Window.STATE_MAXIMIZED_VERT in state and \
-           Window.STATE_MAXIMIZED_HORZ in state:
+           State.MAXIMIZED_VERT in state and State.MAXIMIZED_HORZ in state:
             return False
-        if self.maximized and Window.STATE_MAXIMIZED_VERT in state:
+        if self.maximized and State.MAXIMIZED_VERT in state:
             return False
-        if self.maximized and Window.STATE_MAXIMIZED_HORZ in state:
+        if self.maximized and State.MAXIMIZED_HORZ in state:
             return False
-        if self.fullscreen and Window.STATE_FULLSCREEN in state:
+        if self.fullscreen and State.FULLSCREEN in state:
             return False
-        if self.shaded and Window.STATE_SHADED in state:
+        if self.shaded and State.SHADED in state:
             return False
-        if self.hidden and Window.STATE_HIDDEN in state:
+        if self.hidden and State.HIDDEN in state:
             return False
-        if self.skip_pager and Window.STATE_SKIP_PAGER in state:
+        if self.skip_pager and State.SKIP_PAGER in state:
             return False
-        if self.skip_taskbar and Window.STATE_SKIP_TASKBAR in state:
+        if self.skip_taskbar and State.SKIP_TASKBAR in state:
             return False
-        if self.demands_attention and Window.STATE_DEMANDS_ATTENTION in state:
+        if self.demands_attention and State.DEMANDS_ATTENTION in state:
             return False
         return True
 

@@ -39,7 +39,7 @@ class TestMockedCore(unittest.TestCase):
         self.win = self.map_window()
 
     def map_window(self, 
-                   type=core.Window.TYPE_NORMAL,
+                   type=core.Type.NORMAL,
                    name=WIN_NAME, class_name=WIN_CLASS_NAME,
                    x=WIN_X, y=WIN_Y, 
                    width=WIN_WIDTH, height=WIN_HEIGHT,

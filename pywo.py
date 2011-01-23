@@ -27,7 +27,7 @@ from logging.handlers import RotatingFileHandler
 import actions
 import commandline
 from config import Config
-from core import Window, WindowManager
+from core import Window, WindowManager, State
 from services import daemon
 import filters
 
@@ -75,24 +75,24 @@ if __name__ == '__main__':
             geometry = window.geometry
             state = window.state
             win_desktop = window.desktop
-            desktop = [win_desktop, -1][Window.STATE_STICKY in state or \
+            desktop = [win_desktop, -1][State.STICKY in state or \
                                         win_desktop == Window.ALL_DESKTOPS]
-            if Window.STATE_HIDDEN in state and \
-               not Window.STATE_SHADED in state:
+            if State.HIDDEN in state and \
+               not State.SHADED in state:
                 state_flags = 'i'
-            elif Window.STATE_FULLSCREEN in state:
+            elif State.FULLSCREEN in state:
                 state_flags = 'F'
-            elif Window.STATE_MAXIMIZED_HORZ in state and \
-                 Window.STATE_MAXIMIZED_VERT in state:
+            elif State.MAXIMIZED_HORZ in state and \
+                 State.MAXIMIZED_VERT in state:
                 state_flags = 'M'
-            elif Window.STATE_MAXIMIZED_VERT in state:
+            elif State.MAXIMIZED_VERT in state:
                 state_flags = 'V'
-            elif Window.STATE_MAXIMIZED_HORZ in state:
+            elif State.MAXIMIZED_HORZ in state:
                 state_flags = 'H'
             else:
                 state_flags = ' '
-            state_flags += [' ', 's'][Window.STATE_SHADED in state]# and \
-                                      #not Window.STATE_HIDDEN in state]
+            state_flags += [' ', 's'][State.SHADED in state]# and \
+                                      #not State.HIDDEN in state]
             print '%s %s %s %s' % (window.id, desktop, state_flags, window.name)
     elif args or options.action:
         try:

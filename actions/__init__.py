@@ -24,7 +24,7 @@ import logging
 import os.path
 import sys
 
-from core import Window, WindowManager
+from core import Window, WindowManager, Type, State, Mode
 import filters
 
 
@@ -70,7 +70,7 @@ class Action(object):
         if self.__check:
             self.__check_type_state(win)
         if self.__unshade:
-            win.shade(win.MODE_UNSET)
+            win.shade(Mode.UNSET)
             win.flush()
         self.__action(win, **kwargs)
         # history
@@ -79,17 +79,16 @@ class Action(object):
     def __check_type_state(self, win):
         type = win.type
         if TYPE in self.__check and \
-           (Window.TYPE_DESKTOP in type or \
-            Window.TYPE_DOCK in type or \
-            Window.TYPE_SPLASH in type):
+           (Type.DESKTOP in type or \
+            Type.DOCK in type or \
+            Type.SPLASH in type):
             error = "Can't perform %s on window of this type." % self.name
             raise ActionException(error)
 
         state = win.state
         if STATE in self.__check and \
-           (Window.STATE_FULLSCREEN in state or \
-            (Window.STATE_MAXIMIZED_HORZ in state and \
-             Window.STATE_MAXIMIZED_VERT in state)):
+           (State.FULLSCREEN in state or \
+            (State.MAXIMIZED_HORZ in state and State.MAXIMIZED_VERT in state)):
             error = "Can't perform %s on maximized/fullscreen window." % self.name
             raise ActionException(error)
 

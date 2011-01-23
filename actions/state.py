@@ -21,44 +21,43 @@
 """state.py - PyWO actions - changing windows state."""
 
 from actions import register, TYPE, STATE
-from core import Window, WindowManager
+from core import Window, WindowManager, State, Mode
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
 
 @register(name='iconify', check=[TYPE], unshade=True)
-def _iconify(win, mode=Window.MODE_TOGGLE):
+def _iconify(win, mode=Mode.TOGGLE):
     """Iconify (minimize) window."""
     win.iconify(mode)
 
 @register(name='maximize', check=[TYPE], unshade=True)
-def _maximize(win, mode=Window.MODE_TOGGLE):
+def _maximize(win, mode=Mode.TOGGLE):
     """Maximize window."""
     state = win.state
-    if mode == Window.MODE_TOGGLE and \
-       Window.STATE_MAXIMIZED_HORZ in state and \
-       Window.STATE_MAXIMIZED_VERT in state:
-        mode = Window.MODE_UNSET
-    elif mode == Window.MODE_TOGGLE:
-        mode = Window.MODE_SET
-    if Window.STATE_FULLSCREEN in state:
+    if mode == Mode.TOGGLE and \
+       State.MAXIMIZED_HORZ in state and State.MAXIMIZED_VERT in state:
+        mode = Mode.UNSET
+    elif mode == Mode.TOGGLE:
+        mode = Mode.SET
+    if State.FULLSCREEN in state:
         win.fullscreen(win.MODE_UNSET)
     win.maximize(mode)
 
 @register(name='maximize_vert', check=[TYPE], unshade=True)
-def _maximize(win, mode=Window.MODE_TOGGLE):
+def _maximize(win, mode=Mode.TOGGLE):
     """Maximize vertically window."""
     win.maximize(mode, horz=False)
 
 @register(name='maximize_horz', check=[TYPE], unshade=True)
-def _maximize(win, mode=Window.MODE_TOGGLE):
+def _maximize(win, mode=Mode.TOGGLE):
     """Maximize vertically window."""
     win.maximize(mode, vert=False)
 
 
 @register(name='shade', check=[TYPE])
-def _shade(win, mode=Window.MODE_TOGGLE):
+def _shade(win, mode=Mode.TOGGLE):
     """Shade window."""
     #win.maximize(win.MODE_UNSET)
     win.fullscreen(win.MODE_UNSET)
@@ -66,20 +65,20 @@ def _shade(win, mode=Window.MODE_TOGGLE):
 
 
 @register(name='fullscreen', check=[TYPE], unshade=True)
-def _fullscreen(win, mode=Window.MODE_TOGGLE):
+def _fullscreen(win, mode=Mode.TOGGLE):
     """Fullscreen window."""
     #win.maximize(win.MODE_UNSET)
     win.fullscreen(mode)
 
 
 @register(name='sticky', check=[TYPE])
-def _sticky(win, mode=Window.MODE_TOGGLE):
+def _sticky(win, mode=Mode.TOGGLE):
     """Change sticky (stay on all desktops/viewports) property."""
     win.sticky(mode)
 
 
 @register(name='activate', check=[TYPE], unshade=True)
-def _activate(win, mode=Window.MODE_TOGGLE):
+def _activate(win, mode=Mode.TOGGLE):
     """Activate window.
     
     Unshade, unminimize and switch to it's desktop/viewport.

@@ -104,9 +104,10 @@ class Config(object):
             # Load layout definition
             layout = self._config.get('SETTINGS', 'layout')
             self._config.read(
-                [os.path.join('/', 'etc', 'pywo', 'pyworc', 'layouts'),
-                 os.path.join('/', 'etc', 'pywo', 'pyworc'),
+                [os.path.join('/', 'etc', 'pywo', 'layouts', layout),
+                 os.path.join('/', 'etc', 'pywo', layout),
                  os.path.join(os.path.dirname(__file__), '..', layout),
+                 os.path.join(os.path.dirname(__file__), '..', 'layouts', layout),
                  os.path.join(os.path.expanduser('~'), '.config', 
                               'pywo', 'layouts', layout),
                  os.path.join(os.path.expanduser('~'), '.config', 

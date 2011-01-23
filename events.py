@@ -30,7 +30,7 @@ import logging
 
 from Xlib import X 
 
-from core import Window
+from core import Window, Geometry
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
@@ -198,16 +198,17 @@ class CreateNotifyEvent(Event):
     def __init__(self, event):
         Event.__init__(self, event)
         self.parent_id = event.parent.id
-        self.x = event.x
-        self.y = event.y
-        self.width = event.width
-        self.height = event.height
         self.border_width = event.border_width
         self.override = event.override
 
     @property
     def parent(self):
         return Window(self.parent_id)
+
+    @ property
+    def geometry(self):
+        return Geometry(self._event.x, self._event.y,
+                        self._event.width, self._event.height)
 
 
 class CreateNotifyHandler(EventHandler):
@@ -279,16 +280,17 @@ class ConfigureNotifyEvent(Event):
     def __init__(self, event):
         Event.__init__(self, event)
         self.parent_id = event.parent.id
-        self.x = event.x
-        self.y = event.y
-        self.width = event.width
-        self.height = event.height
         self.border_width = event.border_width
         self.override = event.override
 
     @property
     def parent(self):
         return Window(self.parent_id)
+
+    @ property
+    def geometry(self):
+        return Geometry(self._event.x, self._event.y,
+                        self._event.width, self._event.height)
 
 
 class ConfigureNotifyHandler(EventHandler):

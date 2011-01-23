@@ -12,7 +12,7 @@ from tests import mock_Xlib
 from tests.test_common import TestMockedCore
 from tests.test_common import DESKTOPS, DESKTOP_WIDTH, DESKTOP_HEIGHT, VIEWPORTS
 from tests.test_common import WIN_X, WIN_Y, WIN_WIDTH, WIN_HEIGHT
-import core
+from pywo import core
 
 
 class TestXObject(TestMockedCore):

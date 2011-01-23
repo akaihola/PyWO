@@ -10,8 +10,7 @@ from tests.test_common import TestMockedCore
 from tests.test_common import DESKTOP_WIDTH, DESKTOP_HEIGHT
 from tests.test_common import WIN_WIDTH, WIN_HEIGHT
 
-import actions
-import core
+from pywo import actions, core
 
 
 class TestActionPut(TestMockedCore):

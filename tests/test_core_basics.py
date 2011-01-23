@@ -6,7 +6,7 @@ import sys
 sys.path.insert(0, '../')
 sys.path.insert(0, './')
 
-from core import Gravity, Size, Position, Geometry, Extents
+from pywo.core import Gravity, Size, Position, Geometry, Extents
 
 
 class TestSize(unittest.TestCase):

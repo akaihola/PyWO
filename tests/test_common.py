@@ -8,7 +8,7 @@ sys.path.insert(0, './')
 
 from tests import mock_Xlib
 
-import core
+from pywo import core
 
 
 DESKTOP_WIDTH = 800

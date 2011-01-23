@@ -9,8 +9,7 @@ sys.path.insert(0, './')
 from tests.test_common import TestMockedCore
 from tests.test_common import DESKTOP_WIDTH, DESKTOP_HEIGHT
 
-import core
-import resizer
+from pywo import core, resizer
 
 
 TOP_LEFT = core.Gravity.parse('NW')

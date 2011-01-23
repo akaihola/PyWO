@@ -31,7 +31,14 @@ import logging
 import os.path
 import sys
 
+import utils
+
+
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
+
+
+log = logging.getLogger(__name__)
+log.addHandler(utils.NullHandler())
 
 
 def all(config):
@@ -39,7 +46,7 @@ def all(config):
     path = os.path.dirname(os.path.abspath(__file__))
     modules = [file[0:-3] for file in os.listdir(path) 
                           if file.endswith('_service.py')]
-    logging.debug('Found services: %s' % ', '.join(modules))
+    log.debug('Found services: %s' % ', '.join(modules))
     services = []
     for module in modules:
         if getattr(config, module):

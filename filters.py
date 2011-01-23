@@ -20,10 +20,17 @@
 
 """filters.py - window filters."""
 
+import logging
+
 from core import Window, WindowManager, Type, State
+import utils
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
+
+
+log = logging.getLogger(__name__)
+log.addHandler(utils.NullHandler())
 
 
 class IncludeType(object):

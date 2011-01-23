@@ -31,10 +31,14 @@ import logging
 from Xlib import X 
 
 from core import Window, Geometry
+import utils
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
+
+log = logging.getLogger(__name__)
+log.addHandler(utils.NullHandler())
 
 _SUBSTRUCTURE = {True: X.SubstructureNotifyMask,
                  False: X.StructureNotifyMask}

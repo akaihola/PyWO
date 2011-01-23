@@ -21,6 +21,7 @@
 """commandline.py - parses commandline options."""
 
 from copy import copy
+import logging
 import optparse
 from optparse import OptionParser, OptionGroup, OptionValueError
 import textwrap
@@ -28,9 +29,14 @@ import sys
 
 from core import Size, Gravity, Position
 import actions
+import utils
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
+
+
+log = logging.getLogger(__name__)
+log.addHandler(utils.NullHandler())
 
 
 # Hack for textwrap so newline characters can be used

@@ -36,8 +36,14 @@ from Xlib import X, Xutil, XK, Xatom, error
 from Xlib.protocol.event import ClientMessage
 from Xlib.display import Display
 
+import utils
+
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
+
+
+log = logging.getLogger(__name__)
+log.addHandler(utils.NullHandler())
 
 
 class Gravity(object):
@@ -316,6 +322,7 @@ class EventDispatcher(object):
         self.__root = display.screen().root
         self.__handlers = {} # {window.id: {handler.type: [handler, ], }, }
         self.__thread = None
+        self.log = logging.getLogger('%s.EventDispatcher' % __name__)
 
     def run(self):
         """Perform event queue checking.
@@ -324,13 +331,13 @@ class EventDispatcher(object):
         If there's no registered handlers stop running.
 
         """
-        logging.debug('EventDispatcher started')
+        self.log.debug('EventDispatcher started')
         while self.__handlers:
             while self.__display.pending_events():
                 # Dispatch all pending events if present
                 self.__dispatch(self.__display.next_event())
             time.sleep(0.05)
-        logging.debug('EventDispatcher stopped')
+        self.log.debug('EventDispatcher stopped')
 
     def __get_masks(self, window_id):
         """Return event type masks for given window."""
@@ -342,9 +349,9 @@ class EventDispatcher(object):
 
     def register(self, window, handler):
         """Register event handler and return new window's event mask."""
-        logging.debug('Registering %s (masks=%s, types=%s) for %s' %
-                      (handler.__class__.__name__, 
-                       handler.masks, handler.types, window.id))
+        self.log.debug('Registering %s (masks=%s, types=%s) for %s' %
+                       (handler.__class__.__name__, 
+                        handler.masks, handler.types, window.id))
         window_handlers = self.__handlers.setdefault(window.id, {})
         for type in handler.types:
             type_handlers = window_handlers.setdefault(type, [])
@@ -365,19 +372,19 @@ class EventDispatcher(object):
         
         """
         if not window:
-            logging.debug('Unregistering all handlers for all windows')
+            self.log.debug('Unregistering all handlers for all windows')
             self.__handlers.clear()
             return []
         if not window.id in self.__handlers:
-            logging.error('No handlers registered for window %s' % window.id)
+            self.log.error('No handlers registered for window %s' % window.id)
         elif not handler and window.id in self.__handlers:
-            logging.debug('Unregistering all handlers for window %s' % 
-                          (window.id))
+            self.log.debug('Unregistering all handlers for window %s' % 
+                           (window.id))
             del self.__handlers[window.id]
         elif window.id in self.__handlers:
-            logging.debug('Unregistering %s (masks=%s, types=%s) for %s' %
-                          (handler.__class__.__name__, 
-                           handler.masks, handler.types, window.id))
+            self.log.debug('Unregistering %s (masks=%s, types=%s) for %s' %
+                           (handler.__class__.__name__, 
+                            handler.masks, handler.types, window.id))
             window_handlers = self.__handlers[window.id]
             for type in handler.types:
                 type_handlers = window_handlers.setdefault(type, [])
@@ -403,7 +410,7 @@ class EventDispatcher(object):
             # Try root window
             handlers = self.__handlers[self.__root.id]
         else:
-            logging.error('No handler for this event %s' % event)
+            self.log.error('No handler for this event %s' % event)
             return
         if not event.type in handlers:
             # Just skip unwanted events types
@@ -498,8 +505,8 @@ class XObject(object):
     def __set_event_mask(self, masks):
         """Update event mask."""
         event_mask = 0
-        logging.debug('Setting %s masks for window %s' % 
-                      ([str(e) for e in masks], self.id))
+        log.debug('Setting %s masks for window %s' % 
+                  ([str(e) for e in masks], self.id))
         for mask in masks:
             event_mask = event_mask | mask
         self._win.change_attributes(event_mask=event_mask)
@@ -511,8 +518,7 @@ class XObject(object):
                            onerror=self.__BAD_ACCESS)
         self.sync()
         if self.__BAD_ACCESS.get_error():
-            logging.error("Can't use %s" % 
-                              self.keycode2str(modifiers, keycode))
+            log.error("Can't use %s" % self.keycode2str(modifiers, keycode))
 
     def grab_key(self, modifiers, keycode, numlock, capslock):
         """Grab key.
@@ -990,28 +996,28 @@ class Window(XObject):
     def __ne__(self, other):
         return not self.id == other.id
 
-    def debug_info(self):
+    def debug_info(self, log=log):
         """Print full window's info, for debug use only."""
-        logging.info('ID=%s' % self.id)
-        logging.info('Client_machine=%s' % self.client_machine)
-        logging.info('Name=%s' % self.name)
-        logging.info('Class=%s' % self.class_name)
-        logging.info('Type=%s' % [self.atom_name(e) for e in self.type])
-        logging.info('State=%s' % [self.atom_name(e) for e in self.state])
-        logging.info('WM State=%s' % self._win.get_wm_state())
-        logging.info('Desktop=%s' % self.desktop)
-        logging.info('Extents=%s' % self.extents)
-        logging.info('Extents=%s' % [str(e) for e in self.__extents()])
-        logging.info('Geometry=%s' % self.geometry)
-        logging.info('Geometry_raw=%s' % self._win.get_geometry())
+        log.info('ID=%s' % self.id)
+        log.info('Client_machine=%s' % self.client_machine)
+        log.info('Name=%s' % self.name)
+        log.info('Class=%s' % self.class_name)
+        log.info('Type=%s' % [self.atom_name(e) for e in self.type])
+        log.info('State=%s' % [self.atom_name(e) for e in self.state])
+        log.info('WM State=%s' % self._win.get_wm_state())
+        log.info('Desktop=%s' % self.desktop)
+        log.info('Extents=%s' % self.extents)
+        log.info('Extents=%s' % [str(e) for e in self.__extents()])
+        log.info('Geometry=%s' % self.geometry)
+        log.info('Geometry_raw=%s' % self._win.get_geometry())
         geometry = self._win.get_geometry()
         translated = self._translate_coords(geometry.x, geometry.y)
-        logging.info('Geometry_translated=%s' % translated)
-        logging.info('Parent=%s %s' % (self.parent_id, self.parent))
-        logging.info('Normal_hints=%s' % self._win.get_wm_normal_hints())
-        #logging.info('Hints=%s' % self._win.get_wm_hints())
-        logging.info('Attributes=%s' % self._win.get_attributes())
-        logging.info('Query_tree=%s' % self._win.query_tree())
+        log.info('Geometry_translated=%s' % translated)
+        log.info('Parent=%s %s' % (self.parent_id, self.parent))
+        log.info('Normal_hints=%s' % self._win.get_wm_normal_hints())
+        #log.info('Hints=%s' % self._win.get_wm_hints())
+        log.info('Attributes=%s' % self._win.get_attributes())
+        log.info('Query_tree=%s' % self._win.query_tree())
 
 
 class WindowManager(XObject):
@@ -1220,13 +1226,13 @@ class WindowManager(XObject):
         """Unlisten all."""
         self._unlisten_all()
 
-    def debug_info(self):
+    def debug_info(self, log=log):
         """Print full windows manager's info, for debug use only."""
-        logging.info('WindowManager=%s' % self.name)
-        logging.info('Desktops=%s, current=%s' % (self.desktops, self.desktop))
-        logging.info('Desktop=%s' % self.desktop_size)
-        logging.info('Viewport=%s' % self.viewport_position)
-        logging.info('Workarea=%s' % self.workarea_geometry)
+        log.info('WindowManager=%s' % self.name)
+        log.info('Desktops=%s, current=%s' % (self.desktops, self.desktop))
+        log.info('Desktop=%s' % self.desktop_size)
+        log.info('Viewport=%s' % self.viewport_position)
+        log.info('Workarea=%s' % self.workarea_geometry)
 
 
 # TODO: Window.is_fullscreen?

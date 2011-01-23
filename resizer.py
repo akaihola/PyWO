@@ -25,10 +25,14 @@ import operator
 
 from core import Window, WindowManager
 import filters
+import utils
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
+
+log = logging.getLogger(__name__)
+log.addHandler(utils.NullHandler())
 
 WM = WindowManager()
 

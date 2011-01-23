@@ -36,21 +36,24 @@ __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 __version__ = "0.3"
 
 
+log = logging.getLogger('pywo')
+
+
 def setup_loggers(debug=False):
     """Setup file, and console loggers."""
-    logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)
-    format = '%(levelname)s: %(filename)s(%(lineno)d) %(funcName)s: %(message)s'
+    log.setLevel(logging.DEBUG)
+    format = '%(levelname)s: %(name)s.%(funcName)s(%(lineno)d): %(message)s'
     rotating = RotatingFileHandler('/tmp/PyWO.log', 'a', 1024*50, 2)
     rotating.setFormatter(logging.Formatter(format))
     rotating.setLevel(logging.DEBUG)
-    logger.addHandler(rotating)
+    log.addHandler(rotating)
     console = logging.StreamHandler()
+    console.setFormatter(logging.Formatter('%(message)s'))
     if debug:
         console.setLevel(logging.DEBUG)
     else:
         console.setLevel(logging.INFO)
-    logger.addHandler(console)
+    log.addHandler(console)
 
 
 if __name__ == '__main__':
@@ -65,7 +68,7 @@ if __name__ == '__main__':
     config = Config(options.config)
 
     if options.start_daemon:
-        logging.info('Starting PyWO...')
+        log.info('Starting PyWO...')
         daemon.setup(config)
         daemon.start(loop=True)
     elif options.list_windows:

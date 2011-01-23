@@ -32,9 +32,14 @@ import actions
 import commandline
 from core import Window, WindowManager
 import filters
+import utils
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
+
+
+log = logging.getLogger(__name__)
+log.addHandler(utils.NullHandler())
 
 
 class DBusService(dbus.service.Object):
@@ -44,17 +49,17 @@ class DBusService(dbus.service.Object):
     @dbus.service.method("net.kosciak.PyWO", 
                          in_signature='si', out_signature='s')
     def PerformAction(self, command, win_id):
-        logging.debug('DBUS: command="%s", win_id=%s' % (command, win_id))
+        log.debug('DBUS: command="%s", win_id=%s' % (command, win_id))
         try:
             (options, args) = commandline.parse_args(command.split())
         except commandline.ParserException, e:
-            logging.error('ParserException: %s' % e)
+            log.error('ParserException: %s' % e)
             return 'ERROR: %s' % e
         try:
             actions.perform(args, self.CONFIG, options, win_id)
             return ''
         except actions.ActionException, e:
-            logging.error('ActionException: %s' % e)
+            log.error('ActionException: %s' % e)
             return 'ERROR: %s' % e
 
     @dbus.service.method("net.kosciak.PyWO", 
@@ -103,11 +108,11 @@ def setup(config):
     service.CONFIG = config
 
 def start():
-    logging.info('Starting PyWO D-Bus Service')
+    log.info('Starting PyWO D-Bus Service')
     thread = threading.Thread(name='D-Bus Service', target=loop.run)
     thread.start()
 
 def stop():
     loop.quit()
-    logging.info('PyWO D-Bus Service stopped')
+    log.info('PyWO D-Bus Service stopped')
 

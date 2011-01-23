@@ -26,10 +26,14 @@ import sys
 
 from core import Window, WindowManager, Type, State, Mode
 import filters
+import utils
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
+
+log = logging.getLogger(__name__)
+log.addHandler(utils.NullHandler())
 
 WM = WindowManager()
 
@@ -107,16 +111,16 @@ def register(name, check=[], unshade=False):
 @register(name='debug', check=[TYPE])
 def _debug_info(win):
     """Print debug info about Window Manager, and current Window."""
-    logging.info('-= Window Manager =-')
-    WindowManager().debug_info()
-    logging.info('-= Current Window =-')
-    win.debug_info()
-    logging.info('-= Move with same geometry =-')
+    log.info('-= Window Manager =-')
+    WindowManager().debug_info(log)
+    log.info('-= Current Window =-')
+    win.debug_info(log)
+    log.info('-= Move with same geometry =-')
     geo =  win.geometry
     win.set_geometry(geo)
     win.sync()
-    logging.info('New geometry=%s' % win.geometry)
-    logging.info('-= End of debug =-')
+    log.info('New geometry=%s' % win.geometry)
+    log.info('-= End of debug =-')
 
 
 def __load():
@@ -197,10 +201,10 @@ def perform(args, config, options={}, win_id=0):
         window = WM.active_window()
 
     kwargs = get_args(action, config, section, options)
-    logging.debug('%s(%s)' % 
-                  (action.name, 
-                  ', '.join(['%s=%s' % (key, str(value)) 
-                             for key, value in kwargs.items()])))
+    log.debug('%s(%s)' % 
+              (action.name, 
+              ', '.join(['%s=%s' % (key, str(value)) 
+                         for key, value in kwargs.items()])))
     action(window, **kwargs)
     WM.flush()
 

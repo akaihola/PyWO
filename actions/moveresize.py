@@ -27,10 +27,15 @@ from actions import register, TYPE, STATE
 from core import Gravity, Geometry, Size, WindowManager
 from events import PropertyNotifyHandler
 from resizer import expand_window, shrink_window
+import utils
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
+
+print __name__
+log = logging.getLogger(__name__)
+log.addHandler(utils.NullHandler())
 
 WM = WindowManager()
 
@@ -43,7 +48,7 @@ def _expand(win, direction, vertical_first=True):
     border = expand_window(win, direction, 
                            sticky=(not direction.is_middle),
                            vertical_first=vertical_first)
-    logging.debug(border)
+    log.debug(border)
     win.set_geometry(border, direction)
 
 
@@ -53,7 +58,7 @@ def _shrink(win, direction, vertical_first=True):
     _GRIDED['id'] = None
     border = shrink_window(win, direction.invert(), 
                            vertical_first=vertical_first)
-    logging.debug(border)
+    log.debug(border)
     win.set_geometry(border, direction)
 
 
@@ -71,8 +76,8 @@ def _move(win, direction, vertical_first=True):
     x = border.x + border.width * direction.x
     y = border.y + border.height * direction.y
     geometry.set_position(x, y, direction)
-    logging.debug('x: %s, y: %s, gravity: %s' % 
-                  (geometry.x, geometry.y, direction))
+    log.debug('x: %s, y: %s, gravity: %s' % 
+              (geometry.x, geometry.y, direction))
     win.set_geometry(geometry)
 
 
@@ -86,8 +91,8 @@ def _put(win, position, gravity=None):
     x = workarea.x + workarea.width * position.x
     y = workarea.y + workarea.height * position.y
     geometry.set_position(x, y, gravity)
-    logging.debug('x: %s, y: %s, gravity: %s' % 
-                  (geometry.x, geometry.y, gravity))
+    log.debug('x: %s, y: %s, gravity: %s' % 
+              (geometry.x, geometry.y, gravity))
     win.set_geometry(geometry)
 
 
@@ -171,7 +176,7 @@ def __grid(win, position, gravity,
         _GRIDED['height'] = get_iterator(heights, new_height)
         _GRIDED['placement'] = (position, gravity)
     geometry = Geometry(x, y, new_width, new_height, gravity)
-    logging.debug('width: %s, height: %s' % (geometry.width, geometry.height))
+    log.debug('width: %s, height: %s' % (geometry.width, geometry.height))
     if invert_on_resize: 
         gravity = gravity.invert()
     win.set_geometry(geometry, gravity)

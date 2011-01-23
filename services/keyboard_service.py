@@ -25,10 +25,14 @@ import logging
 import actions
 from core import WindowManager
 import events
+import utils
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
+
+log = logging.getLogger(__name__)
+log.addHandler(utils.NullHandler())
 
 WM = WindowManager()
 
@@ -38,25 +42,25 @@ class KeyPressHandler(events.KeyHandler):
 
     def key_press(self, event):
         """Event handler method for KeyPressEventHandler."""
-        logging.debug('EVENT: type=%s, window=%s, keycode=%s, modifiers=%s' %
-                      (event.type, event.window_id, 
-                       event.keycode, event.modifiers))
+        log.debug('EVENT: type=%s, window=%s, keycode=%s, modifiers=%s' %
+                  (event.type, event.window_id, 
+                   event.keycode, event.modifiers))
         if not (event.modifiers, event.keycode) in MAPPINGS:
-            logging.error('Unrecognized key!')
+            log.error('Unrecognized key!')
             return
         window = WM.active_window()
-        logging.debug(window.name)
+        log.debug(window.name)
         action, kwargs = MAPPINGS[event.modifiers, event.keycode]
-        logging.debug('%s(%s)' % 
-                      (action.name, 
-                      ', '.join(['%s=%s' % (key, str(value)) 
-                                 for key, value in kwargs.items()])))
+        log.debug('%s(%s)' % 
+                  (action.name, 
+                   ', '.join(['%s=%s' % (key, str(value)) 
+                              for key, value in kwargs.items()])))
         try:
             action(window, **kwargs)
         except actions.ActionException, e:
-            logging.error(e)
+            log.error(e)
         except Exception, err:
-            logging.exception(err)
+            log.exception(err)
 
 
 HANDLER = KeyPressHandler()
@@ -89,12 +93,12 @@ def setup(config):
                      config.capslock)
 
 def start():
-    logging.info('Registering keyboard shortcuts')
+    log.info('Registering keyboard shortcuts')
     HANDLER.grab_keys(WM)
 
 
 def stop():
     HANDLER.ungrab_keys(WM)
-    logging.info('Keyboard shortcuts unregistered')
+    log.info('Keyboard shortcuts unregistered')
 
 

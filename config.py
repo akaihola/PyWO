@@ -25,9 +25,14 @@ import os
 from ConfigParser import ConfigParser
 
 from core import Gravity, Size
+import utils
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
+
+
+log = logging.getLogger(__name__)
+log.addHandler(utils.NullHandler())
 
 
 class _Section(object):
@@ -86,7 +91,7 @@ class Config(object):
 
     def load(self, filename):
         """Load configuration file"""
-        logging.debug('Loading configuration file')
+        log.debug('Loading configuration file')
         self.filename = filename
         # Load config file (load default first)
         self._config.read([os.path.join(os.path.dirname(__file__), 'pyworc'),
@@ -118,7 +123,7 @@ class Config(object):
             self.sections[section.lower()] = _Section(self, section, key)
             self._config.remove_section(section)
 
-        logging.debug('Loaded configuration file')
+        log.debug('Loaded configuration file')
 
     def section(self, name):
         return self.sections.get(name.lower(), None)

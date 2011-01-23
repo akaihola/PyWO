@@ -132,6 +132,7 @@ def __grid(win, position, gravity,
         geometry = win.geometry
         size = Size(float(geometry.width) / workarea.width,
                     float(geometry.height) / workarea.height)
+    size = size or NO_SIZE
     try:
         widths = [int(workarea.width * width) 
                   for width in (width.width or size.width)]

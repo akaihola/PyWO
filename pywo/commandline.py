@@ -102,7 +102,7 @@ def size_callback(option, opt_str, value, parser):
             size = Size(width, 0)
         elif option.dest == 'height':
             height = Size.parse_value(value)
-            size = Size(height, 0)
+            size = Size(0, height)
         elif option.dest == 'size':
             size = Size.parse(*value)
     except ValueError, TypeError:

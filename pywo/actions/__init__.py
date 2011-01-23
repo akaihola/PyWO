@@ -168,9 +168,8 @@ def perform(args, config, options={}, win_id=0):
     need_section = 'direction' in action.args or \
                    'position' in action.args or \
                    'gravity' in action.args
-    print need_section, args, options.section
-    if need_section and (args or options.section):
-        name = options.section or args.pop(0)
+    if need_section and options.section:
+        name = options.section #or args.pop(0)
         section = config.section(name)
         if not section:
             raise ActionException('Invalid SECTION name: %s' % name)

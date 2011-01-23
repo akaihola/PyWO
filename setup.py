@@ -16,9 +16,13 @@ setup(
     license='GPL v3',
     description='PyWO allows you to easily organize windows on the desktop using keyboard shortcuts.',
     long_description=open('README').read(),
+    keywords='xlib tiling windows',
     classifiers=[
+        "Development Status :: 4 - Beta",
         "Programming Language :: Python",
         "Operating System :: POSIX :: Linux",
+        "Environment :: Console",
+        "Environment :: X11 Applications",
         "Topic :: Desktop Environment :: Window Managers",
         "Topic :: Software Development :: Libraries :: Python Modules",
         "License :: OSI Approved :: GNU General Public License (GPL)",

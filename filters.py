@@ -206,7 +206,6 @@ class AND(object):
 
     def __call__(self, window):
         for filter in self.filters:
-            print filter
             if not filter(window):
                 return False
         return True

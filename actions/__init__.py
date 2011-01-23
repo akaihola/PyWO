@@ -59,6 +59,8 @@ class Action(object):
             self.obligatory_args = self.args[:-len(action.func_defaults)]
         else:
             self.obligatory_args = self.args
+        self.optional_args = [arg for arg in self.args 
+                              if arg not in self.obligatory_args]
         self.__action = action
         self.__check = check
         self.__unshade = unshade
@@ -181,7 +183,7 @@ def perform(args, config, options={}, win_id=0):
         raise ActionException('Missing %s' % ', '.join(missing))
 
     if win_id or options.win_id:
-        # TODO: try/except invalid options.win_id, or non existatn Window
+        # TODO: try/except invalid options.win_id, or non existant Window
         window = Window(win_id or int(options.win_id, 0))
     elif args:
         # TODO: check system encoding?

@@ -76,8 +76,11 @@ if __name__ == '__main__':
             state = window.state
             win_desktop = window.desktop
             desktop = [win_desktop, -1][Window.STATE_STICKY in state or \
-                                         win_desktop == Window.ALL_DESKTOPS]
-            if Window.STATE_FULLSCREEN in state:
+                                        win_desktop == Window.ALL_DESKTOPS]
+            if Window.STATE_HIDDEN in state and \
+               not Window.STATE_SHADED in state:
+                state_flags = 'i'
+            elif Window.STATE_FULLSCREEN in state:
                 state_flags = 'F'
             elif Window.STATE_MAXIMIZED_HORZ in state and \
                  Window.STATE_MAXIMIZED_VERT in state:
@@ -86,12 +89,10 @@ if __name__ == '__main__':
                 state_flags = 'V'
             elif Window.STATE_MAXIMIZED_HORZ in state:
                 state_flags = 'H'
-            elif Window.STATE_HIDDEN in state:
-                state_flags = 'i'
             else:
                 state_flags = ' '
-            state_flags += [' ', 's'][Window.STATE_SHADED in state and \
-                                      not Window.STATE_HIDDEN in state]
+            state_flags += [' ', 's'][Window.STATE_SHADED in state]# and \
+                                      #not Window.STATE_HIDDEN in state]
             print '%s %s %s %s' % (window.id, desktop, state_flags, window.name)
     elif args or options.action:
         try:

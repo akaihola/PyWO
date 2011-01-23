@@ -33,7 +33,7 @@ import actions
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
 
-# Hack for textwrap so I can use newline characters
+# Hack for textwrap so newline characters can be used
 class TextWrapperWithNewLines:
     @staticmethod
     def wrap(text, width=70, **kw):
@@ -140,7 +140,7 @@ parser.add_option('--help-more',
 parser.add_option('--debug', '--verbose',
                   action='store_true', dest='debug', default=False,
                   help='print debug informations')
-parser.add_option('-c', '--config',
+parser.add_option('--config',
                   action='store', dest='config', default='~/.pyworc',
                   help='use given config FILE [default: %default]', 
                   metavar='FILE')
@@ -156,11 +156,6 @@ parser.add_option('--windows',
 
 action = OptionGroup(parser, 'Options for Actions', 
                      'If not provided, default values from config file will be used')
-# TODO: use gravity_callback for gravity, direction, position (so I can use parser.values to get already parsed values)
-#       if not direction: direction = gravity
-#       if not position: position = gravity
-#       if position and not gravity: gravity = position
-#       like in config
 action.add_option('--id',
                   action='store', dest='win_id', default='', 
                   help='perform action on window with given ID',
@@ -281,9 +276,14 @@ def print_help():
 def print_help_more(config):
     list = []
     for action in sorted(actions.all(), key=lambda action: action.name):
-        list.append('%s\n  %s\n  %s' % (action.name, 
-                                        (action.__doc__ or '').split('\n')[0],
-                                        ', '.join(action.args).upper()))
+        line = '%s\n  %s\n  %s' %  (action.name, 
+                         (action.__doc__ or '').split('\n')[0],
+                         ', '.join(action.obligatory_args).upper())
+        if action.obligatory_args and action.optional_args:
+            line += ', '
+        if action.optional_args:
+            line += '[%s]' % ', '.join(action.optional_args).upper()
+        list.append(line)
     actions_list = OptionGroup(parser, 'ACTION', '\n'.join(list))
     parser.add_option_group(actions_list)
     sections_list = OptionGroup(parser, 'SECTION', 
@@ -293,9 +293,4 @@ def print_help_more(config):
     parser.add_option_group(w_h)
     parser.add_option_group(window)
     parser.print_help()
-
-
-if __name__ == '__main__':
-    options, arguments = parser.parse_args()
-    print options, arguments
 

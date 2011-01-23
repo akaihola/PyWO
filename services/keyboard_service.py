@@ -24,7 +24,7 @@ import logging
 
 import actions
 from core import WindowManager
-from events import KeyPressHandler
+import events
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
@@ -34,29 +34,32 @@ WM = WindowManager()
 
 MAPPINGS = {} # {(modifiers, keycode): (action, args), }
 
-def key_press(event):
-    """Event handler method for KeyPressEventHandler."""
-    logging.debug('EVENT: type=%s, window=%s, keycode=%s, modifiers=%s' %
-                  (event.type, event.window_id, event.keycode, event.modifiers))
-    if not (event.modifiers, event.keycode) in MAPPINGS:
-        logging.error('Unrecognized key!')
-        return
-    window = WM.active_window()
-    logging.debug(window.name)
-    action, kwargs = MAPPINGS[event.modifiers, event.keycode]
-    logging.debug('%s(%s)' % 
-                  (action.name, 
-                  ', '.join(['%s=%s' % (key, str(value)) 
-                             for key, value in kwargs.items()])))
-    try:
-        action(window, **kwargs)
-    except actions.ActionException, e:
-        logging.error(e)
-    except Exception, err:
-        logging.exception(err)
+class KeyPressHandler(events.KeyHandler):
+
+    def key_press(self, event):
+        """Event handler method for KeyPressEventHandler."""
+        logging.debug('EVENT: type=%s, window=%s, keycode=%s, modifiers=%s' %
+                      (event.type, event.window_id, 
+                       event.keycode, event.modifiers))
+        if not (event.modifiers, event.keycode) in MAPPINGS:
+            logging.error('Unrecognized key!')
+            return
+        window = WM.active_window()
+        logging.debug(window.name)
+        action, kwargs = MAPPINGS[event.modifiers, event.keycode]
+        logging.debug('%s(%s)' % 
+                      (action.name, 
+                      ', '.join(['%s=%s' % (key, str(value)) 
+                                 for key, value in kwargs.items()])))
+        try:
+            action(window, **kwargs)
+        except actions.ActionException, e:
+            logging.error(e)
+        except Exception, err:
+            logging.exception(err)
 
 
-HANDLER = KeyPressHandler(key_press)
+HANDLER = KeyPressHandler()
 
 
 def setup(config):

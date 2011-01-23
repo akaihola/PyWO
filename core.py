@@ -336,14 +336,15 @@ class EventDispatcher(object):
         """Return event type masks for given window."""
         masks = set()
         for type_handlers in self.__handlers.get(window_id, {}).values():
-            masks.update(set(handler.mask for handler in type_handlers))
+            for handler in type_handlers:
+                masks.update(handler.masks)
         return masks
 
     def register(self, window, handler):
         """Register event handler and return new window's event mask."""
-        logging.debug('Registering %s (mask=%s, types=%s) for %s' %
+        logging.debug('Registering %s (masks=%s, types=%s) for %s' %
                       (handler.__class__.__name__, 
-                       handler.mask, handler.types, window.id))
+                       handler.masks, handler.types, window.id))
         window_handlers = self.__handlers.setdefault(window.id, {})
         for type in handler.types:
             type_handlers = window_handlers.setdefault(type, [])
@@ -374,9 +375,9 @@ class EventDispatcher(object):
                           (window.id))
             del self.__handlers[window.id]
         elif window.id in self.__handlers:
-            logging.debug('Unregistering %s (mask=%s, types=%s) for %s' %
+            logging.debug('Unregistering %s (masks=%s, types=%s) for %s' %
                           (handler.__class__.__name__, 
-                           handler.mask, handler.types, window.id))
+                           handler.masks, handler.types, window.id))
             window_handlers = self.__handlers[window.id]
             for type in handler.types:
                 type_handlers = window_handlers.setdefault(type, [])
@@ -398,11 +399,11 @@ class EventDispatcher(object):
              event.event.id in self.__handlers:
             # Try window the event is reported for (if present)
             handlers = self.__handlers[event.event.id]
-        elif self.__root in self.__handlers:
+        elif self.__root.id in self.__handlers:
             # Try root window
-            handlers = self.__handlers[self.__root]
+            handlers = self.__handlers[self.__root.id]
         else:
-            logging.error('No handler for this event')
+            logging.error('No handler for this event %s' % event)
             return
         if not event.type in handlers:
             # Just skip unwanted events types
@@ -689,7 +690,7 @@ class Window(XObject):
         """Return list of window's type(s)."""
         type = self.get_property('_NET_WM_WINDOW_TYPE')
         if not type:
-            return [Window.TYPE_NORMAL]
+            return []
         return type.value
 
     @property

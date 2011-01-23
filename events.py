@@ -50,11 +50,7 @@ class Event(object):
         """
         self._event = event
         self.type = event.type
-
-    @property
-    def window_id(self):
-        """Return id of the window, which is the source of the event."""
-        return self._event.window.id
+        self.window_id = event.window.id
 
     @property
     def window(self):
@@ -66,14 +62,12 @@ class EventHandler(object):
 
     """Abstract base class for event handlers."""
 
-    _EVENT_TYPE = Event
-
-    def __init__(self, mask, mapping):
+    def __init__(self, masks, mapping):
         """
         mask - X.EventMask
         mapping - dict of X.EventTypes and associated functions
         """
-        self.mask = mask
+        self.masks = masks
         self.__mapping = mapping
 
     @property
@@ -82,8 +76,9 @@ class EventHandler(object):
 
     def handle_event(self, event):
         """Wrap raw X event into _EVENT_TYPE (Event object) and call _METHOD."""
-        event = self._EVENT_TYPE(event)
-        self.__mapping[event.type](event)
+        event_type, handler_method = self.__mapping[event.type]
+        event = event_type(event)
+        handler_method(event)
 
 
 class KeyEvent(Event):
@@ -112,24 +107,34 @@ class KeyEvent(Event):
         return (modifiers or X.AnyModifier, keycode)
 
 
-class KeyPressHandler(EventHandler):
+class KeyHandler(EventHandler):
     
     """Handler for X.KeyPress events."""
 
-    _EVENT_TYPE = KeyEvent
-
-    def __init__(self, key_press, keys=[], numlock=0, capslock=0):
+    def __init__(self, key_press=None, key_release=None,
+                 keys=[], numlock=0, capslock=0):
         """
         key_press - function that will handle events 
         keys - list of (mask, keycode) pairs
-        numlock - state of NumLock key (0 - OFF, 1 - OFF, 2 - IGNORE)
+        numlock - state of NumLock key (0 - OFF, 1 - ON, 2 - IGNORE)
         capslock - state of CapsLock key
         """
-        EventHandler.__init__(self, X.KeyPressMask, 
-                              {X.KeyPress: key_press})
+        EventHandler.__init__(self, [X.KeyPressMask, X.KeyReleaseMask], 
+                              {X.KeyPress: (KeyEvent, self.key_press),
+                               X.KeyRelease: (KeyEvent, self.key_release)})
+        self.__key_press = key_press
+        self.__key_release = key_release
         self.keys = keys
         self.numlock = numlock
         self.capslock = capslock
+
+    def key_press(self, event):
+        if self.__key_press:
+            self.__key_press(event)
+
+    def key_release(self, event):
+        if self.__key_release:
+            self.__key_release(event)
 
     def set_keys(self, keys, numlock, capslock):
         """Set new keys list."""
@@ -166,14 +171,67 @@ class DestroyNotifyHandler(EventHandler):
 
     """Handler for X.DestroyNotify events."""
 
-    def __init__(self, destroyed, children=False):
+    def __init__(self, destroy=None, children=False):
         """
-        destroyed - function that will handle events
+        destroy - function that will handle events
         children - False - listen for children windows' events
                    True - listen for window's events
         """
-        EventHandler.__init__(self, _SUBSTRUCTURE[children],
-                              {X.DestroyNotify: destroyed})
+        EventHandler.__init__(self, [_SUBSTRUCTURE[children]],
+                              {X.DestroyNotify: (DestroyNotifyEvent, 
+                                                 self.destroy)})
+        self.__destroy = destroy
+
+    def destroy(self, event):
+        if self.__destroy:
+            self.__destroy(event)
+
+
+class CreateNotifyEvent(Event):
+
+    """Class representing X.CreateNotify events.
+    
+    This event is generated when a window is created.
+    
+    """
+
+    def __init__(self, event):
+        Event.__init__(self, event)
+        self.parent_id = event.parent.id
+        self.x = event.x
+        self.y = event.y
+        self.width = event.width
+        self.height = event.height
+        self.border_width = event.border_width
+        self.override = event.override
+
+    @property
+    def parent(self):
+        return Window(self.parent_id)
+
+
+class CreateNotifyHandler(EventHandler):
+
+    """Handler for X.CreateNotify events.
+    
+    WARNING! event.window might be destroyed just after creation, 
+    that's why only events with override=False are handled, 
+    but still you can't be sure if event.window still exists...
+    
+    """
+
+    def __init__(self, create=None):
+        """
+        create - function that will handle events
+        """
+        EventHandler.__init__(self, [X.SubstructureNotifyMask],
+                              {X.CreateNotify: (CreateNotifyEvent, 
+                                                self.create)})
+        self.__create = create
+
+    def create(self, event):
+        if not event.override and self.__create:
+            self.__create(event)
 
 
 class PropertyNotifyEvent(Event):
@@ -202,12 +260,55 @@ class PropertyNotifyHandler(EventHandler):
 
     """Hanlder for X.PropertyNotify events."""
 
-    _EVENT_TYPE = PropertyNotifyEvent
-
-    def __init__(self, property):
+    def __init__(self, property=None):
         """
         property - function that will handle events
         """
-        EventHandler.__init__(self, X.PropertyChangeMask, 
-                              {X.PropertyNotify: property})
+        EventHandler.__init__(self, [X.PropertyChangeMask], 
+                              {X.PropertyNotify: (PropertyNotifyEvent, 
+                                                  self.property)})
+        self.__property = property
+
+    def property(self, event):
+        if self.__property:
+            self.__property(event)
+
+
+class ConfigureNotifyEvent(Event):
+
+    def __init__(self, event):
+        Event.__init__(self, event)
+        self.parent_id = event.parent.id
+        self.x = event.x
+        self.y = event.y
+        self.width = event.width
+        self.height = event.height
+        self.border_width = event.border_width
+        self.override = event.override
+
+    @property
+    def parent(self):
+        return Window(self.parent_id)
+
+
+class ConfigureNotifyHandler(EventHandler):
+
+    """Hanlder for X.ConfigureNotify events."""
+
+    def __init__(self, configure=None, children=False):
+        """
+        configure - function that will handle events
+        children - False - listen for children windows' events
+                   True - listen for window's events
+        """
+        EventHandler.__init__(self, [_SUBSTRUCTURE[children]], 
+                              {X.PropertyNotify: (ConfigureNotifyEvent, 
+                                                  self.configure)})
+        self.__configure = configure
+
+    def configure(self, event):
+        if self.__configure:
+            # TODO: filter out event.override=True?
+            self.__configure(event)
+
 

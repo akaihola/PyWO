@@ -27,7 +27,7 @@ from core import Window, WindowManager
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
 
-@register(name='iconify', check=[TYPE])
+@register(name='iconify', check=[TYPE], unshade=True)
 def _iconify(win, mode=Window.MODE_TOGGLE):
     """Iconify (minimize) window."""
     win.iconify(mode)

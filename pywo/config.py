@@ -89,12 +89,12 @@ class Config(object):
 
     def load(self, filename):
         """Load configuration file"""
-        log.info('Loading configuration file %s' % filename)
+        log.debug('Loading configuration file %s' % filename)
         self.filename = filename
         # Load config file (load default first)
         self._config.read(
             [os.path.join('/', 'etc', 'pywo', 'pyworc'),
-             os.path.join(os.path.dirname(__file__), '..', 'pyworc'),
+             os.path.join(os.path.dirname(__file__), '..', 'etc', 'pyworc'),
              os.path.join(os.path.expanduser('~'), '.config', 'pywo', 'pyworc'),
              os.path.join(os.path.expanduser('~'), '.pyworc')])
         self.keys = dict(self._config.items('KEYS'))
@@ -106,8 +106,9 @@ class Config(object):
             self._config.read(
                 [os.path.join('/', 'etc', 'pywo', 'layouts', layout),
                  os.path.join('/', 'etc', 'pywo', layout),
-                 os.path.join(os.path.dirname(__file__), '..', layout),
-                 os.path.join(os.path.dirname(__file__), '..', 'layouts', layout),
+                 os.path.join(os.path.dirname(__file__), '..', 'etc', layout),
+                 os.path.join(os.path.dirname(__file__), '..', 'etc', 
+                              'layouts', layout),
                  os.path.join(os.path.expanduser('~'), '.config', 
                               'pywo', 'layouts', layout),
                  os.path.join(os.path.expanduser('~'), '.config', 

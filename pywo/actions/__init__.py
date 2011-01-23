@@ -168,6 +168,7 @@ def perform(args, config, options={}, win_id=0):
     need_section = 'direction' in action.args or \
                    'position' in action.args or \
                    'gravity' in action.args
+    print need_section, args, options.section
     if need_section and (args or options.section):
         name = options.section or args.pop(0)
         section = config.section(name)
@@ -181,7 +182,7 @@ def perform(args, config, options={}, win_id=0):
         if not getattr(options, arg):
             missing_args.append(arg.upper())
     if need_section and not section and missing_args:
-        raise ActionException('Missing %s' % ', '.join(missing))
+        raise ActionException('Missing %s' % ', '.join(missing_args))
 
     if win_id or options.win_id:
         # TODO: try/except invalid options.win_id, or non existant Window

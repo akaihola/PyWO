@@ -22,6 +22,8 @@
 
 import logging
 
+from pywo.main import main
+
 
 class NullHandler(logging.Handler):
 
@@ -31,3 +33,4 @@ class NullHandler(logging.Handler):
 
 # Set NullHandler for whole pywo.* loggers hierarchy
 logging.getLogger('pywo').addHandler(NullHandler())
+

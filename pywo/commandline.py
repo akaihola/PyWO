@@ -19,8 +19,8 @@
 #
 
 """commandline.py - parses commandline options."""
+# TODO: leave only real commandline parsing
 
-from copy import copy
 import logging
 import optparse
 from optparse import OptionParser, OptionGroup, OptionValueError
@@ -29,6 +29,7 @@ import sys
 
 from pywo.core import Size, Gravity, Position
 from pywo import actions
+import pywo.actions.parser
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
@@ -70,61 +71,6 @@ class Parser(OptionParser):
         raise ParserException(msg)
 
 
-def largs_callback(option, opt_str, value, parser):
-    if parser.largs and not parser.values.action:
-        setattr(parser.values, 'action', parser.largs.pop(0))
-    if parser.largs and not parser.values.section:
-        setattr(parser.values, 'section', parser.largs.pop(0))
-
-
-def gravity_callback(option, opt_str, value, parser):
-    largs_callback(option, opt_str, value, parser)
-    try:
-        gravity = Gravity.parse(value)
-    except ValueError:
-        raise OptionValueError(
-            'option %s: error parsing Gravity with value: %s' % (opt_str, value))
-    setattr(parser.values, option.dest, gravity)
-    if option.dest == 'gravity' and not parser.values.position:
-        setattr(parser.values, 'position', gravity)
-    if option.dest == 'gravity' and not parser.values.direction:
-        setattr(parser.values, 'direction', gravity)
-    if option.dest == 'position' and not parser.values.gravity:
-        setattr(parser.values, 'gravity', gravity)
-
-
-def size_callback(option, opt_str, value, parser):
-    largs_callback(option, opt_str, value, parser)
-    # TODO: allow relative size, and absolute size
-    try:
-        if option.dest == 'width':
-            width = Size.parse_value(value)
-            size = Size(width, 0)
-        elif option.dest == 'height':
-            height = Size.parse_value(value)
-            size = Size(0, height)
-        elif option.dest == 'size':
-            size = Size.parse(*value)
-    except ValueError, TypeError:
-        raise OptionValueError(
-            'option %s: error parsing Size with value: %s' % (opt_str, value))
-    setattr(parser.values, option.dest, size)
-
-def position_callback(option, opt_str, value, parser):
-    largs_callback(option, opt_str, value, parser)
-    # TODO: parse it to int, might be relative size
-    try:
-        if option.dest == 'x':
-            size = Position(value, 0)
-        elif option.dest == 'y':
-            size = Position(0, value)
-        elif option.dest == 'coords':
-            size = Position(*value)
-    except ValueError, TypeError:
-        raise OptionValueError(
-            'option %s: error parsing Position with value: %s' % (opt_str, value))
-    setattr(parser.values, option.dest, size)
-
 
 usage = '%prog [OPTIONS]\n   or: %prog ACTION [SECTION] [OPTIONS] WINDOW'
 version='PyWO - Python Window Organizer 0.3'
@@ -138,6 +84,7 @@ parser = Parser(usage=usage, version=version,
                 conflict_handler='resolve')
 parser.set_defaults(action=None, section=None)
 
+# TODO: add to separate group?
 parser.add_option('--help-more',
                   action='store_true', dest='help_more',
                   help='list all available ACTIONs')
@@ -160,69 +107,11 @@ parser.add_option('--windows',
 
 action = OptionGroup(parser, 'Options for Actions', 
                      'If not provided, default values from config file will be used')
-action.add_option('--id',
-                  action='store', dest='win_id', default='', 
-                  help='perform action on window with given ID',
-                  metavar='ID')
 
-action.add_option('-a', '--add', '--set', '--on',
-                  action='store_const', const=1, dest='mode', default=2,
-                  help='actions\'s MODE [default: toggle]')
-action.add_option('-r', '--remove', '--unset', '--off',
-                  action='store_const', const=0, dest='mode', default=2,
-                  help='actions\'s MODE [default: toggle]')
-                  
-action.add_option('-g', '--gravity',
-                  action='callback', dest='gravity', type='string',
-                  callback=gravity_callback,
-                  help='window\'s gravity\nIf not set POSITION will be used')
-action.add_option('-d', '--direction',
-                  action='callback', dest='direction', type='string',
-                  callback=gravity_callback,
-                  help='direction of an action\nIf not set GRAVITY will be used')
-action.add_option('-p', '--position',
-                  action='callback', dest='position', type='string',
-                  callback=gravity_callback,
-                  help='window\'s position on screen\nIf not set GRAVITY will be used')
-
-action.add_option('-w', '--width',
-                  action='callback', dest='width', type='string',
-                  callback=size_callback,)
-action.add_option('-h', '--height',
-                  action='callback', dest='height', type='string', 
-                  callback=size_callback,)
-action.add_option('-s', '--size',
-                  action='callback', dest='size', type='string',
-                  callback=size_callback, nargs=2,
-                  help='[default: current size]',
-                  metavar='WIDTH HEIGHT')
-
-'''
-# TODO: To be used with move, resize actions
-action.add_option('-x',
-                  action='callback', dest='x', type='string',
-                  callback=position_callback,)
-action.add_option('-y',
-                  action='callback', dest='y', type='string',
-                  callback=position_callback,)
-action.add_option('-c', '--coords',
-                  action='callback', dest='coords', type='string',
-                  callback=position_callback, nargs=2,
-                  metavar='X Y')
-'''
-
-action.add_option('-i', '--invert',
-                  action='store_true', dest='invert_on_resize', default=True,
-                  help='invert gravity when resizing windows with incremental size [default: %default]')
-action.add_option('-I', '--no-invert',
-                  action='store_false', dest='invert_on_resize', 
-                  help='DON\'T invert gravity when resizing windows with incremental size')
-
-action.add_option('-V', '--vertical-first',
-                  action='store_true', dest='vertical_first', default=True,
-                  help='[default: %default]')
-action.add_option('-H', '--horizontal-first',
-                  action='store_false', dest='vertical_first')
+for option in actions.parser.parser.option_list:
+    # NOTE: just copy options from actions.parser
+    # TODO: check if this works!
+    action.add_option(option)
 parser.add_option_group(action)
 
 #

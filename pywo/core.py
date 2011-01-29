@@ -1175,13 +1175,13 @@ class WindowManager(XObject):
         windows_ids.reverse()
         return windows_ids
 
-    def windows(self, filter_method=None, match='', stacking=True):
+    def windows(self, filter=None, match='', stacking=True):
         """Return list of all windows (newest/on top first)."""
         # TODO: regexp matching?
         windows_ids = self.windows_ids(stacking)
         windows = [Window(win_id) for win_id in windows_ids]
-        if filter_method:
-            windows = [window for window in windows if filter_method(window)]
+        if filter:
+            windows = [window for window in windows if filter(window)]
         if match:
             windows = self.__name_matcher(windows, match)
         return windows

@@ -68,6 +68,38 @@ class IncludeType(object):
 NORMAL_TYPE = IncludeType(normal=True)
 
 
+class ExcludeType(object):
+    def __init__(self,
+                 desktop=False, dock=False, 
+                 toolbar=False, menu=False,
+                 utility=False, splash=False,
+                 dialog=False, normal=False):
+        self.not_allowed_types = []
+        if desktop:
+            self.not_allowed_types.append(Type.DESKTOP)
+        if dock:
+            self.not_allowed_types.append(Type.DOCK)
+        if toolbar:
+            self.not_allowed_types.append(Type.TOOLBAR)
+        if menu:
+            self.not_allowed_types.append(Type.MENU)
+        if utility:
+            self.not_allowed_types.append(Type.UTILITY)
+        if splash:
+            self.not_allowed_types.append(Type.SPLASH)
+        if dialog:
+            self.not_allowed_types.append(Type.DIALOG)
+        if normal:
+            self.not_allowed_types.append(Type.NORMAL)
+
+    def __call__(self, window):
+        type = window.type
+        for not_allowed_type in self.not_allowed_types:
+            if not_allowed_type in type:
+                return False
+        return True
+
+
 class IncludeState(object):
 
     """Return only windows with specified state."""

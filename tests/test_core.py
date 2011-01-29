@@ -162,10 +162,10 @@ class TestWindowManager(TestMockedCore):
         def fullscreen_filter(window):
             return core.State.FULLSCREEN in window.state
 
-        windows = self.WM.windows(filter_method=fullscreen_filter)
+        windows = self.WM.windows(filter=fullscreen_filter)
         self.assertEqual(len(windows), 0)
         self.win.fullscreen(1)
-        windows = self.WM.windows(filter_method=fullscreen_filter)
+        windows = self.WM.windows(filter=fullscreen_filter)
         self.assertEqual(len(windows), 1)
 
 

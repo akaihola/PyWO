@@ -23,7 +23,7 @@
 import itertools
 import logging
 
-from pywo.actions import register, TYPE, STATE
+from pywo.actions import register, TYPE_FILTER, TYPE_STATE_FILTER
 from pywo.core import Gravity, Geometry, Size, WindowManager
 from pywo.events import PropertyNotifyHandler
 from pywo.resizer import expand_window, shrink_window
@@ -38,7 +38,7 @@ WM = WindowManager()
 
 _GRIDED = {} # change to HISTORY
 
-@register(name='expand', check=[TYPE, STATE], unshade=True)
+@register(name='expand', filter=TYPE_STATE_FILTER, unshade=True)
 def _expand(win, direction, vertical_first=True):
     """Expand window in given direction."""
     _GRIDED['id'] = None
@@ -49,7 +49,7 @@ def _expand(win, direction, vertical_first=True):
     win.set_geometry(border, direction)
 
 
-@register(name='shrink', check=[TYPE, STATE], unshade=True)
+@register(name='shrink', filter=TYPE_STATE_FILTER, unshade=True)
 def _shrink(win, direction, vertical_first=True):
     """Shrink window in given direction."""
     _GRIDED['id'] = None
@@ -59,7 +59,7 @@ def _shrink(win, direction, vertical_first=True):
     win.set_geometry(border, direction)
 
 
-@register(name='float', check=[TYPE, STATE], unshade=True)
+@register(name='float', filter=TYPE_STATE_FILTER, unshade=True)
 def _move(win, direction, vertical_first=True):
     """Move window in given direction."""
     _GRIDED['id'] = None
@@ -78,7 +78,7 @@ def _move(win, direction, vertical_first=True):
     win.set_geometry(geometry)
 
 
-@register(name='put', check=[TYPE, STATE], unshade=True)
+@register(name='put', filter=TYPE_STATE_FILTER, unshade=True)
 def _put(win, position, gravity=None):
     """Put window in given position (without resizing)."""
     _GRIDED['id'] = None
@@ -111,6 +111,9 @@ def __grid(win, position, gravity,
            size, width, height, 
            invert_on_resize=True, cycle='width'):
     """Put window in given position and resize it."""
+    # FIXME: there's something wrong... 
+    #        open terminal, grid left, close terminal, 
+    #        open terminal, grid left -> wrong size!
 
     def get_iterator(sizes, new_size):
         """Prepare cycle iterator for window sizes."""
@@ -180,7 +183,7 @@ def __grid(win, position, gravity,
     win.set_geometry(geometry, gravity)
 
 
-@register(name='grid_width', check=[TYPE])
+@register(name='grid_width', filter=TYPE_FILTER)
 def _grid_width(win, position, gravity, 
                 size=None, width=NO_SIZE, height=NO_SIZE, 
                 invert_on_resize=True):
@@ -188,7 +191,7 @@ def _grid_width(win, position, gravity,
     __grid(win, position, gravity, 
            size, width, height, invert_on_resize, 'width')
 
-@register(name='grid_height', check=[TYPE])
+@register(name='grid_height', filter=TYPE_FILTER)
 def _grid_height(win, position, gravity, 
                  size=None, width=NO_SIZE, height=NO_SIZE, 
                  invert_on_resize=True):
@@ -221,12 +224,12 @@ def __switch_cycle(win, keep_active):
         WM.listen(property_handler)
         _switch_cycle = True
 
-@register(name='switch', check=[TYPE])
+@register(name='switch', filter=TYPE_FILTER)
 def _switch(win):
     """Switch placement of windows (keep focus on the same window)."""
     __switch_cycle(win, True)
 
-@register(name='cycle', check=[TYPE])
+@register(name='cycle', filter=TYPE_FILTER)
 def _cycle(win):
     """Switch contents of windows (focus on new window)."""
     __switch_cycle(win, False)

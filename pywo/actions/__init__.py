@@ -35,8 +35,9 @@ log = logging.getLogger(__name__)
 
 WM = WindowManager()
 
-TYPE = 1
-STATE = 2
+TYPE_FILTER = filters.ExcludeType(desktop=True, dock=True, splash=True)
+STATE_FILTER = filters.ExcludeState(fullscreen=True, maximized=True)
+TYPE_STATE_FILTER = filters.AND(TYPE_FILTER, STATE_FILTER)
 
 
 class ActionException(Exception):
@@ -50,63 +51,77 @@ class ActionException(Exception):
 
 class Action(object):
 
-    _ACTIONS = {} # {action.name: action, }
-    _LOADED = False
+    """PyWO Action."""
 
-    def __init__(self, action, name,
-                 check=[], unshade=False):
-        self.name = name
+    __ACTIONS = {} # {action.name: action, }
+    _LOADED = False # TODO: remove?
+
+    def __init__(self, action, name='',
+                 filter=None, unshade=False):
+        self.name = name or action.__name__
+        self.__doc__ = action.__doc__
+        self.__action = action
+        self.__filter = filter
+        self.__unshade = unshade
+        self.post_action_hooks = []
         self.args = action.func_code.co_varnames[1:action.func_code.co_argcount]
         if action.func_defaults:
             self.obligatory_args = self.args[:-len(action.func_defaults)]
         else:
             self.obligatory_args = self.args
         self.optional_args = [arg for arg in self.args 
-                              if arg not in self.obligatory_args]
-        self.__action = action
-        self.__check = check
-        self.__unshade = unshade
-        self.__doc__ = action.__doc__
+                                  if arg not in self.obligatory_args]
 
     def __call__(self, win, **kwargs):
-        if self.__check:
-            self.__check_type_state(win)
+        self.perform(win, **kwargs)
+
+    def perform(self, win, **kwargs):
+        """Perform action on window and with given arguments."""
+        if self.__filter and not self.__filter(win):
+            error = "Can't perform %s on this window." % self.name
+            raise ActionException(error)
         if self.__unshade:
             win.shade(Mode.UNSET)
             win.flush()
         self.__action(win, **kwargs)
-        # history
-        # _GRIDED ??
+        win.flush()
+        for hook in self.post_action_hooks:
+            hook(self, win, **kwargs)
 
-    def __check_type_state(self, win):
-        type = win.type
-        if TYPE in self.__check and \
-           (Type.DESKTOP in type or \
-            Type.DOCK in type or \
-            Type.SPLASH in type):
-            error = "Can't perform %s on window of this type." % self.name
-            raise ActionException(error)
+    def register(self):
+        if self.name in Action.__ACTIONS:
+            log.warning('Action with name %s already registered!' % self.name)
+        Action.__ACTIONS[self.name] = self
+        log.debug('Registered action %s' % self.name)
 
-        state = win.state
-        if STATE in self.__check and \
-           (State.FULLSCREEN in state or \
-            (State.MAXIMIZED_HORZ in state and State.MAXIMIZED_VERT in state)):
-            error = "Can't perform %s on maximized/fullscreen window." % self.name
-            raise ActionException(error)
+    @classmethod
+    def get(cls, name):
+        """Return action with given name or None."""
+        return cls.__ACTIONS.get(name, None)
+
+    @classmethod
+    def all(cls):
+        """Return set of all actions."""
+        return cls.__ACTIONS.values()
 
 
-def register(name, check=[], unshade=False):
+def register(name, filter=None, unshade=False):
     """Register function as PyWO action with given name."""
     def register_action(action):
-        doc = action.__doc__
-        action = Action(action, name, check, unshade)
-        Action._ACTIONS[name] = action
+        action = Action(action, name, filter, unshade)
+        action.register()
         return action
     name = name.lower()
     return register_action
 
 
-@register(name='debug', check=[TYPE])
+def post_action_hook(hook):
+    """Register post_action_hook that will be called after performing action."""
+    Action.post_action_hooks.append(hook)
+    return hook
+
+
+@register(name='debug', filter=TYPE_FILTER)
 def _debug_info(win):
     """Print debug info about Window Manager, and current Window."""
     log.info('-= Window Manager =-')
@@ -123,6 +138,7 @@ def _debug_info(win):
 
 def __load():
     """Autodiscover actions."""
+    # TODO: use pkg_resources and pywo.actions entry point
     path = os.path.dirname(os.path.abspath(__file__))
     modules = [file[0:-3] for file in os.listdir(path) 
                           if file.endswith('.py')]
@@ -135,19 +151,18 @@ def get(name):
     """Return action with given name."""
     if not Action._LOADED:
         __load()
-    return Action._ACTIONS.get(name.lower(), None)
+    return Action.get(name.lower())
 
 
 def all():
     """Return set of all actions."""
     if not Action._LOADED:
         __load()
-    return Action._ACTIONS.values()
+    return Action.all()
 
 
 def get_args(action, config, section=None, options=None):
-    # FIXME: --widths, --heights don't work right now, 
-    #        --sizes is used instead (from options, or default from section)
+    # TODO: move to Action class?
     kwargs = {}
     for arg in action.args:
         for obj in [options, section, config]:
@@ -158,6 +173,7 @@ def get_args(action, config, section=None, options=None):
     return kwargs
 
 
+# TODO: move to commandline.py as perform_action?
 def perform(args, config, options={}, win_id=0):
     if not options.action and len(args) == 0:
         raise ActionException('No ACTION provided')
@@ -204,6 +220,5 @@ def perform(args, config, options={}, win_id=0):
               ', '.join(['%s=%s' % (key, str(value)) 
                          for key, value in kwargs.items()])))
     action(window, **kwargs)
-    WM.flush()
 
 

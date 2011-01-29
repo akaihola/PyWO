@@ -22,7 +22,7 @@
 
 import logging
 
-from pywo.actions import register, TYPE, STATE
+from pywo.actions import register, TYPE_FILTER, STATE_FILTER, TYPE_STATE_FILTER
 from pywo.core import Window, WindowManager, State, Mode
 
 
@@ -32,12 +32,12 @@ __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 log = logging.getLogger(__name__)
 
 
-@register(name='iconify', check=[TYPE], unshade=True)
+@register(name='iconify', filter=TYPE_FILTER, unshade=True)
 def _iconify(win, mode=Mode.TOGGLE):
     """Iconify (minimize) window."""
     win.iconify(mode)
 
-@register(name='maximize', check=[TYPE], unshade=True)
+@register(name='maximize', filter=TYPE_FILTER, unshade=True)
 def _maximize(win, mode=Mode.TOGGLE):
     """Maximize window."""
     state = win.state
@@ -50,18 +50,18 @@ def _maximize(win, mode=Mode.TOGGLE):
         win.fullscreen(win.MODE_UNSET)
     win.maximize(mode)
 
-@register(name='maximize_vert', check=[TYPE], unshade=True)
+@register(name='maximize_vert', filter=TYPE_FILTER, unshade=True)
 def _maximize(win, mode=Mode.TOGGLE):
     """Maximize vertically window."""
     win.maximize(mode, horz=False)
 
-@register(name='maximize_horz', check=[TYPE], unshade=True)
+@register(name='maximize_horz', filter=TYPE_FILTER, unshade=True)
 def _maximize(win, mode=Mode.TOGGLE):
     """Maximize vertically window."""
     win.maximize(mode, vert=False)
 
 
-@register(name='shade', check=[TYPE])
+@register(name='shade', filter=TYPE_FILTER)
 def _shade(win, mode=Mode.TOGGLE):
     """Shade window."""
     #win.maximize(win.MODE_UNSET)
@@ -69,20 +69,20 @@ def _shade(win, mode=Mode.TOGGLE):
     win.shade(mode)
 
 
-@register(name='fullscreen', check=[TYPE], unshade=True)
+@register(name='fullscreen', filter=TYPE_FILTER, unshade=True)
 def _fullscreen(win, mode=Mode.TOGGLE):
     """Fullscreen window."""
     #win.maximize(win.MODE_UNSET)
     win.fullscreen(mode)
 
 
-@register(name='sticky', check=[TYPE])
+@register(name='sticky', filter=TYPE_FILTER)
 def _sticky(win, mode=Mode.TOGGLE):
     """Change sticky (stay on all desktops/viewports) property."""
     win.sticky(mode)
 
 
-@register(name='activate', check=[TYPE], unshade=True)
+@register(name='activate', filter=TYPE_FILTER, unshade=True)
 def _activate(win, mode=Mode.TOGGLE):
     """Activate window.
     
@@ -96,13 +96,13 @@ def _activate(win, mode=Mode.TOGGLE):
     win.activate()
 
 
-@register(name="close", check=[TYPE])
+@register(name="close", filter=TYPE_FILTER)
 def _close(win):
     """Close window."""
     win.close()
 
 
-@register(name='blink', check=[TYPE, STATE])
+@register(name='blink', filter=TYPE_STATE_FILTER)
 def _blink(win):
     """Blink window (show border around window)."""
     win.blink()

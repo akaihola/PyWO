@@ -21,11 +21,10 @@
 """actions - core PyWO actions classes and functions."""
 
 import logging
-import os.path
-import sys
 
 from pywo.core import Window, WindowManager, Type, State, Mode
 from pywo import filters
+from pywo.actions import manager
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
@@ -52,9 +51,6 @@ class ActionException(Exception):
 class Action(object):
 
     """PyWO Action."""
-
-    __ACTIONS = {} # {action.name: action, }
-    _LOADED = False # TODO: remove?
 
     def __init__(self, action, name='',
                  filter=None, unshade=False):
@@ -88,30 +84,13 @@ class Action(object):
         for hook in self.post_action_hooks:
             hook(self, win, **kwargs)
 
-    def register(self):
-        if self.name in Action.__ACTIONS:
-            log.warning('Action with name %s already registered!' % self.name)
-        Action.__ACTIONS[self.name] = self
-        log.debug('Registered action %s' % self.name)
 
-    @classmethod
-    def get(cls, name):
-        """Return action with given name or None."""
-        return cls.__ACTIONS.get(name, None)
-
-    @classmethod
-    def get_all(cls):
-        """Return set of all actions."""
-        return cls.__ACTIONS.values()
-
-
-def register(name, filter=None, unshade=False):
+def register(name='', filter=None, unshade=False):
     """Register function as PyWO action with given name."""
     def register_action(action):
-        action = Action(action, name, filter, unshade)
-        action.register()
+        action = Action(action, name.lower(), filter, unshade)
+        manager.register(action)
         return action
-    name = name.lower()
     return register_action
 
 
@@ -136,29 +115,14 @@ def _debug_info(win):
     log.info('-= End of debug =-')
 
 
-def __load():
-    """Autodiscover actions."""
-    # TODO: use pkg_resources and pywo.actions entry point
-    path = os.path.dirname(os.path.abspath(__file__))
-    modules = [file[0:-3] for file in os.listdir(path) 
-                          if file.endswith('.py')]
-    for module in modules:
-        __import__('pywo.actions.%s' % module)
-    Action._LOADED = True
-
-
 def get(name):
     """Return action with given name."""
-    if not Action._LOADED:
-        __load()
-    return Action.get(name.lower())
+    return manager.get(name.lower())
 
 
 def get_all():
     """Return set of all actions."""
-    if not Action._LOADED:
-        __load()
-    return Action.get_all()
+    return manager.get_all()
 
 
 def get_args(action, config, section=None, options=None):
@@ -177,6 +141,7 @@ def get_args(action, config, section=None, options=None):
 def perform(args, config, options={}, win_id=0):
     # FIXME: options can't be defaulted to dict!!!
     if not options.action and not args:
+        # This will never be called...
         raise ActionException('No ACTION provided')
     name = options.action or args.pop(0)
     action = get(name)
@@ -224,4 +189,6 @@ def perform(args, config, options={}, win_id=0):
                          for key, value in kwargs.items()])))
     action(window, **kwargs)
 
+# Autoload all actions
+manager.load()
 

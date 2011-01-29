@@ -25,7 +25,6 @@ from optparse import OptionParser, OptionValueError
 import sys
 
 from pywo.core import Size, Gravity, Position
-from pywo import actions
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"

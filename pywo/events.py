@@ -74,6 +74,7 @@ class EventHandler(object):
 
     @property
     def types(self):
+        """Return set of EventHandler's event types."""
         return self.__mapping.keys()
 
     def handle_event(self, event):

@@ -605,7 +605,7 @@ class XObject(object):
         
         """
         if key:
-            code = '-'.join([code,key])
+            code = '-'.join([code, key])
         code = code.split('-')
         key = code[-1]
         masks = code[:-1]

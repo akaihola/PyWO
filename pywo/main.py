@@ -55,6 +55,7 @@ def setup_loggers(debug=False):
 
 
 def main():
+    """PyWO run function."""
     # parse commandline
     try:
         (options, args) = commandline.parse_args()
@@ -73,7 +74,6 @@ def main():
         WM = WindowManager()
         windows = WM.windows(filters.NORMAL_TYPE)
         for window in windows:
-            geometry = window.geometry
             state = window.state
             win_desktop = window.desktop
             desktop = [win_desktop, -1][State.STICKY in state or \

@@ -41,8 +41,8 @@ log = logging.getLogger(__name__)
 def all(config):
     """Return all services."""
     path = os.path.dirname(os.path.abspath(__file__))
-    modules = [file[0:-3] for file in os.listdir(path) 
-                          if file.endswith('_service.py')]
+    modules = [filename[0:-3] for filename in os.listdir(path) 
+                              if filename.endswith('_service.py')]
     log.debug('Found services: %s' % ', '.join(modules))
     services = []
     for module in modules:

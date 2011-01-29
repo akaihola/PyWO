@@ -136,5 +136,6 @@ class Config(object):
         log.debug('Loaded configuration file')
 
     def section(self, name):
+        """Return Section with given name."""
         return self.sections.get(name.lower(), None)
 

@@ -21,7 +21,6 @@
 """parser.py - parses actions from commandline."""
 
 import logging
-import optparse
 from optparse import OptionParser, OptionValueError
 import sys
 
@@ -46,11 +45,14 @@ class ParserException(Exception):
 
 class Parser(OptionParser):
 
+    """OptionParser that raises exception on errors."""
+
     def error(self, msg):
         raise ParserException(msg)
 
 
 def largs_callback(option, opt_str, value, parser):
+    """Set action adn section options."""
     # FIXME: this callback is not called if 'action section' without other options!
     if parser.largs and not parser.values.action:
         setattr(parser.values, 'action', parser.largs.pop(0))
@@ -59,12 +61,13 @@ def largs_callback(option, opt_str, value, parser):
 
 
 def gravity_callback(option, opt_str, value, parser):
+    """Parse gravity option to Gravity."""
     largs_callback(option, opt_str, value, parser)
     try:
         gravity = Gravity.parse(value)
     except ValueError:
-        raise OptionValueError(
-            'option %s: error parsing Gravity with value: %s' % (opt_str, value))
+        msg = 'option %s: error parsing Gravity value: %s' % (opt_str, value)
+        raise OptionValueError(msg)
     setattr(parser.values, option.dest, gravity)
     if option.dest == 'gravity' and not parser.values.position:
         setattr(parser.values, 'position', gravity)
@@ -75,6 +78,7 @@ def gravity_callback(option, opt_str, value, parser):
 
 
 def size_callback(option, opt_str, value, parser):
+    """Parse width, height, size options to Size."""
     largs_callback(option, opt_str, value, parser)
     # TODO: allow relative size, and absolute size
     try:
@@ -86,12 +90,14 @@ def size_callback(option, opt_str, value, parser):
             size = Size(0, height)
         elif option.dest == 'size':
             size = Size.parse(*value)
-    except ValueError, TypeError:
-        raise OptionValueError(
-            'option %s: error parsing Size with value: %s' % (opt_str, value))
+    except (ValueError, TypeError):
+        msg = 'option %s: error parsing Size value: %s' % (opt_str, value)
+        raise OptionValueError(msg)
     setattr(parser.values, option.dest, size)
 
+
 def position_callback(option, opt_str, value, parser):
+    """Parse x, y, coords options to Position."""
     largs_callback(option, opt_str, value, parser)
     # TODO: parse it to int, might be relative size
     try:
@@ -101,9 +107,9 @@ def position_callback(option, opt_str, value, parser):
             size = Position(0, value)
         elif option.dest == 'coords':
             size = Position(*value)
-    except ValueError, TypeError:
-        raise OptionValueError(
-            'option %s: error parsing Position with value: %s' % (opt_str, value))
+    except (ValueError, TypeError):
+        msg = 'option %s: error parsing Position value: %s' % (opt_str, value)
+        raise OptionValueError(msg)
     setattr(parser.values, option.dest, size)
 
 

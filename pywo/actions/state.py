@@ -22,8 +22,8 @@
 
 import logging
 
-from pywo.actions import register, TYPE_FILTER, STATE_FILTER, TYPE_STATE_FILTER
-from pywo.core import Window, WindowManager, State, Mode
+from pywo.actions import register, TYPE_FILTER, TYPE_STATE_FILTER
+from pywo.core import WindowManager, State, Mode
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
@@ -51,12 +51,12 @@ def _maximize(win, mode=Mode.TOGGLE):
     win.maximize(mode)
 
 @register(name='maximize_vert', filter=TYPE_FILTER, unshade=True)
-def _maximize(win, mode=Mode.TOGGLE):
+def _maximize_vert(win, mode=Mode.TOGGLE):
     """Maximize vertically window."""
     win.maximize(mode, horz=False)
 
 @register(name='maximize_horz', filter=TYPE_FILTER, unshade=True)
-def _maximize(win, mode=Mode.TOGGLE):
+def _maximize_horz(win, mode=Mode.TOGGLE):
     """Maximize vertically window."""
     win.maximize(mode, vert=False)
 
@@ -83,7 +83,7 @@ def _sticky(win, mode=Mode.TOGGLE):
 
 
 @register(name='activate', filter=TYPE_FILTER, unshade=True)
-def _activate(win, mode=Mode.TOGGLE):
+def _activate(win):
     """Activate window.
     
     Unshade, unminimize and switch to it's desktop/viewport.
@@ -111,5 +111,6 @@ def _blink(win):
 # TODO: new actions
 #   - always on top
 #   - switch desktop/viewport
-#   - move window to desktop/viewport (with or without following - switching to that desktop/viewport)
+#   - move window to desktop/viewport 
+#     (with or without following - switching to that desktop/viewport)
 

@@ -27,10 +27,12 @@ from pywo.main import main
 
 class NullHandler(logging.Handler):
 
+    """logging.Handler that does not emit anything."""
+
     def emit(self, record):
         pass
 
 
-# Set NullHandler for whole pywo.* loggers hierarchy
+# set NullHandler for whole pywo.* loggers hierarchy
 logging.getLogger('pywo').addHandler(NullHandler())
 

@@ -23,13 +23,11 @@
 
 import logging
 import optparse
-from optparse import OptionParser, OptionGroup, OptionValueError
+from optparse import OptionParser, OptionGroup
 import textwrap
 import sys
 
-from pywo.core import Size, Gravity, Position
 from pywo import actions
-import pywo.actions.parser
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
@@ -66,6 +64,7 @@ class ParserException(Exception):
 
 
 class Parser(OptionParser):
+    # TODO: no need for this here, it will be used in console!
 
     def error(self, msg):
         raise ParserException(msg)
@@ -73,7 +72,7 @@ class Parser(OptionParser):
 
 
 usage = '%prog [OPTIONS]\n   or: %prog ACTION [SECTION] [OPTIONS] WINDOW'
-version='PyWO - Python Window Organizer 0.3'
+version = 'PyWO - Python Window Organizer 0.3'
 description = version
 epilog = '' 
 # TODO: add some examples of usage
@@ -110,7 +109,6 @@ action = OptionGroup(parser, 'Options for Actions',
 
 for option in actions.parser.parser.option_list:
     # NOTE: just copy options from actions.parser
-    # TODO: check if this works!
     action.add_option(option)
 parser.add_option_group(action)
 

@@ -175,6 +175,7 @@ def get_args(action, config, section=None, options=None):
 
 # TODO: move to commandline.py as perform_action?
 def perform(args, config, options={}, win_id=0):
+    # FIXME: options can't be defaulted to dict!!!
     if not options.action and len(args) == 0:
         raise ActionException('No ACTION provided')
     name = options.action or args.pop(0)

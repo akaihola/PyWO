@@ -41,7 +41,7 @@ def setup_loggers(debug=False):
     """Setup file, and console loggers."""
     log.setLevel(logging.DEBUG)
     format = '%(levelname)s: %(name)s.%(funcName)s(%(lineno)d): %(message)s'
-    rotating = RotatingFileHandler('/tmp/PyWO.log', 'a', 1024*50, 2)
+    rotating = RotatingFileHandler('/tmp/PyWO.log', 'a', 1024*100)
     rotating.setFormatter(logging.Formatter(format))
     rotating.setLevel(logging.DEBUG)
     log.addHandler(rotating)
@@ -54,16 +54,15 @@ def setup_loggers(debug=False):
     log.addHandler(console)
 
 
-def main():
+def run():
     """PyWO run function."""
     # parse commandline
-    try:
-        (options, args) = commandline.parse_args()
-    except commandline.ParserException, e:
-        commandline.print_error(str(e))
+    (options, args) = commandline.parse_args()
+
     # setup loggers
     setup_loggers(options.debug)
 
+    # load config settings
     config = Config(options.config)
 
     if options.start_daemon:
@@ -95,19 +94,18 @@ def main():
             state_flags += [' ', 's'][State.SHADED in state]# and \
                                       #not State.HIDDEN in state]
             print '%s %s %s %s' % (window.id, desktop, state_flags, window.name)
+    elif options.help_more:
+        commandline.print_help_more(config)
     elif args or options.action:
         try:
             actions.perform(args, config, options)
         except actions.ActionException, e:
-            # TODO: What about other exceptions?
-            #       parser exceptions?
             commandline.print_error(e)
-    elif options.help_more:
-        commandline.print_help_more(config)
     else:
         commandline.print_help()
 
 
 if __name__ == '__main__':
-    main()
+    # run PyWO
+    run()
 

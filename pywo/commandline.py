@@ -19,7 +19,6 @@
 #
 
 """commandline.py - parses commandline options."""
-# TODO: leave only real commandline parsing
 
 import logging
 import optparse
@@ -39,12 +38,16 @@ log = logging.getLogger(__name__)
 
 # Hack for textwrap so newline characters can be used
 class TextWrapperWithNewLines:
+
+    """TextWrapper that keeps newline characters."""
+
     @staticmethod
     def wrap(text, width=70, **kw):
         result = []
         for line in text.split("\n"):
             result.extend(textwrap.wrap(line, width, **kw))
         return result
+
     @staticmethod
     def fill(text, width=70, **kw):
         result = []
@@ -55,36 +58,21 @@ class TextWrapperWithNewLines:
 optparse.textwrap = TextWrapperWithNewLines()
 
 
-class ParserException(Exception):
-
-    def __init__(self, msg):
-        self.msg = msg
-
-    def __str__(self):
-        return self.msg
-
-
-class Parser(OptionParser):
-    # TODO: no need for this here, it will be used in console!
-
-    def error(self, msg):
-        raise ParserException(msg)
-
-
-
-usage = '%prog [OPTIONS]\n   or: %prog ACTION [SECTION] [OPTIONS] WINDOW'
+usage = '%prog [OPTIONS]\n   or: %prog ACTION [SECTION] [OPTIONS] [WINDOW NAME]'
 version = 'PyWO - Python Window Organizer 0.3'
 description = version
 epilog = '' 
 # TODO: add some examples of usage
 # TODO: add author, webpage, license info
 # TODO: store parser in threading.local to make it thread safe?
-parser = Parser(usage=usage, version=version,
-                #description=description,
-                conflict_handler='resolve')
+parser = OptionParser(usage=usage, version=version,
+                      #description=description,
+                      conflict_handler='resolve')
 parser.set_defaults(action=None, section=None)
 
-# TODO: add to separate group?
+#
+# Commandline options
+#
 parser.add_option('--help-more',
                   action='store_true', dest='help_more',
                   help='list all available ACTIONs')
@@ -97,7 +85,7 @@ parser.add_option('--config',
                   metavar='FILE')
 parser.add_option('--daemon',
                   action='store_true', dest='start_daemon', default=False,
-                  help='run PyWO in daemon mode - register keyboard shortcuts, start D-Bus Service (if turned on in config file) [default: %default]')
+                  help='run PyWO in daemon mode [default: %default]')
 parser.add_option('--windows',
                   action='store_true', dest='list_windows', default=False,
                   help='list all windows: <id> <desktop> <state> <name>')
@@ -105,6 +93,10 @@ parser.add_option('--windows',
 #                  action='store_true', dest='list_desktops', default=False,
 #                  help='list dekstops') # TODO output format
 
+
+#
+# Group of options related to actions
+#
 action = OptionGroup(parser, 'Options for Actions', 
                      'If not provided, default values from config file will be used')
 
@@ -112,6 +104,7 @@ for option in pywo.actions.parser.parser.option_list:
     # NOTE: just copy options from actions.parser
     action.add_option(option)
 parser.add_option_group(action)
+
 
 #
 # Groups for --help-more
@@ -155,10 +148,7 @@ def parse_args(args=sys.argv[1:]):
 
 
 def print_error(msg):
-    parser.print_usage(sys.stderr)
-    if msg:
-        sys.stderr.write("ERROR: %s\n" % (msg))
-    sys.exit(2)
+    parser.error(msg)
 
 
 def print_help():

@@ -22,8 +22,6 @@
 
 import logging
 
-from pywo.main import main
-
 
 class NullHandler(logging.Handler):
 

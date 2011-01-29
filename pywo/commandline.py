@@ -28,6 +28,7 @@ import textwrap
 import sys
 
 from pywo import actions
+import pywo.actions.parser
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
@@ -107,7 +108,7 @@ parser.add_option('--windows',
 action = OptionGroup(parser, 'Options for Actions', 
                      'If not provided, default values from config file will be used')
 
-for option in actions.parser.parser.option_list:
+for option in pywo.actions.parser.parser.option_list:
     # NOTE: just copy options from actions.parser
     action.add_option(option)
 parser.add_option_group(action)

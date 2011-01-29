@@ -53,7 +53,6 @@ class Parser(OptionParser):
 
 def largs_callback(option, opt_str, value, parser):
     """Set action adn section options."""
-    # FIXME: this callback is not called if 'action section' without other options!
     if parser.largs and not parser.values.action:
         setattr(parser.values, 'action', parser.largs.pop(0))
     if parser.largs and not parser.values.section:

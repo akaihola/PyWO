@@ -176,7 +176,7 @@ def get_args(action, config, section=None, options=None):
 # TODO: move to commandline.py as perform_action?
 def perform(args, config, options={}, win_id=0):
     # FIXME: options can't be defaulted to dict!!!
-    if not options.action and len(args) == 0:
+    if not options.action and not args:
         raise ActionException('No ACTION provided')
     name = options.action or args.pop(0)
     action = get(name)
@@ -186,10 +186,12 @@ def perform(args, config, options={}, win_id=0):
                    'position' in action.args or \
                    'gravity' in action.args
     if need_section and options.section:
-        name = options.section #or args.pop(0)
+        name = options.section
         section = config.section(name)
         if not section:
             raise ActionException('Invalid SECTION name: %s' % name)
+    elif need_section and args and config.section(args[0]):
+        section = config.section(args.pop(0))
     else:
         section = None
 

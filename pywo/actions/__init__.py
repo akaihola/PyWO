@@ -100,7 +100,7 @@ class Action(object):
         return cls.__ACTIONS.get(name, None)
 
     @classmethod
-    def all(cls):
+    def get_all(cls):
         """Return set of all actions."""
         return cls.__ACTIONS.values()
 
@@ -154,11 +154,11 @@ def get(name):
     return Action.get(name.lower())
 
 
-def all():
+def get_all():
     """Return set of all actions."""
     if not Action._LOADED:
         __load()
-    return Action.all()
+    return Action.get_all()
 
 
 def get_args(action, config, section=None, options=None):

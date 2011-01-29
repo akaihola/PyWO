@@ -38,7 +38,7 @@ __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 log = logging.getLogger(__name__)
 
 
-def all(config):
+def get_all(config):
     """Return all services."""
     path = os.path.dirname(os.path.abspath(__file__))
     modules = [filename[0:-3] for filename in os.listdir(path) 

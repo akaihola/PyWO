@@ -166,7 +166,7 @@ def print_help():
 
 def print_help_more(config):
     list = []
-    for action in sorted(actions.all(), key=lambda action: action.name):
+    for action in sorted(actions.get_all(), key=lambda action: action.name):
         line = '%s\n  %s\n  %s' %  (action.name, 
                          (action.__doc__ or '').split('\n')[0],
                          ', '.join(action.obligatory_args).upper())

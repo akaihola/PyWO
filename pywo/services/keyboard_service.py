@@ -65,7 +65,7 @@ HANDLER = KeyPressHandler()
 
 def setup(config):
     MAPPINGS.clear()
-    for action in actions.all():
+    for action in actions.get_all():
         if 'direction' in action.args or \
            'position' in action.args or \
            'gravity' in action.args:

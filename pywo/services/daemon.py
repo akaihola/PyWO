@@ -58,7 +58,7 @@ def setup(config):
     FILENAME = config.filename
     global SERVICES
     SERVICES = []
-    for service in services.all(config):
+    for service in services.get_all(config):
         SERVICES.append(service)
     for service in SERVICES:
         service.setup(config)

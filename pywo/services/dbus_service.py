@@ -61,8 +61,10 @@ class DBusService(dbus.service.Object):
     @dbus.service.method("net.kosciak.PyWO", 
                          in_signature='', out_signature='a(ssasas)')
     def GetActions(self):
-        return [(action.name, (action.__doc__ or '').split('\n')[0],
-                 action.args, action.obligatory_args) for action in actions.all()]
+        return [(action.name, 
+                 (action.__doc__ or '').split('\n')[0],
+                 action.args, 
+                 action.obligatory_args) for action in actions.get_all()]
 
     @dbus.service.method("net.kosciak.PyWO", 
                          in_signature='', out_signature='as')

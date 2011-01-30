@@ -49,13 +49,13 @@ class DBusService(dbus.service.Object):
         try:
             (options, args) = commandline.parse_args(command.split())
         except commandline.ParserException, e:
-            log.error('ParserException: %s' % e)
+            log.excetpion('ParserException: %s' % e)
             return 'ERROR: %s' % e
         try:
             actions.perform(args, self.CONFIG, options, win_id)
             return ''
         except actions.ActionException, e:
-            log.error('ActionException: %s' % e)
+            log.excetpion('ActionException: %s' % e)
             return 'ERROR: %s' % e
 
     @dbus.service.method("net.kosciak.PyWO", 

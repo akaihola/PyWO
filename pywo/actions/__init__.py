@@ -138,6 +138,7 @@ def perform(args, config, options={}, win_id=0):
         # This will never be called...
         raise ActionException('No ACTION provided')
     name = options.action or args.pop(0)
+    name = config.alias(name)
     action = manager.get(name)
     if not action:
         raise ActionException('Invalid ACTION name: %s' % name)

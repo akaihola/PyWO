@@ -30,7 +30,7 @@ setup(
     tests_require=['nose'],
     entry_points={
         'console_scripts':[
-            'pywo = pywo.main:main',
+            'pywo = pywo.main:run',
         ],
     },
     #scripts = ['bin/pywo'],

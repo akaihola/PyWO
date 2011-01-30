@@ -73,6 +73,7 @@ class Config(object):
         self.keys = {} # {'action_name': 'key', }
         self.ignored = set()
         self.sections = {} # {section.name: section, }
+        self.aliases = {} # {alias: section|action, }
         self.filename = filename
         self.load(filename)
 
@@ -97,8 +98,14 @@ class Config(object):
              os.path.join(os.path.dirname(__file__), '..', 'etc', 'pyworc'),
              os.path.join(os.path.expanduser('~'), '.config', 'pywo', 'pyworc'),
              os.path.join(os.path.expanduser('~'), '.pyworc')])
+        # Get keys settings
         self.keys = dict(self._config.items('KEYS'))
         self._config.remove_section('KEYS')
+        # Get aliases
+        self.aliases = dict(self._config.items('ALIASES'))
+        self.aliases = dict([[alias, name.lower()] for alias, name 
+                                                   in self.aliases.items()])
+        self._config.remove_section('ALIASES')
         # Parse SETTINGS section
         if self._config.has_option('SETTINGS', 'layout'):
             # Load layout definition
@@ -125,17 +132,28 @@ class Config(object):
             self.ignored.update('grid_width', 'grid_height')
         self.__parse_settings()
         self._config.remove_section('SETTINGS')
-
         # Parse every section
         self.sections = {}
         for section in self._config.sections():
             key = self.keys.pop(section, None)
-            self.sections[section.lower()] = _Section(self, section, key)
+            try:
+                self.sections[section.lower()] = _Section(self, section, key)
+            except Exception, e:
+                log.exception('Invalid section %s: %s', (section, e))
             self._config.remove_section(section)
 
         log.debug('Loaded configuration file')
 
     def section(self, name):
         """Return Section with given name."""
+        name = self.alias(name)
         return self.sections.get(name.lower(), None)
+
+    def alias(self, name):
+        """Return real action or section name for alias.
+
+        If name is not an alias return original name.
+
+        """
+        return self.aliases.get(name, name)
 

@@ -65,6 +65,13 @@ reload = Ctrl-Shift-Alt-R
 ; print debug info
 debug = Ctrl-Shift-Alt-I
 
+[ALIASES]
+; List of aliases for actions and sections. 
+; Alias names are case sensitive, action and section names are not.
+; Examples:
+; center = middle
+grid = grid_width
+
 ; Example of custom screen position definition:
 ;
 ; [name-of-screen-position]

@@ -2,9 +2,8 @@ include COPYING
 include README
 include bin/pywo
 recursive-include pywo *.py
-exclude pywo/run.py
 recursive-include pywo actions/*.py
-exclude pywo/actions/experimental.py
+exclude pywo/actions/experimental_actions.py
 recursive-include pywo services/*.py
 include etc/pyworc
 recursive-include etc/layouts *

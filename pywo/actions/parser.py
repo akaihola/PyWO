@@ -18,11 +18,16 @@
 # along with PyWO.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-"""parser.py - parses actions from commandline."""
+"""parser.py - parses actions from commandline.
+
+Module's functions mimics subset of optparse.OptionParser methods, 
+so it can be used like real OptionParser instance.
+
+"""
 
 import logging
-from optparse import OptionParser, OptionValueError
-import sys
+import optparse
+import shlex
 
 from pywo.core import Size, Gravity, Position
 
@@ -32,8 +37,12 @@ __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
 log = logging.getLogger(__name__)
 
+option_list = []
+
 
 class ParserException(Exception):
+
+    """Exception raised by Parser.parse_args()."""
 
     def __init__(self, msg):
         self.msg = msg
@@ -42,7 +51,7 @@ class ParserException(Exception):
         return self.msg
 
 
-class Parser(OptionParser):
+class Parser(optparse.OptionParser):
 
     """OptionParser that raises exception on errors."""
 
@@ -51,8 +60,29 @@ class Parser(OptionParser):
         raise ParserException(msg)
 
 
+def add_option(*args, **kwargs):
+    """Add new option to actions.parser."""
+    option = optparse.make_option(*args, **kwargs)
+    option_list.append(option)
+
+
+def parse_args(args=None, values=None):
+    """Parse arguments using new instance of Parser (to make it thread sage)."""
+    #if line:
+    #    line_args = shlex.split(line)
+    #    args.expand(line_args)
+    parser = Parser(conflict_handler='resolve')
+    parser.set_defaults(action=None, section=None)
+    for option in option_list:
+        parser.add_option(option)
+    return parser.parse_args(args, values)
+
+
+#
+# Callbacks used by Options
+#
 def largs_callback(option, opt_str, value, parser):
-    """Set action adn section options."""
+    """Set action and section options."""
     if parser.largs and not parser.values.action:
         setattr(parser.values, 'action', parser.largs.pop(0))
     if parser.largs and not parser.values.section:
@@ -60,13 +90,13 @@ def largs_callback(option, opt_str, value, parser):
 
 
 def gravity_callback(option, opt_str, value, parser):
-    """Parse gravity option to Gravity."""
+    """Parse gravity, direction, position options to Gravity."""
     largs_callback(option, opt_str, value, parser)
     try:
         gravity = Gravity.parse(value)
     except ValueError:
         msg = 'option %s: error parsing Gravity value: %s' % (opt_str, value)
-        raise OptionValueError(msg)
+        raise optparse.OptionValueError(msg)
     setattr(parser.values, option.dest, gravity)
     if option.dest == 'gravity' and not parser.values.position:
         setattr(parser.values, 'position', gravity)
@@ -91,7 +121,7 @@ def size_callback(option, opt_str, value, parser):
             size = Size.parse(*value)
     except (ValueError, TypeError):
         msg = 'option %s: error parsing Size value: %s' % (opt_str, value)
-        raise OptionValueError(msg)
+        raise optparse.OptionValueError(msg)
     setattr(parser.values, option.dest, size)
 
 
@@ -108,79 +138,87 @@ def position_callback(option, opt_str, value, parser):
             size = Position(*value)
     except (ValueError, TypeError):
         msg = 'option %s: error parsing Position value: %s' % (opt_str, value)
-        raise OptionValueError(msg)
+        raise optparse.OptionValueError(msg)
     setattr(parser.values, option.dest, size)
 
 
-parser = Parser(conflict_handler='resolve')
-parser.set_defaults(action=None, section=None)
+#
+# Core options
+#
+add_option('--id',
+           action='store', dest='win_id', default='', 
+           help='perform action on window with given ID',
+           metavar='ID')
 
-parser.add_option('--id',
-                  action='store', dest='win_id', default='', 
-                  help='perform action on window with given ID',
-                  metavar='ID')
-
-parser.add_option('-a', '--add', '--set', '--on',
-                  action='store_const', const=1, dest='mode', default=2,
-                  help='actions\'s MODE [default: toggle]')
-parser.add_option('-r', '--remove', '--unset', '--off',
-                  action='store_const', const=0, dest='mode', default=2,
-                  help='actions\'s MODE [default: toggle]')
+#
+# Change state, set properties
+#
+add_option('-a', '--add', '--set', '--on',
+           action='store_const', const=1, dest='mode', default=2,
+           help='actions\'s MODE [default: toggle]')
+add_option('-r', '--remove', '--unset', '--off',
+           action='store_const', const=0, dest='mode', default=2,
+           help='actions\'s MODE [default: toggle]')
                   
-parser.add_option('-g', '--gravity',
-                  action='callback', dest='gravity', type='string',
-                  callback=gravity_callback,
-                  help='window\'s gravity\nIf not set POSITION will be used')
-parser.add_option('-d', '--direction',
-                  action='callback', dest='direction', type='string',
-                  callback=gravity_callback,
-                  help='direction of an action\nIf not set GRAVITY will be used')
-parser.add_option('-p', '--position',
-                  action='callback', dest='position', type='string',
-                  callback=gravity_callback,
-                  help='window\'s position on screen\nIf not set GRAVITY will be used')
+#
+# Move, resize, and place windows
+#
+add_option('-g', '--gravity',
+           action='callback', dest='gravity', type='string',
+           callback=gravity_callback,
+           help='window\'s gravity\nIf not set POSITION will be used')
+add_option('-d', '--direction',
+           action='callback', dest='direction', type='string',
+           callback=gravity_callback,
+           help='direction of an action\nIf not set GRAVITY will be used')
+add_option('-p', '--position',
+           action='callback', dest='position', type='string',
+           callback=gravity_callback,
+           help='window\'s position on screen\nIf not set GRAVITY will be used')
 
-parser.add_option('-w', '--width',
-                  action='callback', dest='width', type='string',
-                  callback=size_callback,)
-parser.add_option('-h', '--height',
-                  action='callback', dest='height', type='string', 
-                  callback=size_callback,)
-parser.add_option('-s', '--size',
-                  action='callback', dest='size', type='string',
-                  callback=size_callback, nargs=2,
-                  help='[default: current size]',
-                  metavar='WIDTH HEIGHT')
+#
+# Set geometry
+#
+add_option('-w', '--width',
+           action='callback', dest='width', type='string',
+           callback=size_callback,)
+add_option('-h', '--height',
+           action='callback', dest='height', type='string', 
+           callback=size_callback,)
+add_option('-s', '--size',
+           action='callback', dest='size', type='string',
+           callback=size_callback, nargs=2,
+           help='[default: current size]',
+           metavar='WIDTH HEIGHT')
 
 '''
 # TODO: To be used with move, resize actions
-parser.add_option('-x',
-                  action='callback', dest='x', type='string',
-                  callback=position_callback,)
-parser.add_option('-y',
-                  action='callback', dest='y', type='string',
-                  callback=position_callback,)
-parser.add_option('-c', '--coords',
-                  action='callback', dest='coords', type='string',
-                  callback=position_callback, nargs=2,
-                  metavar='X Y')
+add_option('-x',
+           action='callback', dest='x', type='string',
+           callback=position_callback,)
+add_option('-y',
+           action='callback', dest='y', type='string',
+           callback=position_callback,)
+add_option('-c', '--coords',
+           action='callback', dest='coords', type='string',
+           callback=position_callback, nargs=2,
+           metavar='X Y')
 '''
 
-parser.add_option('-i', '--invert',
-                  action='store_true', dest='invert_on_resize', default=True,
-                  help='invert gravity when resizing windows with incremental size [default: %default]')
-parser.add_option('-I', '--no-invert',
-                  action='store_false', dest='invert_on_resize', 
-                  help='DON\'T invert gravity when resizing windows with incremental size')
+#
+# Additional options (mostly flags overwriting settings from config)
+#
+add_option('-i', '--invert',
+           action='store_true', dest='invert_on_resize', default=True,
+           help='invert gravity when resizing windows with incremental size [default: %default]')
+add_option('-I', '--no-invert',
+           action='store_false', dest='invert_on_resize', 
+           help='DON\'T invert gravity when resizing windows with incremental size')
 
-parser.add_option('-V', '--vertical-first',
-                  action='store_true', dest='vertical_first', default=True,
-                  help='[default: %default]')
-parser.add_option('-H', '--horizontal-first',
-                  action='store_false', dest='vertical_first')
-
-
-def parse_args(args=sys.argv[1:]):
-    return parser.parse_args(args)
+add_option('-V', '--vertical-first',
+           action='store_true', dest='vertical_first', default=True,
+           help='[default: %default]')
+add_option('-H', '--horizontal-first',
+           action='store_false', dest='vertical_first')
 
 

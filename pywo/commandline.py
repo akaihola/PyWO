@@ -81,8 +81,8 @@ parser.add_option('--debug', '--verbose',
                   action='store_true', dest='debug', default=False,
                   help='print debug informations')
 parser.add_option('--config',
-                  action='store', dest='config', default='~/.pyworc',
-                  help='use given config FILE [default: %default]', 
+                  action='store', dest='config', default='',
+                  help='use given config FILE', 
                   metavar='FILE')
 parser.add_option('--daemon',
                   action='store_true', dest='start_daemon', default=False,
@@ -101,7 +101,7 @@ parser.add_option('--windows',
 action = OptionGroup(parser, 'Options for Actions', 
                      'If not provided, default values from config file will be used')
 
-for option in pywo.actions.parser.parser.option_list:
+for option in pywo.actions.parser.option_list:
     # NOTE: just copy options from actions.parser
     action.add_option(option)
 parser.add_option_group(action)

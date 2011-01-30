@@ -115,14 +115,8 @@ def _debug_info(win):
     log.info('-= End of debug =-')
 
 
-def get(name):
-    """Return action with given name."""
-    return manager.get(name.lower())
-
-
-def get_all():
-    """Return set of all actions."""
-    return manager.get_all()
+# Autoload all actions
+manager.load()
 
 
 def get_args(action, config, section=None, options=None):
@@ -144,7 +138,7 @@ def perform(args, config, options={}, win_id=0):
         # This will never be called...
         raise ActionException('No ACTION provided')
     name = options.action or args.pop(0)
-    action = get(name)
+    action = manager.get(name)
     if not action:
         raise ActionException('Invalid ACTION name: %s' % name)
     need_section = 'direction' in action.args or \
@@ -188,7 +182,4 @@ def perform(args, config, options={}, win_id=0):
               ', '.join(['%s=%s' % (key, str(value)) 
                          for key, value in kwargs.items()])))
     action(window, **kwargs)
-
-# Autoload all actions
-manager.load()
 

@@ -19,7 +19,7 @@ class TestActionPut(TestMockedCore):
         return core.Geometry(x, y, WIN_WIDTH, WIN_HEIGHT)
 
     def test_position(self):
-        action = actions.get('put')
+        action = actions.manager.get('put')
         position = core.Gravity.parse('TOP_LEFT')
         action(self.win, position=position)
         geometry = self.get_geometry(0, 0)
@@ -62,7 +62,7 @@ class TestActionPut(TestMockedCore):
         self.assertEqual(self.win.geometry, geometry)
 
     def test_position_gravity(self):
-        action = actions.get('put')
+        action = actions.manager.get('put')
         position = core.Gravity.parse('MIDDLE')
         gravity = core.Gravity.parse('TOP_RIGHT')
         action(self.win, position=position, gravity=gravity)

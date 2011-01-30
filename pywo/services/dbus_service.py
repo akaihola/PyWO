@@ -64,7 +64,7 @@ class DBusService(dbus.service.Object):
         return [(action.name, 
                  (action.__doc__ or '').split('\n')[0],
                  action.args, 
-                 action.obligatory_args) for action in actions.get_all()]
+                 action.obligatory_args) for action in actions.manager.get_all()]
 
     @dbus.service.method("net.kosciak.PyWO", 
                          in_signature='', out_signature='as')

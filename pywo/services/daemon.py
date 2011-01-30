@@ -31,7 +31,8 @@ import threading
 
 from pywo.core import WindowManager
 from pywo.config import Config
-from pywo import actions, services
+from pywo import actions
+from pywo.services import manager
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
@@ -40,33 +41,29 @@ __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 log = logging.getLogger(__name__)
 
 
-SERVICES = []
-FILENAME = ''
+_CONFIG = ''
 WM = WindowManager()
 
 
 def setup(config):
     """Import and setup all services."""
-    global FILENAME
-    if not FILENAME:
+    global _CONFIG
+    if not _CONFIG:
         # First time start, we are im main-thread - register signal handlers
         signal.signal(signal.SIGINT, interrupt_handler)
         signal.signal(signal.SIGTERM, interrupt_handler)
         # and required actions
         actions.register(name='exit')(exit_pywo)
         actions.register(name='reload')(reload)
-    FILENAME = config.filename
-    global SERVICES
-    SERVICES = []
-    for service in services.get_all(config):
-        SERVICES.append(service)
-    for service in SERVICES:
+    _CONFIG = config
+    manager.load(_CONFIG)
+    for service in manager.get_all():
         service.setup(config)
 
 
 def start(loop=False):
     """Start all services."""
-    for service in SERVICES:
+    for service in manager.get_all():
         service.start()
     log.info('PyWO ready and running!')
     # Simple loop for keeping main-thread running and make signal handlers work
@@ -76,7 +73,7 @@ def start(loop=False):
 
 def stop():
     """Stop all services."""
-    for service in SERVICES:
+    for service in manager.get_all():
         service.stop()
 
 
@@ -84,10 +81,10 @@ def reload(win, config=None, *args):
     """Stop services, (re)load configuration file, and start again."""
     log.info('Reloading PyWO...')
     stop()
-    filename = config or FILENAME
+    filename = config or _CONFIG.filename
     log.info('Reloading configuration file: %s' % filename)
-    config = Config(filename)
-    setup(config)
+    config = _CONFIG.load(filename)
+    setup(_CONFIG)
     start()
 
 

@@ -34,6 +34,7 @@ _ACTIONS = {}
 
 
 def register(action):
+    """Register new Action object."""
     if action.name in _ACTIONS:
         log.warning('Action with name %s already registered!' % action.name)
     _ACTIONS[action.name] = action
@@ -44,8 +45,8 @@ def load():
     """Load actions from modules and plugins."""
     # import all local modules
     path = os.path.dirname(os.path.abspath(__file__))
-    modules = [file[0:-3] for file in os.listdir(path) 
-                          if file.endswith('_actions.py')]
+    modules = [filename[0:-3] for filename in os.listdir(path) 
+                              if filename.endswith('_actions.py')]
     for module in modules:
         module_name = 'pywo.actions.%s' % module
         if not module_name in sys.modules:

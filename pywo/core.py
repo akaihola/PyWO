@@ -1234,5 +1234,6 @@ class WindowManager(XObject):
 
 # TODO: Window.is_fullscreen?
 
-# TODO: consider ability to connect to given screen (so Xvfb can be used) - Display(displayname=':0.0') 
+# TODO: consider ability to connect to given screen (so Xvfb can be used) 
+#       Display(displayname=':0.0') 
 

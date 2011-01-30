@@ -38,7 +38,7 @@ class Service(object):
 
     """
 
-    def setup(confif):
+    def setup(self, config):
         """Setup service using provided Config instance.
 
         Class will be initialized (or module loaded) only once, 
@@ -48,7 +48,7 @@ class Service(object):
         """
         raise NotImplementedError()
 
-    def start():
+    def start(self):
         """Start service.
 
         If needed new thread should be started and main loop entered.
@@ -57,7 +57,7 @@ class Service(object):
         """
         raise NotImplementedError()
 
-    def stop():
+    def stop(self):
         """Stop service and cleanup all used resources.
 
         All threads should be stopped. 

@@ -37,6 +37,8 @@ MAPPINGS = {} # {(modifiers, keycode): (action, args), }
 
 class KeyPressHandler(events.KeyHandler):
 
+    """EventHandler for KeyPress events."""
+
     def key_press(self, event):
         """Event handler method for KeyPressEventHandler."""
         log.debug('EVENT: type=%s, window=%s, keycode=%s, modifiers=%s' %

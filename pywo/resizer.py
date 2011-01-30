@@ -23,7 +23,7 @@
 import logging
 import operator
 
-from pywo.core import Window, WindowManager
+from pywo.core import WindowManager
 from pywo import filters
 
 

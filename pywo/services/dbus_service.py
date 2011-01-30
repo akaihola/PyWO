@@ -87,7 +87,7 @@ class DBusService(dbus.service.Object):
                  win.class_name, win.name,
                  win.desktop
                  (geometry.x, geometry.y),
-                 (geometry.width, geometry.height)) for win in windows]
+                 (geometry.width, geometry.height))]
 
     # TODO: GetDesktops
     # TODO: GetDesktopInfo

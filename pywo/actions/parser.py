@@ -47,6 +47,7 @@ class Parser(OptionParser):
     """OptionParser that raises exception on errors."""
 
     def error(self, msg):
+        """Raise ParserException instead of printing on console and exiting."""
         raise ParserException(msg)
 
 

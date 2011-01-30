@@ -30,7 +30,6 @@ import time
 import threading
 
 from pywo.core import WindowManager
-from pywo.config import Config
 from pywo import actions
 from pywo.services import manager
 
@@ -41,7 +40,7 @@ __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 log = logging.getLogger(__name__)
 
 
-_CONFIG = ''
+_CONFIG = None
 WM = WindowManager()
 
 
@@ -54,7 +53,7 @@ def setup(config):
         signal.signal(signal.SIGTERM, interrupt_handler)
         # and required actions
         actions.register(name='exit')(exit_pywo)
-        actions.register(name='reload')(reload)
+        actions.register(name='reload')(reload_pywo)
     _CONFIG = config
     manager.load(_CONFIG)
     for service in manager.get_all():
@@ -77,7 +76,7 @@ def stop():
         service.stop()
 
 
-def reload(win, config=None, *args):
+def reload_pywo(win, config=None, *args):
     """Stop services, (re)load configuration file, and start again."""
     log.info('Reloading PyWO...')
     stop()

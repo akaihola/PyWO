@@ -45,7 +45,7 @@ class _Section(object):
             self.ignored.update(data.get('ignore_actions', '').split(', '))
         self.ignored.update(config.ignored)
         if 'grid' in self.ignored:
-            self.ignored.update('grid_width', 'grid_height')
+            self.ignored.update(['grid_width', 'grid_height'])
 
         self.gravity = Gravity.parse(data.get('gravity', ''))
         self.direction = Gravity.parse(data.get('direction', ''))

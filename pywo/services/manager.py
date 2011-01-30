@@ -34,6 +34,7 @@ _SERVICES = set()
 
 
 def load(config):
+    """Load Services from modules and plugins."""
     _SERVICES.clear()
     # import all local modules
     path = os.path.dirname(os.path.abspath(__file__))

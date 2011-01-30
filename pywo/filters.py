@@ -69,6 +69,9 @@ NORMAL_TYPE = IncludeType(normal=True)
 
 
 class ExcludeType(object):
+
+    """Return only windows without specified type."""
+
     def __init__(self,
                  desktop=False, dock=False, 
                  toolbar=False, menu=False,

@@ -52,6 +52,8 @@ class Action(object):
 
     """PyWO Action."""
 
+    post_action_hooks = []
+
     def __init__(self, action, name='',
                  filter=None, unshade=False):
         self.name = name or action.__name__
@@ -59,7 +61,6 @@ class Action(object):
         self.__action = action
         self.__filter = filter
         self.__unshade = unshade
-        self.post_action_hooks = []
         self.args = action.func_code.co_varnames[1:action.func_code.co_argcount]
         if action.func_defaults:
             self.obligatory_args = self.args[:-len(action.func_defaults)]
@@ -116,6 +117,7 @@ def _debug_info(win):
 
 
 # Autoload all actions
+# TODO: maybe move it to actions.parser? No need to load on import
 manager.load()
 
 

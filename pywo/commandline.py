@@ -65,7 +65,8 @@ epilog = ''
 # TODO: add some examples of usage
 # TODO: add author, webpage, license info
 # TODO: store parser in threading.local to make it thread safe?
-parser = OptionParser(usage=usage, version=version,
+parser = OptionParser(usage=usage, 
+                      version=version,
                       #description=description,
                       conflict_handler='resolve')
 parser.set_defaults(action=None, section=None)

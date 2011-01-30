@@ -28,6 +28,7 @@ class NullHandler(logging.Handler):
     """logging.Handler that does not emit anything."""
 
     def emit(self, record):
+        """Just pass."""
         pass
 
 

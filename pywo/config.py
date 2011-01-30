@@ -95,9 +95,15 @@ class Config(object):
         # Load config file (load default first)
         self._config.read(
             [os.path.join('/', 'etc', 'pywo', 'pyworc'),
-             os.path.join(os.path.dirname(__file__), '..', 'etc', 'pyworc'),
-             os.path.join(os.path.expanduser('~'), '.config', 'pywo', 'pyworc'),
-             os.path.join(os.path.expanduser('~'), '.pyworc')])
+             os.path.join(os.path.dirname(__file__), '..', 'etc', 'pyworc'),])
+        if self.filename:
+            # If filename provided use it instead of default location in ~/
+            self._config.read(self.filename)
+        else:
+            self._config.read(
+                [os.path.join(os.path.expanduser('~'), '.config', 
+                              'pywo', 'pyworc'),
+                 os.path.join(os.path.expanduser('~'), '.pyworc'),])
         # Get keys settings
         self.keys = dict(self._config.items('KEYS'))
         self._config.remove_section('KEYS')

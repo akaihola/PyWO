@@ -37,6 +37,7 @@ def _iconify(win, mode=Mode.TOGGLE):
     """Iconify (minimize) window."""
     win.iconify(mode)
 
+
 @register(name='maximize', filter=TYPE_FILTER, unshade=True)
 def _maximize(win, mode=Mode.TOGGLE):
     """Maximize window."""
@@ -80,6 +81,20 @@ def _fullscreen(win, mode=Mode.TOGGLE):
 def _sticky(win, mode=Mode.TOGGLE):
     """Change sticky (stay on all desktops/viewports) property."""
     win.sticky(mode)
+
+
+@register(name='above', filter=TYPE_FILTER)
+def _above(win, mode=Mode.TOGGLE):
+    """Always on top."""
+    win.always_below(Mode.UNSET)
+    win.always_above(mode)
+
+
+@register(name='below', filter=TYPE_FILTER)
+def _below(win, mode=Mode.TOGGLE):
+    """Always on bottom."""
+    win.always_above(Mode.UNSET)
+    win.always_below(mode)
 
 
 @register(name='activate', filter=TYPE_FILTER, unshade=True)

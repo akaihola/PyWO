@@ -955,6 +955,20 @@ class Window(XObject):
                 0, 0, 0]
         self.__change_state(data)
 
+    def always_above(self, mode):
+        """Make window always on top (if supported by window manager)."""
+        data = [mode, 
+                State.ABOVE,
+                0, 0, 0]
+        self.__change_state(data)
+
+    def always_below(self, mode):
+        """Make window always on top (if supported by window manager)."""
+        data = [mode, 
+                State.BELOW,
+                0, 0, 0]
+        self.__change_state(data)
+
     def reset(self):
         """Unmaximize (horizontally and vertically), unshade, unfullscreen."""
         self.iconify(Mode.UNSET)
@@ -962,6 +976,8 @@ class Window(XObject):
         self.maximize(Mode.UNSET)
         self.shade(Mode.UNSET)
         self.sticky(Mode.UNSET)
+        self.always_above(Mode.UNSET)
+        self.always_below(Mode.UNSET)
 
     def close(self):
         """Close window."""

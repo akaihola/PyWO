@@ -956,14 +956,14 @@ class Window(XObject):
         self.__change_state(data)
 
     def always_above(self, mode):
-        """Make window always on top (if supported by window manager)."""
+        """Make window always above others (if supported by window manager)."""
         data = [mode, 
                 State.ABOVE,
                 0, 0, 0]
         self.__change_state(data)
 
     def always_below(self, mode):
-        """Make window always on top (if supported by window manager)."""
+        """Make window always below others (if supported by window manager)."""
         data = [mode, 
                 State.BELOW,
                 0, 0, 0]

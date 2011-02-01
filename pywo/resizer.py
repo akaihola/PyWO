@@ -70,7 +70,8 @@ class Resizer(object):
         #TODO: add limit? and use limit geometry instead of workarea?
         current = win.geometry
         workarea = WM.workarea_geometry
-        windows = [window.geometry for window in WM.windows(filters.NORMAL_ON_WORKAREA) 
+        windows = [window.geometry for window 
+                                   in WM.windows(filters.NORMAL_ON_WORKAREA) 
                                    if window.id != win.id]
         axis_order = [['x', 'y'], ['y', 'x']]
         for axis in axis_order[vertical_first]:

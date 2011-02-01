@@ -39,8 +39,10 @@ class IncludeType(object):
                  desktop=False, dock=False, 
                  toolbar=False, menu=False,
                  utility=False, splash=False,
-                 dialog=False, normal=False):
+                 dialog=False, normal=False,
+                 no_type=False):
         self.allowed_types = []
+        self.no_type = no_type
         if desktop:
             self.allowed_types.append(Type.DESKTOP)
         if dock:
@@ -60,12 +62,15 @@ class IncludeType(object):
 
     def __call__(self, window):
         type = window.type
+        # NOTE: Some normal windows have now type set (e.g. tvtime)
+        if not type and self.no_type:
+            return True
         for allowed_type in self.allowed_types:
             if allowed_type in type:
                 return True
         return False
 
-NORMAL_TYPE = IncludeType(normal=True)
+NORMAL_TYPE = IncludeType(normal=True, no_type=True)
 
 
 class ExcludeType(object):
@@ -76,7 +81,9 @@ class ExcludeType(object):
                  desktop=False, dock=False, 
                  toolbar=False, menu=False,
                  utility=False, splash=False,
-                 dialog=False, normal=False):
+                 dialog=False, normal=False,
+                 no_type=False):
+        self.no_type = no_type
         self.not_allowed_types = []
         if desktop:
             self.not_allowed_types.append(Type.DESKTOP)
@@ -97,6 +104,8 @@ class ExcludeType(object):
 
     def __call__(self, window):
         type = window.type
+        if not type and self.no_type:
+            return False
         for not_allowed_type in self.not_allowed_types:
             if not_allowed_type in type:
                 return False
@@ -113,6 +122,7 @@ class IncludeState(object):
                  fullscreen=False,
                  shaded=False, hidden=False, 
                  skip_pager=False, skip_taskbar=False,
+                 above=False, below=False,
                  demands_attention = False):
         self.allowed_states = []
         if modal:
@@ -133,6 +143,10 @@ class IncludeState(object):
             self.allowed_states.append(State.SKIP_PAGER)
         if skip_taskbar:
             self.allowed_states.append(State.SKIP_TASKBAR)
+        if above:
+            self.allowed_states.append(State.ABOVE)
+        if below:
+            self.allowed_states.append(State.BELOW)
         if demands_attention:
             self.allowed_states.append(State.DEMANDS_ATTENTION)
 
@@ -153,6 +167,7 @@ class ExcludeState(object):
                  fullscreen=False,
                  shaded=False, hidden=False, 
                  skip_pager=False, skip_taskbar=False,
+                 above=False, below=False,
                  demands_attention = False):
         self.modal = modal
         self.sticky = sticky
@@ -164,6 +179,8 @@ class ExcludeState(object):
         self.hidden = hidden
         self.skip_pager = skip_pager
         self.skip_taskbar = skip_taskbar
+        self.above = above
+        self.below = below
         self.demands_attention = demands_attention
 
     def __call__(self, window):
@@ -188,6 +205,10 @@ class ExcludeState(object):
         if self.skip_pager and State.SKIP_PAGER in state:
             return False
         if self.skip_taskbar and State.SKIP_TASKBAR in state:
+            return False
+        if self.above and State.ABOVE in state:
+            return False
+        if self.below and State.BELOW in state:
             return False
         if self.demands_attention and State.DEMANDS_ATTENTION in state:
             return False

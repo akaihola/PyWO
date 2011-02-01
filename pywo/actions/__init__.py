@@ -52,6 +52,11 @@ class Action(object):
 
     """PyWO Action."""
 
+    # TODO: redesign *_action_hooks
+    # TODO: history/undo would need *pre*_action_hook to obtain 
+    #       window's state, and geometry, but it won't guarantee that 
+    #       this action was actually performed...
+    #       What about switch/cycle actions?
     post_action_hooks = []
 
     def __init__(self, action, name='',
@@ -97,11 +102,12 @@ def register(name='', filter=None, unshade=False):
 
 def post_action_hook(hook):
     """Register post_action_hook that will be called after performing action."""
+    # NOTE: This is subject to change!
     Action.post_action_hooks.append(hook)
     return hook
 
 
-@register(name='debug', filter=TYPE_FILTER)
+@register(name='debug')
 def _debug_info(win):
     """Print debug info about Window Manager, and current Window."""
     log.info('-= Window Manager =-')
@@ -171,7 +177,7 @@ def perform(args, config, options={}, win_id=0):
         # TODO: check system encoding?
         args = [arg.decode('utf-8') for arg in args]
         match = u' '.join(args)
-        windows = WM.windows(filters.NORMAL_TYPE, match=match)
+        windows = WM.windows(match=match)
         try:
             window = windows[0]
         except:

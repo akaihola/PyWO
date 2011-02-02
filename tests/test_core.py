@@ -285,10 +285,10 @@ class TestWindowProperties(TestMockedCore):
         self.assertEqual(self.win.client_machine, 'mock')
 
     def test_type(self):
-        self.assertEqual(self.win.type, [core.Type.NORMAL])
+        self.assertEqual(self.win.type, (core.Type.NORMAL,))
 
     def test_state(self):
-        self.assertEqual(self.win.state, [])
+        self.assertEqual(self.win.state, ())
 
     def test_desktop(self):
         # check current
@@ -439,6 +439,7 @@ class TestWindowState(TestMockedCore):
         self.assertEqual(extents.bottom, mock_Xlib.EXTENTS_NORMAL.bottom)
         # set maximize
         self.win.maximize(1)
+        self.assertTrue(core.State.MAXIMIZED in self.win.state)
         self.assertTrue(core.State.MAXIMIZED_HORZ in self.win.state)
         self.assertTrue(core.State.MAXIMIZED_VERT in self.win.state)
         geometry = self.win.geometry
@@ -450,6 +451,7 @@ class TestWindowState(TestMockedCore):
         self.assertEqual(extents.bottom, mock_Xlib.EXTENTS_MAXIMIZED.bottom)
         # unset maximize
         self.win.maximize(0)
+        self.assertFalse(core.State.MAXIMIZED in self.win.state)
         self.assertFalse(core.State.MAXIMIZED_HORZ in self.win.state)
         self.assertFalse(core.State.MAXIMIZED_VERT in self.win.state)
         geometry = self.win.geometry
@@ -462,9 +464,11 @@ class TestWindowState(TestMockedCore):
         self.assertEqual(extents.bottom, mock_Xlib.EXTENTS_NORMAL.bottom)
         # toggle back and forth
         self.win.maximize(2)
+        self.assertTrue(core.State.MAXIMIZED in self.win.state)
         self.assertTrue(core.State.MAXIMIZED_HORZ in self.win.state)
         self.assertTrue(core.State.MAXIMIZED_VERT in self.win.state)
         self.win.maximize(2)
+        self.assertFalse(core.State.MAXIMIZED in self.win.state)
         self.assertFalse(core.State.MAXIMIZED_HORZ in self.win.state)
         self.assertFalse(core.State.MAXIMIZED_VERT in self.win.state)
 
@@ -655,33 +659,33 @@ class TestWindowState(TestMockedCore):
 
     def test_reset(self):
         self.win.maximize(1)
-        self.assertNotEqual(self.win.state, [])
+        self.assertNotEqual(self.win.state, ())
         self.win.reset()
-        self.assertEqual(self.win.state, [])
+        self.assertEqual(self.win.state, ())
         self.win.fullscreen(1)
-        self.assertNotEqual(self.win.state, [])
+        self.assertNotEqual(self.win.state, ())
         self.win.reset()
-        self.assertEqual(self.win.state, [])
+        self.assertEqual(self.win.state, ())
         self.win.iconify(1)
-        self.assertNotEqual(self.win.state, [])
+        self.assertNotEqual(self.win.state, ())
         self.win.reset()
-        self.assertEqual(self.win.state, [])
+        self.assertEqual(self.win.state, ())
         self.win.sticky(1)
-        self.assertNotEqual(self.win.state, [])
+        self.assertNotEqual(self.win.state, ())
         self.win.reset()
-        self.assertEqual(self.win.state, [])
+        self.assertEqual(self.win.state, ())
         self.win.shade(1)
-        self.assertNotEqual(self.win.state, [])
+        self.assertNotEqual(self.win.state, ())
         self.win.reset()
-        self.assertEqual(self.win.state, [])
+        self.assertEqual(self.win.state, ())
         self.win.maximize(1)
         self.win.fullscreen(1)
         self.win.sticky(1)
         self.win.shade(1)
         self.win.iconify(1)
-        self.assertNotEqual(self.win.state, [])
+        self.assertNotEqual(self.win.state, ())
         self.win.reset()
-        self.assertEqual(self.win.state, [])
+        self.assertEqual(self.win.state, ())
 
 
 if __name__ == '__main__':

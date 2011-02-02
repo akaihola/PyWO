@@ -33,79 +33,29 @@ log = logging.getLogger(__name__)
 
 class IncludeType(object):
 
-    """Return only windows with specified type."""
+    """Return only windows with any of specified types."""
 
-    def __init__(self,
-                 desktop=False, dock=False, 
-                 toolbar=False, menu=False,
-                 utility=False, splash=False,
-                 dialog=False, normal=False,
-                 no_type=False):
-        self.allowed_types = []
-        self.no_type = no_type
-        if desktop:
-            self.allowed_types.append(Type.DESKTOP)
-        if dock:
-            self.allowed_types.append(Type.DOCK)
-        if toolbar:
-            self.allowed_types.append(Type.TOOLBAR)
-        if menu:
-            self.allowed_types.append(Type.MENU)
-        if utility:
-            self.allowed_types.append(Type.UTILITY)
-        if splash:
-            self.allowed_types.append(Type.SPLASH)
-        if dialog:
-            self.allowed_types.append(Type.DIALOG)
-        if normal:
-            self.allowed_types.append(Type.NORMAL)
+    def __init__(self, *types):
+        self.allowed_types = types
 
     def __call__(self, window):
         type = window.type
         # NOTE: Some normal windows have now type set (e.g. tvtime)
-        if not type and self.no_type:
-            return True
         for allowed_type in self.allowed_types:
             if allowed_type in type:
                 return True
         return False
 
-NORMAL_TYPE = IncludeType(normal=True, no_type=True)
-
 
 class ExcludeType(object):
 
-    """Return only windows without specified type."""
+    """Return only windows without specified types."""
 
-    def __init__(self,
-                 desktop=False, dock=False, 
-                 toolbar=False, menu=False,
-                 utility=False, splash=False,
-                 dialog=False, normal=False,
-                 no_type=False):
-        self.no_type = no_type
+    def __init__(self, *types):
         self.not_allowed_types = []
-        if desktop:
-            self.not_allowed_types.append(Type.DESKTOP)
-        if dock:
-            self.not_allowed_types.append(Type.DOCK)
-        if toolbar:
-            self.not_allowed_types.append(Type.TOOLBAR)
-        if menu:
-            self.not_allowed_types.append(Type.MENU)
-        if utility:
-            self.not_allowed_types.append(Type.UTILITY)
-        if splash:
-            self.not_allowed_types.append(Type.SPLASH)
-        if dialog:
-            self.not_allowed_types.append(Type.DIALOG)
-        if normal:
-            self.not_allowed_types.append(Type.NORMAL)
 
     def __call__(self, window):
         type = window.type
-        if not type and self.no_type:
-            return False
         for not_allowed_type in self.not_allowed_types:
             if not_allowed_type in type:
                 return False
@@ -114,108 +64,33 @@ class ExcludeType(object):
 
 class IncludeState(object):
 
-    """Return only windows with specified state."""
+    """Return only windows with any of specified states."""
 
-    def __init__(self,
-                 modal=False, sticky=False,
-                 maximized=False, maximized_vert=False, maximized_horz=False,
-                 fullscreen=False,
-                 shaded=False, hidden=False, 
-                 skip_pager=False, skip_taskbar=False,
-                 above=False, below=False,
-                 demands_attention = False):
-        self.allowed_states = []
-        if modal:
-            self.allowed_states.append(State.MODAL)
-        if sticky:
-            self.allowed_states.append(State.STICKY)
-        if maximized or maximized_vert:
-            self.allowed_states.append(State.MAXIMIZED_VERT)
-        if maximized or maximized_horz:
-            self.allowed_states.append(State.MAXIMIZED_HORZ)
-        if fullscreen:
-            self.allowed_states.append(State.FULLSCREEN)
-        if shaded:
-            self.allowed_states.append(State.SHADED)
-        if hidden:
-            self.allowed_states.append(State.HIDDEN)
-        if skip_pager:
-            self.allowed_states.append(State.SKIP_PAGER)
-        if skip_taskbar:
-            self.allowed_states.append(State.SKIP_TASKBAR)
-        if above:
-            self.allowed_states.append(State.ABOVE)
-        if below:
-            self.allowed_states.append(State.BELOW)
-        if demands_attention:
-            self.allowed_states.append(State.DEMANDS_ATTENTION)
+    def __init__(self, *states):
+        self.allowed_states = states
 
     def __call__(self, window):
-        for state in window.state:
-            if state in self.allowed_states:
+        state = window.state
+        for allowed_state in self.allowed_states:
+            if allowed_state in state:
                 return True
         return False
 
 
 class ExcludeState(object):
 
-    """Return only windows without specified type."""
+    """Return only windows without specified types."""
 
-    def __init__(self,
-                 modal=False, sticky=False,
-                 maximized=False, maximized_vert=False, maximized_horz=False,
-                 fullscreen=False,
-                 shaded=False, hidden=False, 
-                 skip_pager=False, skip_taskbar=False,
-                 above=False, below=False,
-                 demands_attention = False):
-        self.modal = modal
-        self.sticky = sticky
-        self.maximized = maximized
-        self.maximized_vert = maximized_vert
-        self.maximized_horz = maximized_horz
-        self.fullscreen = fullscreen
-        self.shaded = shaded
-        self.hidden = hidden
-        self.skip_pager = skip_pager
-        self.skip_taskbar = skip_taskbar
-        self.above = above
-        self.below = below
-        self.demands_attention = demands_attention
+    def __init__(self, *states):
+        self.not_allowed_states = states
 
     def __call__(self, window):
         state = window.state
-        if self.modal and State.MODAL in state:
-            return False
-        if self.sticky and State.STICKY in state:
-            return False
-        if self.maximized and \
-           State.MAXIMIZED_VERT in state and State.MAXIMIZED_HORZ in state:
-            return False
-        if self.maximized and State.MAXIMIZED_VERT in state:
-            return False
-        if self.maximized and State.MAXIMIZED_HORZ in state:
-            return False
-        if self.fullscreen and State.FULLSCREEN in state:
-            return False
-        if self.shaded and State.SHADED in state:
-            return False
-        if self.hidden and State.HIDDEN in state:
-            return False
-        if self.skip_pager and State.SKIP_PAGER in state:
-            return False
-        if self.skip_taskbar and State.SKIP_TASKBAR in state:
-            return False
-        if self.above and State.ABOVE in state:
-            return False
-        if self.below and State.BELOW in state:
-            return False
-        if self.demands_attention and State.DEMANDS_ATTENTION in state:
-            return False
+        for not_allowed_state in self.not_allowed_states:
+            if not_allowed_state in state:
+                return False
         return True
 
-NORMAL_STATE = ExcludeState(modal=True, shaded=True, hidden=True, 
-                            maximized=True, fullscreen=True)
 
 class Desktop(object):
 
@@ -231,8 +106,6 @@ class Desktop(object):
         win_desktop = window.desktop
         return win_desktop == desktop or \
                win_desktop == Window.ALL_DESKTOPS
-
-DESKTOP = Desktop()
 
 
 class Workarea(Desktop):
@@ -254,8 +127,6 @@ class Workarea(Desktop):
                geometry.y < self.workarea.y2 and \
                geometry.y2 > self.workarea.y
 
-WORKAREA = Workarea()
-
 
 class AND(object):
 
@@ -270,7 +141,12 @@ class AND(object):
                 return False
         return True
 
-NORMAL = AND(NORMAL_TYPE, NORMAL_STATE)
 
+NORMAL_TYPE = IncludeType(Type.NORMAL, Type.NONE)
+NORMAL_STATE = ExcludeState(State.MODAL, State.SHADED, State.HIDDEN,
+                            State.MAXIMIZED, State.FULLSCREEN)
+NORMAL = AND(NORMAL_TYPE, NORMAL_STATE)
+DESKTOP = Desktop()
+WORKAREA = Workarea()
 NORMAL_ON_WORKAREA = AND(NORMAL_TYPE, NORMAL_STATE, WORKAREA)
 

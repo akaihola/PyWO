@@ -43,6 +43,16 @@ __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 log = logging.getLogger(__name__)
 
 
+class CustomTuple(tuple):
+
+    """Tuple that allows both x in [x, y] and [x,z] in [x, y, z]"""
+
+    def __contains__(self, item):
+        if hasattr(item, '__len__'):
+            return set(item) <= set(self)
+        return tuple.__contains__(self, item)
+
+
 class Gravity(object):
 
     """Gravity point as a percentage of width and height of the window."""
@@ -652,6 +662,7 @@ class Type(object):
     SPLASH = XObject.atom('_NET_WM_WINDOW_TYPE_SPLASH')
     DIALOG = XObject.atom('_NET_WM_WINDOW_TYPE_DIALOG')
     NORMAL = XObject.atom('_NET_WM_WINDOW_TYPE_NORMAL')
+    NONE = -1
 
 
 class State(object):
@@ -662,6 +673,7 @@ class State(object):
     STICKY = XObject.atom('_NET_WM_STATE_STICKY')
     MAXIMIZED_VERT = XObject.atom('_NET_WM_STATE_MAXIMIZED_VERT')
     MAXIMIZED_HORZ = XObject.atom('_NET_WM_STATE_MAXIMIZED_HORZ')
+    MAXIMIZED = (MAXIMIZED_VERT, MAXIMIZED_HORZ)
     SHADED = XObject.atom('_NET_WM_STATE_SHADED')
     SKIP_TASKBAR = XObject.atom('_NET_WM_STATE_SKIP_TASKBAR')
     SKIP_PAGER = XObject.atom('_NET_WM_STATE_SKIP_PAGER')
@@ -702,19 +714,19 @@ class Window(XObject):
 
     @property
     def type(self):
-        """Return list of window's type(s)."""
+        """Return tuple of window's type(s)."""
         type = self.get_property('_NET_WM_WINDOW_TYPE')
         if not type:
-            return []
-        return type.value
+            return CustomTuple([Type.NONE])
+        return CustomTuple(type.value)
 
     @property
     def state(self):
-        """Return list of window's state(s)."""
+        """Return tuple of window's state(s)."""
         state = self.get_property('_NET_WM_STATE')
         if not state:
-            return []
-        return state.value
+            return CustomTuple()
+        return CustomTuple(state.value)
 
     @property
     def parent_id(self):

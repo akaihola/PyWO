@@ -124,7 +124,6 @@ def _blink(win):
 
 
 # TODO: new actions
-#   - always on top
 #   - switch desktop/viewport
 #   - move window to desktop/viewport 
 #     (with or without following - switching to that desktop/viewport)

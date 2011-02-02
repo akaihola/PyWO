@@ -34,8 +34,9 @@ log = logging.getLogger(__name__)
 
 WM = WindowManager()
 
-TYPE_FILTER = filters.ExcludeType(desktop=True, dock=True, splash=True)
-STATE_FILTER = filters.ExcludeState(fullscreen=True, maximized=True)
+TYPE_FILTER = filters.ExcludeType(Type.DESKTOP, Type.DOCK, 
+                                  Type.SPLASH, Type.MENU)
+STATE_FILTER = filters.ExcludeState(State.MAXIMIZED, State.FULLSCREEN)
 TYPE_STATE_FILTER = filters.AND(TYPE_FILTER, STATE_FILTER)
 
 
@@ -75,7 +76,10 @@ class Action(object):
                                   if arg not in self.obligatory_args]
 
     def __call__(self, win, **kwargs):
+        # TODO: always treat Action as callable
+        #self.pre_perform()
         self.perform(win, **kwargs)
+        #self.post_perform()
 
     def perform(self, win, **kwargs):
         """Perform action on window and with given arguments."""

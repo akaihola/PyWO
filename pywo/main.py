@@ -26,7 +26,7 @@ from logging.handlers import RotatingFileHandler
 
 from pywo import actions, commandline, filters
 from pywo.config import Config
-from pywo.core import Window, WindowManager, State
+from pywo.core import Window, WindowManager, State, Type
 from pywo.services import daemon
 
 
@@ -71,7 +71,9 @@ def run():
         daemon.start(loop=True)
     elif options.list_windows:
         WM = WindowManager()
-        windows = WM.windows(filters.NORMAL_TYPE)
+        windows = WM.windows(filters.AND(
+                    filters.ExcludeType(Type.DESKTOP, Type.DOCK, Type.SPLASH),
+                    filters.ExcludeState(State.SKIP_PAGER, State.SKIP_TASKBAR)))
         for window in windows:
             state = window.state
             win_desktop = window.desktop

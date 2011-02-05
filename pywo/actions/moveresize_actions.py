@@ -200,6 +200,8 @@ def _grid_height(win, position, gravity,
            size, width, height, invert_on_resize, 'height')
 
 
+# TODO: move to separate module, 
+#       make it Action subclass and __call__ after choosing second window
 def __switch_cycle(win, keep_active):
     """Switch contents/placement of windows."""
     _GRIDED['id'] = None

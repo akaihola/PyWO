@@ -52,7 +52,7 @@ class ExcludeType(object):
     """Return only windows without specified types."""
 
     def __init__(self, *types):
-        self.not_allowed_types = []
+        self.not_allowed_types = types
 
     def __call__(self, window):
         type = window.type
@@ -141,6 +141,8 @@ class AND(object):
                 return False
         return True
 
+
+ALL_FILTER = lambda window: True # accept all windows
 
 NORMAL_TYPE = IncludeType(Type.NORMAL, Type.NONE)
 NORMAL_STATE = ExcludeState(State.MODAL, State.SHADED, State.HIDDEN,

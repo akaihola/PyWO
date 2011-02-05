@@ -51,64 +51,94 @@ class ActionException(Exception):
 
 class Action(object):
 
-    """PyWO Action."""
+    """Base class for all PyWO actions.
+    
+    Actions should be treated as callable.
 
-    # TODO: redesign *_action_hooks
-    # TODO: history/undo would need *pre*_action_hook to obtain 
-    #       window's state, and geometry, but it won't guarantee that 
-    #       this action was actually performed...
-    #       What about switch/cycle actions?
-    post_action_hooks = []
+    One instance of the Action will be created and used for all calls. 
+    Since PyWO is a multithreaded app Action objects should be stateless.
 
-    def __init__(self, action, name='',
+    """
+
+    # TODO: implement pre and post action_hooks
+
+    def __init__(self, name='',
                  filter=None, unshade=False):
-        self.name = name or action.__name__
-        self.__doc__ = action.__doc__
-        self.__action = action
-        self.__filter = filter
+        self.name = name
+        self.__filter = filter or filters.ALL_FILTER
         self.__unshade = unshade
-        self.args = action.func_code.co_varnames[1:action.func_code.co_argcount]
-        if action.func_defaults:
-            self.obligatory_args = self.args[:-len(action.func_defaults)]
-        else:
-            self.obligatory_args = self.args
-        self.optional_args = [arg for arg in self.args 
-                                  if arg not in self.obligatory_args]
-
-    def __call__(self, win, **kwargs):
-        # TODO: always treat Action as callable
-        #self.pre_perform()
-        self.perform(win, **kwargs)
-        #self.post_perform()
+        args = self.perform.func_code.co_varnames
+        self.args = args[2:self.perform.func_code.co_argcount] 
+        self.obligatory_args = self.args[:-len(self.perform.func_defaults or [])]
 
     def perform(self, win, **kwargs):
+        """Perform action on window and with given arguments.
+        
+        This method must be implemented by Action subclasses.
+        
+        """
+        raise NotImplementedError()
+
+    @property
+    def optional_args(self):
+        """Return list of optional arguments."""
+        optional_args = [arg for arg in self.args 
+                             if arg not in self.obligatory_args]
+        return optional_args
+
+    def __call__(self, win, **kwargs):
         """Perform action on window and with given arguments."""
-        if self.__filter and not self.__filter(win):
+        self.check_filter(win)
+        self.pre_perform(win, **kwargs)
+        self.perform(win, **kwargs)
+        self.post_perform(win, **kwargs)
+
+    def check_filter(self, win):
+        """Check if window matches filter."""
+        if not self.__filter(win):
             error = "Can't perform %s on this window." % self.name
             raise ActionException(error)
+
+    def pre_perform(self, win, *args, **kwargs):
+        """Called before performing an action."""
+        # TODO: call pre_action_hooks
         if self.__unshade:
             win.shade(Mode.UNSET)
             win.flush()
+
+    def post_perform(self, win, *args, **kwargs):
+        """Called after performing an action."""
+        win.sync()
+        # TODO: call post_action_hooks
+
+
+class SimpleActionWrapper(Action):
+
+    """Wrapper for simple function actions."""
+
+    def __init__(self, action, name,
+                 filter=None, unshade=False):
+        Action.__init__(self, name=name, filter=filter, unshade=unshade)
+        self.args = action.func_code.co_varnames[1:action.func_code.co_argcount]
+        self.obligatory_args = self.args[:-len(action.func_defaults or [])]
+        self.__doc__ = action.__doc__
+        self.__action = action
+
+    def perform(self, win, **kwargs):
+        """Perform action on window and with given arguments."""
         self.__action(win, **kwargs)
-        win.flush()
-        for hook in self.post_action_hooks:
-            hook(self, win, **kwargs)
 
 
-def register(name='', filter=None, unshade=False):
+def register(name='', filter=filters.ALL_FILTER, unshade=False):
     """Register function as PyWO action with given name."""
     def register_action(action):
-        action = Action(action, name.lower(), filter, unshade)
+        if isinstance(action, type) and issubclass(action, Action):
+            action = action(name=name, filter=filter, unshade=unshade)
+        elif callable(action):
+            action = SimpleActionWrapper(action, name.lower(), filter, unshade)
         manager.register(action)
         return action
     return register_action
-
-
-def post_action_hook(hook):
-    """Register post_action_hook that will be called after performing action."""
-    # NOTE: This is subject to change!
-    Action.post_action_hooks.append(hook)
-    return hook
 
 
 @register(name='debug')

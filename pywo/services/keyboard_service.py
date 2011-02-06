@@ -51,10 +51,6 @@ class KeyPressHandler(KeyHandler):
         window = WM.active_window()
         log.debug(window.name)
         action, kwargs = MAPPINGS[event.modifiers, event.keycode]
-        log.debug('%s(%s)' % 
-                  (action.name, 
-                   ', '.join(['%s=%s' % (key, str(value)) 
-                              for key, value in kwargs.items()])))
         try:
             action(window, **kwargs)
         except actions.ActionException, e:

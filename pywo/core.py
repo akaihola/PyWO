@@ -138,7 +138,7 @@ class Gravity(object):
         return not self == other
 
     def __str__(self):
-        return '(%.2f, %.2f)' % (self.x, self.y)
+        return '<Gravity x=%.2f, y=%.2f>' % (self.x, self.y)
 
 
 class Size(object):
@@ -206,8 +206,7 @@ class Size(object):
         return not self == other
 
     def __str__(self):
-        string = 'width: %s, height: %s' 
-        return string % (self.width, self.height)
+        return '<Size width=%s, height=%s>' % (self.width, self.height)
 
 
 class Position(object):
@@ -231,8 +230,7 @@ class Position(object):
         return not self == other
 
     def __str__(self):
-        string = 'x: %s, y: %s' 
-        return string % (self.x, self.y)
+        return '<Position x=%s, y=%s>' % (self.x, self.y)
 
 
 class Geometry(Position, Size):
@@ -279,10 +277,8 @@ class Geometry(Position, Size):
         return not self == other
 
     def __str__(self):
-        string = 'x: %s, y: %s, width: %s, height: %s, x2: %s, y2: %s' 
-        return string % (self.x, self.y, 
-                         self.width, self.height, 
-                         self.x2, self.y2)
+        return '<Geometry x=%s, y=%s, width=%s, height=%s, x2=%s, y2=%s>' % \
+               (self.x, self.y, self.width, self.height, self.x2, self.y2)
 
 
 class Extents(object):
@@ -306,8 +302,8 @@ class Extents(object):
         return self.top + self.bottom
 
     def __str__(self):
-        string = 'left: %s, right: %s, top: %s, bottom %s' 
-        return string % (self.left, self.right, self.top, self.bottom)
+        return '<Extents left=%s, right=%s, top=%s, bottom=%s>' % \
+               (self.left, self.right, self.top, self.bottom)
 
 
 class EventDispatcher(object):
@@ -1021,6 +1017,9 @@ class Window(XObject):
     def __ne__(self, other):
         return not self.id == other.id
 
+    def __str__(self):
+        return '<Window id=%s>' % (self.id,)
+
     def debug_info(self, log=log):
         """Print full window's info, for debug use only."""
         log.info('ID=%s' % self.id)
@@ -1250,6 +1249,9 @@ class WindowManager(XObject):
     def unlisten_all(self):
         """Unlisten all."""
         self._unlisten_all()
+
+    def __str__(self):
+        return '<WindowManager id=%s>' % (self.id,)
 
     def debug_info(self, log=log):
         """Print full windows manager's info, for debug use only."""

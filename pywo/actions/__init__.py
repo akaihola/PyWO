@@ -87,6 +87,10 @@ class Action(object):
 
     def __call__(self, win, **kwargs):
         """Perform action on window and with given arguments."""
+        log.debug('%s(%s)' % 
+                  (self.name, 
+                  ', '.join(['%s=%s' % (key, value) 
+                             for key, value in kwargs.items()])))
         self.check_filter(win)
         self.pre_perform(win, **kwargs)
         self.perform(win, **kwargs)
@@ -217,9 +221,5 @@ def perform(args, config, options={}, win_id=0):
         window = WM.active_window()
 
     kwargs = get_args(action, config, section, options)
-    log.debug('%s(%s)' % 
-              (action.name, 
-              ', '.join(['%s=%s' % (key, str(value)) 
-                         for key, value in kwargs.items()])))
     action(window, **kwargs)
 

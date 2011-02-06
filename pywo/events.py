@@ -59,6 +59,10 @@ class Event(object):
         """Return window, which is the source of the event."""
         return Window(self.window_id)
 
+    def __str__(self):
+        return '<%s type=%s, window_id=%s>' % \
+               (self.__class__.__name__, self.type, self.window_id)
+
 
 class EventHandler(object):
 
@@ -112,6 +116,11 @@ class KeyEvent(Event):
             if state & modifier:
                 modifiers = modifiers | modifier
         return (modifiers or X.AnyModifier, keycode)
+
+    def __str__(self):
+        return '<%s type=%s, window_id=%s keycode=%s, modifiers=%s>' % \
+               (self.__class__.__name__, self.type, self.window_id,
+                self.keycode, self.modifiers)
 
 
 class KeyHandler(EventHandler):

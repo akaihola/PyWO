@@ -49,6 +49,7 @@ def setup_loggers(debug=False):
     console.setFormatter(logging.Formatter('%(message)s'))
     if debug:
         console.setLevel(logging.DEBUG)
+        console.setFormatter(logging.Formatter(format))
     else:
         console.setLevel(logging.INFO)
     log.addHandler(console)

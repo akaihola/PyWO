@@ -42,9 +42,7 @@ class KeyPressHandler(KeyHandler):
 
     def key_press(self, event):
         """Event handler method for KeyPressEventHandler."""
-        log.debug('EVENT: type=%s, window=%s, keycode=%s, modifiers=%s' %
-                  (event.type, event.window_id, 
-                   event.keycode, event.modifiers))
+        log.debug('%s' % (event,))
         if not (event.modifiers, event.keycode) in MAPPINGS:
             log.excetpion('Unrecognized key!')
             return

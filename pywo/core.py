@@ -972,15 +972,16 @@ class Window(XObject):
                 0, 0, 0]
         self.__change_state(data)
 
-    def reset(self):
+    def reset(self, full=False):
         """Unmaximize (horizontally and vertically), unshade, unfullscreen."""
         self.iconify(Mode.UNSET)
         self.fullscreen(Mode.UNSET)
         self.maximize(Mode.UNSET)
         self.shade(Mode.UNSET)
-        self.sticky(Mode.UNSET)
-        self.always_above(Mode.UNSET)
-        self.always_below(Mode.UNSET)
+        if full:
+            self.sticky(Mode.UNSET)
+            self.always_above(Mode.UNSET)
+            self.always_below(Mode.UNSET)
 
     def close(self):
         """Close window."""

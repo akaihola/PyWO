@@ -87,9 +87,9 @@ class Action(object):
 
     def __call__(self, win, **kwargs):
         """Perform action on window and with given arguments."""
-        log.debug('%s(%s)' % 
-                  (self.name, 
-                  ', '.join(['%s=%s' % (key, value) 
+        log.debug('%s win=%s, kwargs={%s}' % 
+                  (self, win,
+                  ', '.join(["'%s':%s" % (key, value) 
                              for key, value in kwargs.items()])))
         self.check_filter(win)
         self.pre_perform(win, **kwargs)
@@ -117,6 +117,9 @@ class Action(object):
     def register(self):
         """Register instance of Action as PyWO action."""
         manager.register(self)
+
+    def __str__(self):
+        return "<Action '%s'>" % (self.name,)
 
 
 class SimpleActionWrapper(Action):

@@ -49,7 +49,6 @@ class KeyPressHandler(KeyHandler):
             log.excetpion('Unrecognized key!')
             return
         window = WM.active_window()
-        log.debug(window.name)
         action, kwargs = MAPPINGS[event.modifiers, event.keycode]
         try:
             action(window, **kwargs)

@@ -82,6 +82,10 @@ class EventHandler(object):
         event_type, handler_method = self.__mapping[event.type]
         event = event_type(event)
         handler_method(event)
+    
+    def __str__(self):
+        return '<%s masks=%s, types=%s>' % \
+               (self.__class__.__name__, self.masks, self.types)
 
 
 class KeyEvent(Event):

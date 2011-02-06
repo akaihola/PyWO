@@ -39,22 +39,24 @@ def register(action):
     if action.name in _ACTIONS:
         log.warning('Action with name %s already registered!' % action.name)
     _ACTIONS[action.name] = action
-    log.debug('Registered action %s' % action.name)
+    log.debug('Registered %s' % action)
 
 
 def load():
     """Load actions from modules and plugins."""
     # import all local modules
+    log.debug('Loading local actions modules...')
     path = os.path.dirname(os.path.abspath(__file__))
     modules = [filename[0:-3] for filename in os.listdir(path) 
                               if filename.endswith('_actions.py')]
     for module in modules:
         module_name = 'pywo.actions.%s' % module
         if not module_name in sys.modules:
-            log.debug('Importing module %s' % module_name)
+            log.debug("Importing <module '%s'>" % module_name)
             __import__(module_name)
     # TODO: use pkg_resources and pywo.actions entry point
     global __LOADED
+    log.debug('Registered %s actions' % (len(_ACTIONS),))
     __LOADED = True
 
 

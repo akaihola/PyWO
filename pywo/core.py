@@ -352,9 +352,7 @@ class EventDispatcher(object):
 
     def register(self, window, handler):
         """Register event handler and return new window's event mask."""
-        self.log.debug('Registering %s (masks=%s, types=%s) for %s' %
-                       (handler.__class__.__name__, 
-                        handler.masks, handler.types, window.id))
+        self.log.debug('Registering %s for %s' % (handler, window))
         window_handlers = self.__handlers.setdefault(window.id, {})
         for type in handler.types:
             type_handlers = window_handlers.setdefault(type, [])
@@ -379,15 +377,12 @@ class EventDispatcher(object):
             self.__handlers.clear()
             return []
         if not window.id in self.__handlers:
-            self.log.error('No handlers registered for window %s' % window.id)
+            self.log.error('No handlers registered for %s' % window)
         elif not handler and window.id in self.__handlers:
-            self.log.debug('Unregistering all handlers for window %s' % 
-                           (window.id))
+            self.log.debug('Unregistering all handlers for %s' % (window,))
             del self.__handlers[window.id]
         elif window.id in self.__handlers:
-            self.log.debug('Unregistering %s (masks=%s, types=%s) for %s' %
-                           (handler.__class__.__name__, 
-                            handler.masks, handler.types, window.id))
+            self.log.debug('Unregistering %s for %s' % (handler, window))
             window_handlers = self.__handlers[window.id]
             for type in handler.types:
                 type_handlers = window_handlers.setdefault(type, [])
@@ -508,8 +503,8 @@ class XObject(object):
     def __set_event_mask(self, masks):
         """Update event mask."""
         event_mask = 0
-        log.debug('Setting %s masks for window %s' % 
-                  ([str(e) for e in masks], self.id))
+        log.debug('Setting %s masks for %s' % 
+                  ([str(e) for e in masks], self))
         for mask in masks:
             event_mask = event_mask | mask
         self._win.change_attributes(event_mask=event_mask)

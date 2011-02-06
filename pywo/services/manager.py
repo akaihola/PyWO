@@ -30,26 +30,28 @@ __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
 log = logging.getLogger(__name__)
 
-_SERVICES = set()
+__SERVICES = set()
 
 
 def load(config):
     """Load Services from modules and plugins."""
-    _SERVICES.clear()
+    __SERVICES.clear()
     # import all local modules
+    log.debug('Loading local services modules...')
     path = os.path.dirname(os.path.abspath(__file__))
     modules = [filename[0:-3] for filename in os.listdir(path) 
                               if filename.endswith('_service.py')]
     for module in modules:
         module_name = 'pywo.services.%s' % module
         if getattr(config, module) or getattr(config, module_name):
-            log.debug('Importing module %s' % module_name)
+            log.debug("Importing <module '%s'>" % module_name)
             __import__(module_name)
-            _SERVICES.add(sys.modules[module_name])
+            __SERVICES.add(sys.modules[module_name])
     # TODO: use pkg_resources and pywo.actions entry point
+    log.debug('Registered %s services' % (len(__SERVICES),))
 
 
 def get_all():
     """Return set of all services."""
-    return _SERVICES
+    return __SERVICES
 

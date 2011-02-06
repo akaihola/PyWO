@@ -22,8 +22,9 @@
 
 import logging
 
-from pywo import actions, events
+from pywo import actions
 from pywo.core import WindowManager
+from pywo.events import KeyHandler
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
@@ -35,7 +36,7 @@ WM = WindowManager()
 
 MAPPINGS = {} # {(modifiers, keycode): (action, args), }
 
-class KeyPressHandler(events.KeyHandler):
+class KeyPressHandler(KeyHandler):
 
     """EventHandler for KeyPress events."""
 

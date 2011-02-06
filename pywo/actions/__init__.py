@@ -62,8 +62,7 @@ class Action(object):
 
     # TODO: implement pre and post action_hooks
 
-    def __init__(self, name='',
-                 filter=None, unshade=False):
+    def __init__(self, name='', filter=None, unshade=False):
         self.name = name
         self.__filter = filter or filters.ALL_FILTER
         self.__unshade = unshade
@@ -111,13 +110,16 @@ class Action(object):
         win.sync()
         # TODO: call post_action_hooks
 
+    def register(self):
+        """Register instance of Action as PyWO action."""
+        manager.register(self)
+
 
 class SimpleActionWrapper(Action):
 
     """Wrapper for simple function actions."""
 
-    def __init__(self, action, name,
-                 filter=None, unshade=False):
+    def __init__(self, action, name, filter=None, unshade=False):
         Action.__init__(self, name=name, filter=filter, unshade=unshade)
         self.args = action.func_code.co_varnames[1:action.func_code.co_argcount]
         self.obligatory_args = self.args[:-len(action.func_defaults or [])]
@@ -130,7 +132,7 @@ class SimpleActionWrapper(Action):
 
 
 def register(name='', filter=filters.ALL_FILTER, unshade=False):
-    """Register function as PyWO action with given name."""
+    """Register function or Action subclass as PyWO action with given name."""
     def register_action(action):
         if isinstance(action, type) and issubclass(action, Action):
             action = action(name=name, filter=filter, unshade=unshade)
@@ -154,11 +156,6 @@ def _debug_info(win):
     win.sync()
     log.info('New geometry=%s' % win.geometry)
     log.info('-= End of debug =-')
-
-
-# Autoload all actions
-# TODO: maybe move it to actions.parser? No need to load on import
-manager.load()
 
 
 def get_args(action, config, section=None, options=None):

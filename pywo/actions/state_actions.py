@@ -18,7 +18,7 @@
 # along with PyWO.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-"""state.py - PyWO actions - changing windows state."""
+"""state_actions.py - PyWO actions - changing windows state."""
 
 import logging
 

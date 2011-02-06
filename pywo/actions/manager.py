@@ -31,6 +31,7 @@ __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 log = logging.getLogger(__name__)
 
 _ACTIONS = {}
+__LOADED = False
 
 
 def register(action):
@@ -53,14 +54,20 @@ def load():
             log.debug('Importing module %s' % module_name)
             __import__(module_name)
     # TODO: use pkg_resources and pywo.actions entry point
+    global __LOADED
+    __LOADED = True
 
 
 def get(name):
     """Return action with given name or None."""
+    if not __LOADED:
+        load()
     return _ACTIONS.get(name, None)
 
 
 def get_all():
     """Return set of all actions."""
+    if not __LOADED:
+        load()
     return _ACTIONS.values()
 

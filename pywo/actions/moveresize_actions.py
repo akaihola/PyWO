@@ -18,7 +18,7 @@
 # along with PyWO.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-"""moveresize.py - PyWO actions -  moving and resizing windows."""
+"""moveresize_actions.py - PyWO actions - moving and resizing windows."""
 
 import itertools
 import logging
@@ -198,43 +198,6 @@ def _grid_height(win, position, gravity,
     """Put window in given position and resize it (cycle heights)."""
     __grid(win, position, gravity, 
            size, width, height, invert_on_resize, 'height')
-
-
-# TODO: move to separate module, 
-#       make it Action subclass and __call__ after choosing second window
-def __switch_cycle(win, keep_active):
-    """Switch contents/placement of windows."""
-    _GRIDED['id'] = None
-    _switch_cycle = False
-    
-    def active_changed(event):
-        if event.atom_name == '_NET_ACTIVE_WINDOW':
-            WM.unlisten(property_handler)
-            _switch_cycle = False
-            active = WM.active_window()
-            active_geo, win_geo = active.geometry, win.geometry
-            win.set_geometry(active_geo)
-            active.set_geometry(win_geo)
-            if keep_active:
-                win.activate()
-
-    property_handler = PropertyNotifyHandler(active_changed)
-    if _switch_cycle:
-        WM.unlisten(property_handler)
-        _switch_cycle = False
-    else:
-        WM.listen(property_handler)
-        _switch_cycle = True
-
-@register(name='switch', filter=TYPE_FILTER)
-def _switch(win):
-    """Switch placement of windows (keep focus on the same window)."""
-    __switch_cycle(win, True)
-
-@register(name='cycle', filter=TYPE_FILTER)
-def _cycle(win):
-    """Switch contents of windows (focus on new window)."""
-    __switch_cycle(win, False)
 
 
 # TODO: new actions

@@ -44,7 +44,7 @@ class KeyPressHandler(KeyHandler):
         """Event handler method for KeyPressEventHandler."""
         log.debug('%s' % (event,))
         if not (event.modifiers, event.keycode) in MAPPINGS:
-            log.excetpion('Unrecognized key!')
+            log.exception('Unrecognized key!')
             return
         window = WM.active_window()
         action, kwargs = MAPPINGS[event.modifiers, event.keycode]

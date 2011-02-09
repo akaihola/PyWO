@@ -37,7 +37,7 @@ __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
 log = logging.getLogger(__name__)
 
-option_list = []
+__OPTION_LIST = []
 
 
 class ParserException(Exception):
@@ -60,10 +60,15 @@ class Parser(optparse.OptionParser):
         raise ParserException(msg)
 
 
+@property
+def option_list():
+    return __OPTION_LIST
+
+
 def add_option(*args, **kwargs):
     """Add new option to actions.parser."""
     option = optparse.make_option(*args, **kwargs)
-    option_list.append(option)
+    __OPTION_LIST.append(option)
 
 
 def parse_args(args=None, values=None):
@@ -73,7 +78,7 @@ def parse_args(args=None, values=None):
     #    args.expand(line_args)
     parser = Parser(conflict_handler='resolve')
     parser.set_defaults(action=None, section=None)
-    for option in option_list:
+    for option in __OPTION_LIST:
         parser.add_option(option)
     return parser.parse_args(args, values)
 

@@ -60,9 +60,7 @@ class Parser(optparse.OptionParser):
         raise ParserException(msg)
 
 
-@property
-def option_list():
-    return __OPTION_LIST
+option_list = __OPTION_LIST
 
 
 def add_option(*args, **kwargs):

@@ -36,11 +36,9 @@ class EventDispatcher(object):
 
     """Checks the event queue and dispatches events to correct handlers.
 
-    EventDispatcher will run in separate thread.
-    The self.__handlers attribute holds all registered EventHnadlers,
-    it has structure as follows:
-    self.__handlers = {win_id: {event_type: handler}} 
-    That's why there can be only one handler per window/event_type.
+    EventDispatcher will run in separate thread. Thread is not started 
+    until first EventHandler is registered, and stopped when there are no
+    handlers left.
 
     """
 
@@ -49,12 +47,11 @@ class EventDispatcher(object):
         # gobject.io_add_watch(root.display, gobject.IO_IN, handle_xevent)
         self.__display = display
         self.__root = display.screen().root
-        self.__handlers = {} # {window.id: {handler.type: [handler, ], }, }
-        # TODO: {event.type: {window.id: set([hander, ], ...}, ...}
+        self.__handlers = {} # {event.type: {window.id: set([handler, ]), }, }
         self.__thread = None
 
     def run(self):
-        """Perform event queue checking.
+        """Main loop - perform event queue checking.
 
         Every 50ms check event queue for pending events and dispatch them.
         If there's no registered handlers stop running.
@@ -63,32 +60,18 @@ class EventDispatcher(object):
         log.debug('EventDispatcher started')
         while self.__handlers:
             while self.__display.pending_events():
-                # Dispatch all pending events if present
                 self.__dispatch(self.__display.next_event())
             time.sleep(0.05)
         log.debug('EventDispatcher stopped')
 
-    def __get_masks(self, window_id):
-        """Return event type masks for given window."""
-        masks = set()
-        for type_handlers in self.__handlers.get(window_id, {}).values():
-            for handler in type_handlers:
-                masks.update(handler.masks)
-        return masks
-
     def register(self, window, handler):
         """Register event handler and return new window's event mask."""
         log.debug('Registering %s for %s' % (handler, window))
-        window_handlers = self.__handlers.setdefault(window.id, {})
-        for type in handler.types:
-            type_handlers = window_handlers.setdefault(type, [])
-            type_handlers.append(handler)
-        if not self.__thread or \
-           (self.__thread and not self.__thread.isAlive()):
-            # start new thread only if needed
-            self.__thread = threading.Thread(name='EventDispatcher', 
-                                 target=self.run)
-            self.__thread.start()
+        for event_type in handler.types:
+            type_handlers = self.__handlers.setdefault(event_type, {})
+            win_handlers = type_handlers.setdefault(window.id, set())
+            win_handlers.add(handler)
+        self.__start()
         return self.__get_masks(window.id)
 
     def unregister(self, window=None, handler=None):
@@ -102,43 +85,68 @@ class EventDispatcher(object):
             log.debug('Unregistering all handlers for all windows')
             self.__handlers.clear()
             return []
-        if not window.id in self.__handlers:
-            log.error('No handlers registered for %s' % window)
-        elif not handler and window.id in self.__handlers:
-            log.debug('Unregistering all handlers for %s' % (window,))
-            del self.__handlers[window.id]
-        elif window.id in self.__handlers:
+        if not handler:
+            log.debug('Unregistering all handlers for %s' % (window))
+        else:
             log.debug('Unregistering %s for %s' % (handler, window))
-            window_handlers = self.__handlers[window.id]
-            for type in handler.types:
-                type_handlers = window_handlers.setdefault(type, [])
-                if handler in type_handlers:
-                    type_handlers.remove(handler)
-                if not type_handlers:
-                    del window_handlers[type]
-        if not self.__handlers.setdefault(window.id, {}):
-            del self.__handlers[window.id]
+        for event_type, type_handlers in self.__handlers.items():
+            if not window.id in type_handlers:
+                continue
+            if handler:
+                type_handlers[window.id].discard(handler)
+            else:
+                type_handlers.pop(window.id, None)
+            if not type_handlers:
+                self.__handlers.pop(event_type)
         return self.__get_masks(window.id)
 
+    def __get_masks(self, window_id):
+        """Return event type masks for given window."""
+        masks = set()
+        for type_handlers in self.__handlers.values():
+            win_handlers = type_handlers.get(window_id, ())
+            for handler in win_handlers:
+                masks.update(handler.masks)
+        return masks
+
+    def __start(self):
+        """Start new thread only if not already running."""
+        if not self.__thread or \
+           (self.__thread and not self.__thread.isAlive()):
+            self.__thread = threading.Thread(name='EventDispatcher', 
+                                             target=self.run)
+            self.__thread.start()
+
     def __dispatch(self, event):
-        """Dispatch raw X event to correct handler."""
-        if hasattr(event, 'window') and \
-           event.window.id in self.__handlers:
-            # Try window the event is reported on (if present)
-            handlers = self.__handlers[event.window.id]
-        elif hasattr(event, 'event') and \
-             event.event.id in self.__handlers:
-            # Try window the event is reported for (if present)
-            handlers = self.__handlers[event.event.id]
-        elif self.__root.id in self.__handlers:
-            # Try root window
-            handlers = self.__handlers[self.__root.id]
-        else:
-            log.error('No handler for this event %s' % event)
-            return
-        if not event.type in handlers:
+        """Dispatch raw X event to correct handler.
+
+        X.KeyPress
+            event.window - window the event is reported on
+        X.DestroyNotify
+            event.window - window that was destroyed
+        X.CreateNotify
+            event.parent - parent of the new window
+            event.window - new window
+        X.PropertyNotify
+            event.window - window which the property was changed
+        X.ConfigureNotify
+            event.event - the window the event is generated for
+            event.window - the window that has been changed
+
+        """
+        if not event.type in self.__handlers:
             # Just skip unwanted events types
             return
-        for handler in handlers[event.type]:
+        type_handlers = self.__handlers[event.type]
+        handlers = []
+        if hasattr(event, 'parent') and event.parent.id in type_handlers:
+            handlers.extend(type_handlers[event.parent.id])
+        elif hasattr(event, 'event') and event.event.id in type_handlers:
+            handlers.extend(type_handlers[event.event.id])
+        elif hasattr(event, 'window') and event.window.id in type_handlers:
+            handlers.extend(type_handlers[event.window.id])
+        if self.__root in type_handlers:
+            handlers.extend(type_handlers[self.__root])
+        for handler in handlers:
             handler.handle_event(event)
 

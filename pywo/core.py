@@ -363,11 +363,11 @@ class XObject(object):
         property = self._win.get_full_property(atom, 0)
         return property
 
-    def send_event(self, data, type, mask):
+    def send_event(self, data, event_type, mask):
         """Send event to the root window."""
         event = ClientMessage(
                     window=self._win,
-                    client_type=type,
+                    client_type=event_type,
                     data=(32, (data)))
         self.__root.send_event(event, event_mask=mask)
 
@@ -664,11 +664,11 @@ class Window(XObject):
         desktop_id = int(desktop_id)
         if desktop_id < 0:
             desktop_id = 0
-        type = self.atom('_NET_WM_DESKTOP')
+        event_type = self.atom('_NET_WM_DESKTOP')
         data = [desktop_id, 
                 0, 0, 0, 0]
         mask = X.PropertyChangeMask
-        self.send_event(data, type, mask)
+        self.send_event(data, event_type, mask)
 
     def __extents(self):
         """Return raw extents info."""
@@ -793,10 +793,10 @@ class Window(XObject):
     def activate(self):
         """Make this window active (and unshade, unminimize)."""
         # NOTE: In Metacity this WON'T change desktop to window's desktop!
-        type = self.atom('_NET_ACTIVE_WINDOW')
+        event_type = self.atom('_NET_ACTIVE_WINDOW')
         mask = X.SubstructureRedirectMask
         data = [0, 0, 0, 0, 0]
-        self.send_event(data, type, mask)
+        self.send_event(data, event_type, mask)
         # NOTE: Previously used for activating (didn't unshade/unminimize)
         #       Need to test if setting X.Above is needed in various WMs
         #self._win.set_input_focus(X.RevertToNone, X.CurrentTime)
@@ -811,11 +811,11 @@ class Window(XObject):
         if mode == 0 or \
            mode == 2 and state == Xutil.IconicState:
             set_state = Xutil.NormalState
-        type = self.atom('WM_CHANGE_STATE')
+        event_type = self.atom('WM_CHANGE_STATE')
         mask = X.SubstructureRedirectMask
         data = [set_state,
                 0, 0, 0, 0]
-        self.send_event(data, type, mask)
+        self.send_event(data, event_type, mask)
 
     def maximize(self, mode,
                  vert=State.MAXIMIZED_VERT, 
@@ -875,16 +875,16 @@ class Window(XObject):
 
     def close(self):
         """Close window."""
-        type = self.atom('_NET_CLOSE_WINDOW')
+        event_type = self.atom('_NET_CLOSE_WINDOW')
         mask = X.SubstructureRedirectMask
         data = [0, 0, 0, 0, 0]
-        self.send_event(data, type, mask)
+        self.send_event(data, event_type, mask)
 
     def __change_state(self, data):
         """Send _NET_WM_STATE event to the root window."""
-        type = self.atom('_NET_WM_STATE')
+        event_type = self.atom('_NET_WM_STATE')
         mask = X.SubstructureRedirectMask
-        self.send_event(data, type, mask)
+        self.send_event(data, event_type, mask)
 
     def blink(self):
         """For 0.25 second show border around window."""
@@ -1003,11 +1003,11 @@ class WindowManager(XObject):
         desktop_id = int(desktop_id)
         if desktop_id < 0:
             desktop_id = 0
-        type = self.atom('_NET_CURRENT_DESKTOP')
+        event_type = self.atom('_NET_CURRENT_DESKTOP')
         data = [desktop_id, 
                 0, 0, 0, 0]
         mask = X.PropertyChangeMask
-        self.send_event(data, type, mask)
+        self.send_event(data, event_type, mask)
 
     @property
     def desktop_size(self):
@@ -1057,12 +1057,12 @@ class WindowManager(XObject):
 
     def set_viewport_position(self, x, y):
         """Change current viewport."""
-        type = self.atom('_NET_DESKTOP_VIEWPORT')
+        event_type = self.atom('_NET_DESKTOP_VIEWPORT')
         data = [x, 
                 y, 
                 0, 0, 0]
         mask = X.PropertyChangeMask
-        self.send_event(data, type, mask)
+        self.send_event(data, event_type, mask)
 
     def active_window_id(self):
         """Return id of active window."""

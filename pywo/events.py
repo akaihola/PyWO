@@ -82,7 +82,7 @@ class EventHandler(object):
         return self.__mapping.keys()
 
     def handle_event(self, event):
-        """Wrap raw X event into _EVENT_TYPE (Event object) and call _METHOD."""
+        """Wrap raw X event into Event object and call handler method."""
         event_type, handler_method = self.__mapping[event.type]
         event = event_type(event)
         handler_method(event)
@@ -299,6 +299,12 @@ class PropertyNotifyHandler(EventHandler):
 
 
 class ConfigureNotifyEvent(Event):
+
+    """Class representing X.ConfigureNotify events.
+
+    This event is generated when geometry of the window is changed.
+
+    """
 
     def __init__(self, event):
         Event.__init__(self, event)

@@ -37,8 +37,10 @@ WM = WindowManager()
 
 class ActiveChangedEventHandler(PropertyNotifyHandler):
 
+    """Listen for change of active window."""
+
     def __init__(self, action):
-        PropertyNotifyHandler.__init__(self, self.property)
+        PropertyNotifyHandler.__init__(self)
         self.action = action
 
     def property(self, event):

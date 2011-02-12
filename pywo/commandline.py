@@ -145,19 +145,23 @@ best match. Windows on current desktop/viewport have higher priority.''')
 
 
 def parse_args(args=sys.argv[1:]):
+    """Parse arguments."""
     return parser.parse_args(args)
 
 
 def print_error(msg):
+    """Print error message."""
     parser.error(msg)
 
 
 def print_help():
+    """Print normal help."""
     parser.print_help()
 
 
 def print_help_more(config):
-    list = []
+    """Print extended help."""
+    action_descriptions = []
     for action in sorted(actions.manager.get_all(), 
                          key=lambda action: action.name):
         line = '%s\n  %s\n  %s' %  (action.name, 
@@ -167,8 +171,8 @@ def print_help_more(config):
             line += ', '
         if action.optional_args:
             line += '[%s]' % ', '.join(action.optional_args).upper()
-        list.append(line)
-    actions_list = OptionGroup(parser, 'ACTION', '\n'.join(list))
+        action_descriptions.append(line)
+    actions_list = OptionGroup(parser, 'ACTION', '\n'.join(action_descriptions))
     parser.add_option_group(actions_list)
     sections_list = OptionGroup(parser, 'SECTION', 
                                 '\n'.join(sorted(config.sections, reverse=True)))

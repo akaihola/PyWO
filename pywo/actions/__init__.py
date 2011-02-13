@@ -62,8 +62,9 @@ class Action(object):
 
     # TODO: implement pre and post action_hooks
 
-    def __init__(self, name='', filter=None, unshade=False):
+    def __init__(self, name='', doc='', filter=None, unshade=False):
         self.name = name
+        self.__doc__ = doc
         self.__filter = filter or filters.ALL_FILTER
         self.__unshade = unshade
         args = self.perform.func_code.co_varnames

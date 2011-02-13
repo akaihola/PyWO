@@ -23,8 +23,8 @@
 import itertools
 import logging
 
-from pywo.actions import register, TYPE_FILTER
-from pywo.core import Gravity, Geometry, Size, WindowManager
+from pywo.actions import Action, TYPE_FILTER
+from pywo.core import Gravity, Geometry, Size, Position, Window, WindowManager
 from pywo.resizer import expand_window
 
 
@@ -36,112 +36,152 @@ log = logging.getLogger(__name__)
 WM = WindowManager()
 
 NO_SIZE = Size(0, 0)
-_GRIDED = {} # change to HISTORY
+
+CYCLE_WIDTH = 0
+CYCLE_HEIGHT = 1
 
 
-class _DummyWindow(object):
+class DummyWindow(object):
 
     """Dummy Window object, only geometry information is needed."""
     
     gravity = Gravity(0.5, 0.5)
 
-    def __init__(self, workarea, window, x, y, widths, heights, gravity):
+    def __init__(self, window, position, size, gravity):
         self.extents = window.extents
         self.desktop = window.desktop
         self.id = window.id
-        self.geometry = Geometry(x, y, min(widths), min(heights), gravity)
+        self.geometry = Geometry(position.x, position.y, 
+                                 min(size.width), min(size.height), 
+                                 gravity)
 
 
-def __grid(win, position, gravity, 
-           size, width, height, 
-           invert_on_resize=True, cycle='width'):
-    """Put window in given position and resize it."""
-    # FIXME: there's something wrong... 
-    #        open terminal, grid left, close terminal, 
-    #        open terminal, grid left -> wrong size!
+def absolute_position(workarea, position):
+    """Return Position on viewport."""
+    return Position(workarea.x + workarea.width * position.x,
+                    workarea.y + workarea.height * position.y)
 
-    def get_iterator(sizes, new_size):
-        """Prepare cycle iterator for window sizes."""
-        sizes.sort()
-        if new_size in sizes[len(sizes)/2:] and \
-           new_size != sizes[len(sizes)/2]:
-            sizes.reverse()
-        sizes = sizes[sizes.index(new_size)+1:] + \
-                 sizes[:sizes.index(new_size)+1]
-        return itertools.cycle(sizes)
 
-    win.reset()
-    win.sync() 
-    workarea = WM.workarea_geometry
-    x = workarea.x + workarea.width * position.x
-    y = workarea.y + workarea.height * position.y
-    if not size and (width == NO_SIZE or height == NO_SIZE):
-        # Use current window's size if no size provided
-        geometry = win.geometry
-        size = Size(float(geometry.width) / workarea.width,
-                    float(geometry.height) / workarea.height)
-    size = size or NO_SIZE
+def absolute_size(win, workarea, size, width, height):
+    """Return Size containing sorted lists of absolute sizes."""
+    widths = width.width or size.width or float(win.width)/workarea.width
+    heights = height.height or size.height or float(win.height)/workarea.height
     try:
-        widths = [int(workarea.width * width) 
-                  for width in (width.width or size.width)]
+        widths = set([min([width * workarea.width, workarea.width]) 
+                     for width in widths])
     except TypeError:
-        widths = [int(workarea.width * (width.width or size.width))]
+        widths = [min([widths * workarea.width, workarea.width])]
     try:
-        heights = [int(workarea.height * height) 
-                   for height in (height.height or size.height)]
+        heights = set([min([height * workarea.height, workarea.height]) 
+                      for height in heights])
     except TypeError:
-        heights = [int(workarea.height * (height.height or size.height))]
-    if _GRIDED and win.id == _GRIDED['id'] and \
-       _GRIDED['placement'] == (position, gravity):
-        old = win.geometry
-        if cycle == 'width':
-            new_width = _GRIDED['width'].next()
-            new_height = old.height + \
-                         min(abs(old.height - height) for height in heights)
-        elif cycle == 'height':
-            new_height = _GRIDED['height'].next()
-            new_width = old.width + \
-                        min(abs(old.width - width) for width in widths)
-    else:
-        dummy = _DummyWindow(workarea, win, x, y, widths, heights, gravity)
-        border = expand_window(dummy, dummy.gravity,
-                               sticky = False,
-                               vertical_first=(cycle is 'height'))
-        #FIXME: max() might get empty sequence! --width F+H
-        #       maybe use current geometry as default in such situation?
-        new_width = max([width for width in widths 
-                               if border.width - width >= 0 and \
-                                  x - width * position.x >= border.x and \
-                                  x + width * (1 - position.x) <= border.x2])
-        new_height = max([height for height in heights 
-                                 if border.height - height >= 0 and \
-                                    y - height * position.y >= border.y and \
-                                    y + height * (1 - position.y) <= border.y2])
-        _GRIDED['id'] = win.id
-        _GRIDED['width'] = get_iterator(widths, new_width)
-        _GRIDED['height'] = get_iterator(heights, new_height)
-        _GRIDED['placement'] = (position, gravity)
-    geometry = Geometry(x, y, new_width, new_height, gravity)
-    log.debug('width: %s, height: %s' % (geometry.width, geometry.height))
-    if invert_on_resize: 
-        gravity = gravity.invert()
-    win.set_geometry(geometry, gravity)
+        heights = [min([heights * workarea.width, workarea.height])]
+    return Size(sorted(widths), sorted(heights))
 
 
-@register(name='grid_width', filter=TYPE_FILTER)
-def _grid_width(win, position, gravity, 
-                size=None, width=NO_SIZE, height=NO_SIZE, 
+def get_iterator(sizes, new_size):
+    """Prepare cycle iterator for window sizes."""
+    if new_size in sizes[len(sizes)/2:] and \
+       new_size != sizes[len(sizes)/2]:
+        sizes.reverse()
+    sizes = sizes[sizes.index(new_size):] + \
+            sizes[:sizes.index(new_size)]
+    return itertools.cycle(sizes)
+
+
+class GeometryCycler(object):
+
+    """Cycle window geometry."""
+
+    def __init__(self, win, position, gravity, size, width, height, cycle):
+        self.win_id = win.id
+        self.args = (position, gravity, size, width, height) # TOD: remove me!?
+        self.gravity = gravity
+        workarea = WM.workarea_geometry
+        self.position = absolute_position(workarea, position)
+        self.sizes = absolute_size(win, workarea, size, width, height)
+        dummy = DummyWindow(win, self.position, self.sizes, self.gravity)
+        max_geo = expand_window(dummy, dummy.gravity,
+                                sticky=False, vertical_first=cycle)
+        widths = []
+        for width in self.sizes.width:
+            if max_geo.width - width >= 0 and \
+               self.position.x - width * position.x >= max_geo.x and \
+               self.position.x + width * (1 - position.x) <= max_geo.x2:
+                widths.append(width)
+        heights = []
+        for height in self.sizes.height:
+            if max_geo.height - height >= 0 and \
+               self.position.y - height * position.y >= max_geo.y and \
+               self.position.y + height * (1 - position.y) <= max_geo.y2:
+                heights.append(height)
+        width = max(widths)
+        height = max(heights)
+        self.sizes_iterator = Size(get_iterator(self.sizes.width, width),
+                                   get_iterator(self.sizes.height, height))
+        [self.sizes_iterator.height, self.sizes_iterator.width][cycle].next()
+        self.previous = Geometry(self.position.x, self.position.y,
+                                 width, height, self.gravity)
+
+    def next(self, cycle):
+        """Return new window geometry."""
+        win = Window(self.win_id)
+        if cycle == CYCLE_WIDTH:
+            width = self.sizes_iterator.width.next()
+            height = self.previous.height
+        if cycle == CYCLE_HEIGHT:
+            width = self.previous.width
+            height = self.sizes_iterator.height.next()
+        self.previous = Size(width, height)
+        return Geometry(self.position.x, self.position.y, 
+                        width, height, self.gravity)
+
+
+class GridAction(Action):
+
+    """Put window on given position and resize it according to grid layout."""
+
+    __cycler = None
+
+    def __init__(self, name, doc, cycle):
+        Action.__init__(self, name=name, doc=doc, 
+                        filter=TYPE_FILTER, unshade=False)
+        self.cycle = cycle
+
+    def perform(self, win, position, gravity=None,
+                size=NO_SIZE, width=NO_SIZE, height=NO_SIZE,
                 invert_on_resize=True):
-    """Put window in given position and resize it (cycle widths)."""
-    __grid(win, position, gravity, 
-           size, width, height, invert_on_resize, 'width')
+        win.reset()
+        win.sync() 
+        gravity = gravity or position
+        geometry = self.get_geometry(win, position, gravity,
+                                     size, width, height, self.cycle)
+        log.debug('Setting %s' % (geometry,))
+        if invert_on_resize: 
+            gravity = gravity.invert()
+        win.set_geometry(geometry, gravity)
 
-@register(name='grid_height', filter=TYPE_FILTER)
-def _grid_height(win, position, gravity, 
-                 size=None, width=NO_SIZE, height=NO_SIZE, 
-                 invert_on_resize=True):
-    """Put window in given position and resize it (cycle heights)."""
-    __grid(win, position, gravity, 
-           size, width, height, invert_on_resize, 'height')
+    @classmethod
+    def get_geometry(cls, win, position, gravity, 
+                     size, width, height, cycle):
+        """Return new window geometry from GeometryCycler."""
+        # TODO: this should be done in action_hook,
+        #       here only existence of cycle should be checked
+        # NOTE: it seems window.id are reused, when you create new window 
+        #       just after closing previous it might get the same id!
+        if not cls.__cycler or \
+           not win.id == cls.__cycler.win_id or \
+           not (position, gravity, size, width, height) == cls.__cycler.args:
+            cls.__cycler = GeometryCycler(win, position, gravity, 
+                                          size, width, height, cycle)
+        return cls.__cycler.next(cycle)
 
+
+GridAction('grid_width', 
+           "Put window in given position and resize it (cycle widths).",
+           CYCLE_WIDTH).register()
+
+GridAction('grid_height', 
+           "Put window in given position and resize it (cycle heights).",
+           CYCLE_HEIGHT).register()
 

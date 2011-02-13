@@ -54,8 +54,7 @@ class SwitchCycleAction(Action):
     """Switch or cycle windows."""
 
     def __init__(self, name, doc, keep_active):
-        Action.__init__(self, name=name, filter=TYPE_FILTER, unshade=False)
-        self.__doc__ = doc
+        Action.__init__(self, name=name, doc=doc, filter=TYPE_FILTER)
         self.args = ['window']
         self.keep_active = keep_active
         self.__listener = ActiveChangedEventHandler(self)
@@ -91,6 +90,7 @@ class SwitchCycleAction(Action):
 SwitchCycleAction('switch', 
                   "Switch placement of windows (keep focus on current window).",
                   True).register()
+
 SwitchCycleAction('cycle', 
                   "Switch contents of windows (focus on new window).",
                   False).register()

@@ -134,15 +134,15 @@ def position_callback(option, opt_str, value, parser):
     # TODO: parse it to int, might be relative size
     try:
         if option.dest == 'x':
-            size = Position(value, 0)
+            position = Position(value, 0)
         elif option.dest == 'y':
-            size = Position(0, value)
+            position = Position(0, value)
         elif option.dest == 'coords':
-            size = Position(*value)
+            position = Position(*value)
     except (ValueError, TypeError):
         msg = 'option %s: error parsing Position value: %s' % (opt_str, value)
         raise optparse.OptionValueError(msg)
-    setattr(parser.values, option.dest, size)
+    setattr(parser.values, option.dest, position)
 
 
 #

@@ -55,6 +55,7 @@ def setup(config):
         actions.register(name='exit')(exit_pywo)
         actions.register(name='reload')(reload_pywo)
     _CONFIG = config
+    WM.update_type()
     manager.load(_CONFIG)
     for service in manager.get_all():
         service.setup(config)
@@ -66,8 +67,13 @@ def start(loop=False):
         service.start()
     log.info('PyWO ready and running!')
     # Simple loop for keeping main-thread running and make signal handlers work
+    counter = 0
     while loop and len(threading.enumerate()) > 1: 
         time.sleep(0.5)
+        counter += 1
+        if counter % 10 == 0:
+            counter = 0
+            WM.update_type() # update WM type every 5 seconds
 
 
 def stop():

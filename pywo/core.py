@@ -43,6 +43,12 @@ __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
 log = logging.getLogger(__name__)
 
+# TODO: create core package and split core.py into separate modules:
+#       basic - CustomTuple, Gravity, Size, Position, Geometry, Extents(?)
+#       xlib - XObject, Type, State, whatever X-related
+#       window
+#       wm
+#       move dispatch.py to core package
 
 class CustomTuple(tuple):
 
@@ -330,6 +336,8 @@ class XObject(object):
 
     __KEYCODES = {}
 
+    _WM_TYPE = None
+
     def __init__(self, win_id=None):
         """
         win_id - id of the window to be created, if no id assume it's 
@@ -533,8 +541,9 @@ class XObject(object):
 
 class Type(object):
 
-    """Enum of window types."""
+    """Enum of window and window manager types."""
 
+    # Window Types
     DESKTOP = XObject.atom('_NET_WM_WINDOW_TYPE_DESKTOP')
     DOCK = XObject.atom('_NET_WM_WINDOW_TYPE_DOCK')
     TOOLBAR = XObject.atom('_NET_WM_WINDOW_TYPE_TOOLBAR')
@@ -544,6 +553,21 @@ class Type(object):
     DIALOG = XObject.atom('_NET_WM_WINDOW_TYPE_DIALOG')
     NORMAL = XObject.atom('_NET_WM_WINDOW_TYPE_NORMAL')
     NONE = -1
+
+    # WindowManager Types
+    COMPIZ = 1
+    METACITY = 2
+    KWIN = 3
+    XFWM = 4
+    OPENBOX = 5
+    FLUXBOX = 6
+    BLACKBOX = 7
+    ICEWM = 8
+    ENLIGHTMENT = 9
+    WINDOW_MAKER = 10
+    SAWFISH = 11
+    PEKWM = 12
+    UNKNOWN = -1
 
 
 class State(object):
@@ -563,6 +587,7 @@ class State(object):
     ABOVE = XObject.atom('_NET_WM_STATE_ABOVE')
     BELOW = XObject.atom('_NET_WM_STATE_BELOW')
     DEMANDS_ATTENTION = XObject.atom('_NET_WM_STATE_DEMANDS_ATTENTION')
+    # TODO: add WM specific states like _OB_WM_STATE_*
 
 
 class Mode(object):
@@ -584,6 +609,7 @@ class Window(XObject):
     def __init__(self, win_id):
         XObject.__init__(self, win_id)
         # Here comes the hacks for WMs strange behaviours....
+        # TODO: Use self._WM_TYPE in Hacks.TRANSLATE_COORDS
         wm_name = WindowManager().name.lower()
         if wm_name.startswith('icewm'):
             wm_name = 'icewm'
@@ -958,6 +984,7 @@ class WindowManager(XObject):
         manager = object.__new__(cls)
         XObject.__init__(manager)
         cls.__INSTANCE = manager
+        manager.update_type()
         return manager
 
     @property
@@ -976,6 +1003,25 @@ class WindowManager(XObject):
             return name.value
         else:
             return ''
+
+    @property
+    def type(self):
+        """Return tuple of window manager's type(s)."""
+        return CustomTuple([self._WM_TYPE])
+    
+    def update_type(self):
+        """Update window manager's type."""
+        recognize = {'compiz': Type.COMPIZ, 'metacity': Type.METACITY,
+                     'kwin': Type.KWIN, 'xfwm': Type.XFWM, 'pekwm': Type.PEKWM,
+                     'openbox': Type.OPENBOX, 'fluxbox': Type.FLUXBOX,
+                     'blackbox': Type.BLACKBOX, 'icewm': Type.ICEWM,
+                     'e1': Type.ENLIGHTMENT, 'sawfish': Type.SAWFISH,
+                     'window maker': Type.WINDOW_MAKER, }
+        name = self.name.lower()
+        XObject._WM_TYPE = Type.UNKNOWN
+        for name_part, wm_type in recognize.items():
+            if name_part in name:
+                XObject._WM_TYPE = wm_type
 
     @property
     def desktops(self):

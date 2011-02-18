@@ -81,6 +81,11 @@ class Hacks(object):
                                    Type.BLACKBOX])
     PARENT_XY = CustomTuple([Type.FLUXBOX, 
                              Type.WINDOW_MAKER])
+    CALCULATE_EXTENTS = CustomTuple([Type.BLACKBOX, 
+                                     Type.ICEWM,
+                                     Type.SAWFISH,
+                                     Type.WINDOW_MAKER,
+                                     Type.UNKNOWN])
 
 
 class State(object):
@@ -101,6 +106,7 @@ class State(object):
     BELOW = XObject.atom('_NET_WM_STATE_BELOW')
     DEMANDS_ATTENTION = XObject.atom('_NET_WM_STATE_DEMANDS_ATTENTION')
     # TODO: add WM specific states like _OB_WM_STATE_*
+    OB_UNDECORATED = XObject.atom('_OB_WM_STATE_UNDECORATED')
 
 
 class Mode(object):
@@ -204,27 +210,38 @@ class Window(XObject):
         extents = self.get_property('_NET_FRAME_EXTENTS')
         if extents:
             return extents.value
-        # Hack for Blackbox, IceWM, Sawfish, Window Maker
-        win = self._win
-        parent = win.query_tree().parent
-        if parent.id == self._root_id:
-            return (0, 0, 0, 0)
-        if win.get_geometry().width == parent.get_geometry().width and \
-           win.get_geometry().height == parent.get_geometry().height:
-            win, parent = parent, parent.query_tree().parent
-        win_geo = win.get_geometry()
-        parent_geo = parent.get_geometry()
-        border_widths = win_geo.border_width + parent_geo.border_width
-        left = win_geo.x + border_widths
-        top = win_geo.y + border_widths
-        right = parent_geo.width - win_geo.width - left + parent_geo.border_width*2
-        bottom = parent_geo.height - win_geo.height - top + parent_geo.border_width*2
-        return (left, right, top, bottom)
+        else: 
+            return ()
 
     @property
     def extents(self):
         """Return window's extents (decorations)."""
         extents = self.__extents()
+        if not extents and self.wm_type in Hacks.CALCULATE_EXTENTS:
+            # Hack for Blackbox, IceWM, Sawfish, Window Maker
+            win = self._win
+            parent = win.query_tree().parent
+            if parent.id == self._root_id:
+                return (0, 0, 0, 0)
+            if win.get_geometry().width == parent.get_geometry().width and \
+               win.get_geometry().height == parent.get_geometry().height:
+                win, parent = parent, parent.query_tree().parent
+            win_geo = win.get_geometry()
+            parent_geo = parent.get_geometry()
+            border_widths = win_geo.border_width + parent_geo.border_width
+            parent_border = parent_geo.border_width*2
+            left = win_geo.x + border_widths
+            top = win_geo.y + border_widths
+            right = parent_geo.width - win_geo.width - left + parent_border
+            bottom = parent_geo.height - win_geo.height - top + parent_border
+            extents = (left, right, top, bottom)
+        elif not extents:
+            extents = (0, 0, 0, 0)
+        elif Type.OPENBOX in self.wm_type and \
+             State.OB_UNDECORATED in self.state:
+            # TODO: recognize 'retain border when undecorated' setting
+            extents = (1, 1, 1, 1) # works for retain border
+            #extents = (0, 0, 0, 0) # if border is not retained
         return Extents(*extents)
 
     def __geometry(self):
@@ -446,7 +463,7 @@ class Window(XObject):
         log.info('WM State=%s' % self._win.get_wm_state())
         log.info('Desktop=%s' % self.desktop)
         log.info('Extents=%s' % self.extents)
-        log.info('Extents=%s' % [str(e) for e in self.__extents()])
+        log.info('Extents_raw=%s' % [str(e) for e in self.__extents()])
         log.info('Geometry=%s' % self.geometry)
         log.info('Geometry_raw=%s' % self._win.get_geometry())
         geometry = self._win.get_geometry()

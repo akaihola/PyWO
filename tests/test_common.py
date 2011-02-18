@@ -8,6 +8,7 @@ sys.path.insert(0, './')
 
 from tests import mock_Xlib
 
+from pywo.core import xlib
 from pywo import core
 
 
@@ -33,8 +34,8 @@ class TestMockedCore(unittest.TestCase):
                                     desktops=DESKTOPS,
                                     viewports=VIEWPORTS)
         self.display = display
-        core.ClientMessage = mock_Xlib.ClientMessage
-        core.XObject._XObject__DISPLAY = display
+        xlib.ClientMessage = mock_Xlib.ClientMessage
+        xlib.XObject._XObject__DISPLAY = display
         self.WM = core.WindowManager()
         self.win = self.map_window()
 

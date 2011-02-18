@@ -18,525 +18,22 @@
 # along with PyWO.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-"""core.py - an abstract layer between Xlib and the rest of aplication.
-
-core module (with events module) encapsulates all comunication with X Server.
-It contains objects representing Window Manager, Windows, and other basic
-concepts needed for repositioning and resizing windows (size, position,
-extents, gravity, etc).
-
-"""
+"""window.py - classes and functions related to windows and window managers."""
 
 import logging
-import re
 import time
 
-from Xlib import X, Xutil, XK, Xatom, error
-from Xlib.protocol.event import ClientMessage
-from Xlib.display import Display
+from Xlib import X, Xutil, Xatom
 
-from pywo.dispatch import EventDispatcher
+from pywo.core.basic import CustomTuple
+from pywo.core.basic import Gravity, Position, Size, Geometry, Extents
+from pywo.core.xlib import XObject
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
 
 log = logging.getLogger(__name__)
-
-# TODO: create core package and split core.py into separate modules:
-#       basic - CustomTuple, Gravity, Size, Position, Geometry, Extents(?)
-#       xlib - XObject, Type, State, whatever X-related
-#       window
-#       wm
-#       move dispatch.py to core package
-
-class CustomTuple(tuple):
-
-    """Tuple that allows both x in [x, y] and [x,z] in [x, y, z]"""
-
-    def __contains__(self, item):
-        if hasattr(item, '__len__'):
-            return set(item) <= set(self)
-        return tuple.__contains__(self, item)
-
-
-class Gravity(object):
-
-    """Gravity point as a percentage of width and height of the window."""
-
-    # Predefined gravities, that can be used in config files
-    __GRAVITIES = {}
-    for xy, names in {
-        (0, 0): ['TOP_LEFT', 'UP_LEFT', 'TL', 'UL', 'NW'],
-        (0.5, 0): ['TOP', 'UP', 'T', 'U', 'N'],
-        (1, 0): ['TOP_RIGHT', 'UP_RIGHT', 'TR', 'UR', 'NE'],
-        (0, 0.5): ['LEFT', 'L', 'W'],
-        (0.5, 0.5): ['MIDDLE', 'CENTER', 'M', 'C', 'NSEW', 'NSWE'],
-        (1, 0.5): ['RIGHT', 'R', 'E'],
-        (0, 1): ['BOTTOM_LEFT', 'DOWN_LEFT', 'BL', 'DL', 'SW'],
-        (0.5, 1): ['BOTTOM', 'DOWN', 'B', 'D', 'S'],
-        (1, 1): ['BOTTOM_RIGHT', 'DOWN_RIGHT', 'BR', 'DR', 'SE'],
-    }.items():
-        for name in names:
-            __GRAVITIES[name] = xy
-
-    def __init__(self, x, y):
-        """
-        x - percentage of width
-        y - percentage of height
-        """
-        self.x = x
-        self.y = y
-        self.is_middle = (x == 1.0/2) and (y == 1.0/2)
-        # FIXME: should is_middle be also is_diagonal?
-        self.is_diagonal = (not x == 1.0/2) and (not y == 1.0/2)
-
-    @property
-    def is_top(self):
-        """Return True if gravity is toward top."""
-        return self.y < 1.0/2 or self.is_middle
-
-    @property
-    def is_bottom(self):
-        """Return True if gravity is toward bottom."""
-        return self.y > 1.0/2 or self.is_middle
-
-    @property
-    def is_left(self):
-        """Return True if gravity is toward left."""
-        return self.x < 1.0/2 or self.is_middle
-
-    @property
-    def is_right(self):
-        """Return True if gravity is toward right."""
-        return self.x > 1.0/2 or self.is_middle
-
-    def invert(self, vertical=True, horizontal=True):
-        """Invert the gravity (left becomes right, top becomes bottom)."""
-        x, y = self.x, self.y
-        if vertical:
-            y = 1.0 - self.y
-        if horizontal:
-            x = 1.0 - self.x
-        return Gravity(x, y)
-
-    @staticmethod
-    def parse(gravity):
-        """Parse gravity string and return Gravity object.
-
-        It can be one of predefined __GRAVITIES, or x and y values (floating
-        numbers or those described in __SIZES).
-
-        """
-        if not gravity:
-            return None
-        if gravity in Gravity.__GRAVITIES:
-            x, y = Gravity.__GRAVITIES[gravity]
-            return Gravity(x, y)
-        else:
-            x, y = [Size.parse_value(xy) for xy in gravity.split(',')]
-        return Gravity(x, y)
-
-    def __eq__(self, other):
-        return ((self.x, self.y) ==
-                (other.x, other.y))
-
-    def __ne__(self, other):
-        return not self == other
-
-    def __str__(self):
-        return '<Gravity x=%.2f, y=%.2f>' % (self.x, self.y)
-
-
-class Size(object):
-
-    """Size encapsulates width and height of the object."""
-
-    # Pattern matching simple calculations with floating numbers
-    __PATTERN = re.compile('^[ 0-9\.\+-/\*]+$')
-
-    # Predefined sizes that can be used in config files
-    __SIZES = {'FULL': '1.0',
-               'HALF': '0.5',
-               'THIRD': '1.0/3',
-               'QUARTER': '0.25', }
-    __SIZES_SHORT = {'F': '1.0',
-                     'H': '0.5',
-                     'T': '1.0/3',
-                     'Q': '0.25', }
-
-    def __init__(self, width, height):
-        self.width = width
-        self.height = height
-
-    @classmethod
-    def parse_value(cls, size_string):
-        """Parse string representing width or height.
-
-        It can be one of the predefined values, float, or expression.
-        If you want to parse list of values separte them with comma.
-
-        """
-        if not size_string.strip():
-            return None
-        size = size_string
-        for name, value in cls.__SIZES.items():
-            size = size.replace(name, value)
-        for name, value in cls.__SIZES_SHORT.items():
-            size = size.replace(name, value)
-        size = [eval(value) for value in size.split(',')
-                            if value.strip() and \
-                            cls.__PATTERN.match(value)]
-        if size == []:
-            raise ValueError('Can\'t parse: %s' % (size_string))
-        if len(size) == 1:
-            return size[0]
-        return size
-    
-    @staticmethod
-    def parse(width, height):
-        """Parse width and height strings.
-        
-        Check parse_value for details.
-        
-        """
-        width = Size.parse_value(width)
-        height = Size.parse_value(height)
-        if width is not None and height is not None:
-            return Size(width, height)
-        return None
-
-    def __eq__(self, other):
-        return ((self.width, self.height) == (other.width, other.height))
-
-    def __ne__(self, other):
-        return not self == other
-
-    def __str__(self):
-        return '<Size width=%s, height=%s>' % (self.width, self.height)
-
-
-class Position(object):
-
-    """Position encapsulates Position of the object.
-
-    Position coordinates starts at top-left corner of the desktop.
-
-    """
-
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-
-    # TODO: add parse for relative and absolute values
-
-    def __eq__(self, other):
-        return ((self.x, self.y) == (other.x, other.y))
-
-    def __ne__(self, other):
-        return not self == other
-
-    def __str__(self):
-        return '<Position x=%s, y=%s>' % (self.x, self.y)
-
-
-class Geometry(Position, Size):
-
-    """Geometry combines Size and Position of the object.
-
-    Position coordinates (x, y) starts at top left corner of the desktop.
-    (x2, y2) are the coordinates of the bottom-right corner of the object.
-
-    """
-
-    # TODO: Geometry + Size, Geometry + Position, Geometry * Size
-
-    __DEFAULT_GRAVITY = Gravity(0, 0)
-
-    def __init__(self, x, y, width, height,
-                 gravity=__DEFAULT_GRAVITY):
-        Size.__init__(self, int(width), int(height))
-        Position.__init__(self, int(x), int(y))
-        self.set_position(x, y, gravity)
-
-    @property
-    def x2(self):
-        return self.x + self.width
-
-    @property
-    def y2(self):
-        return self.y + self.height
-
-    def set_position(self, x, y, gravity=__DEFAULT_GRAVITY):
-        """Set position with (x,y) as gravity point."""
-        # FIXME: why x,y not position?
-        self.x = int(x - self.width * gravity.x)
-        self.y = int(y - self.height * gravity.y)
-
-    # TODO: def set_size(self, size, gravity)
-    #       int() !!!
-
-    def __eq__(self, other):
-        return ((self.x, self.y, self.width, self.height) ==
-                (other.x, other.y, other.width, other.height))
-
-    def __ne__(self, other):
-        return not self == other
-
-    def __str__(self):
-        return '<Geometry x=%s, y=%s, width=%s, height=%s, x2=%s, y2=%s>' % \
-               (self.x, self.y, self.width, self.height, self.x2, self.y2)
-
-
-class Extents(object):
-
-    """Extents encapsulate Window extents (decorations)."""
-
-    def __init__(self, left, right, top, bottom):
-        self.top = top
-        self.bottom = bottom
-        self.left = left
-        self.right = right
-
-    @property
-    def horizontal(self):
-        """Return sum of left and right extents."""
-        return self.left + self.right
-
-    @property
-    def vertical(self):
-        """Return sum of top and bottom extents."""
-        return self.top + self.bottom
-
-    def __str__(self):
-        return '<Extents left=%s, right=%s, top=%s, bottom=%s>' % \
-               (self.left, self.right, self.top, self.bottom)
-
-
-class XObject(object):
-
-    """Abstract base class for classes communicating with X Server.
-
-    Encapsulates common methods for communication with X Server.
-
-    """
-
-    # TODO: setting Display, not only default one
-    __DISPLAY = Display()
-    __EVENT_DISPATCHER = EventDispatcher(__DISPLAY)
-    __BAD_ACCESS = error.CatchError(error.BadAccess)
-
-    # List of recognized key modifiers
-    __KEY_MODIFIERS = {'Alt': X.Mod1Mask,
-                       'Ctrl': X.ControlMask,
-                       'Shift': X.ShiftMask,
-                       'Super': X.Mod4Mask,
-                       'NumLock': X.Mod2Mask,
-                       'CapsLock': X.LockMask}
-
-    __KEYCODES = {}
-
-    _WM_TYPE = None
-
-    def __init__(self, win_id=None):
-        """
-        win_id - id of the window to be created, if no id assume it's 
-                 Window Manager (root window)
-        """
-        self.__root = self.__DISPLAY.screen().root
-        self._root_id = self.__root.id
-        if win_id and win_id != self.__root.id:
-            # Normal window
-            # FIXME: Xlib.error.BadWindow if invalid win_id is provided!
-            self._win = self.__DISPLAY.create_resource_object('window', win_id)
-            self.id = win_id
-        else:
-            # WindowManager, act as root window
-            self._win = self.__root 
-            self.id = self._win.id
-
-    @classmethod
-    def atom(cls, name):
-        """Return atom with given name."""
-        return cls.__DISPLAY.intern_atom(name)
-
-    @classmethod
-    def atom_name(cls, atom):
-        """Return atom's name."""
-        return cls.__DISPLAY.get_atom_name(atom)
-
-    def get_property(self, name):
-        """Return property (None if there's no such property)."""
-        atom = self.atom(name)
-        property = self._win.get_full_property(atom, 0)
-        return property
-
-    def send_event(self, data, event_type, mask):
-        """Send event to the root window."""
-        event = ClientMessage(
-                    window=self._win,
-                    client_type=event_type,
-                    data=(32, (data)))
-        self.__root.send_event(event, event_mask=mask)
-
-    def listen(self, event_handler):
-        """Register new event handler and update event mask."""
-        masks = self.__EVENT_DISPATCHER.register(self, event_handler)
-        self.__set_event_mask(masks)
-
-    def unlisten(self, event_handler=None):
-        """Unregister event handler(s) and update event mask.
-        
-        If event_handler is None all handlers will be unregistered.
-
-        """
-        masks = self.__EVENT_DISPATCHER.unregister(self, event_handler)
-        self.__set_event_mask(masks)
-
-    def _unlisten_all(self):
-        """Unregister all event handlers for all windows."""
-        masks = self.__EVENT_DISPATCHER.unregister()
-        self.__set_event_mask(masks)
-
-    def __set_event_mask(self, masks):
-        """Update event mask."""
-        event_mask = 0
-        log.debug('Setting %s masks for %s' % 
-                  ([str(e) for e in masks], self))
-        for mask in masks:
-            event_mask = event_mask | mask
-        self._win.change_attributes(event_mask=event_mask)
-
-    def __grab_key(self, keycode, modifiers):
-        """Grab key."""
-        self._win.grab_key(keycode, modifiers, 
-                           1, X.GrabModeAsync, X.GrabModeAsync,
-                           onerror=self.__BAD_ACCESS)
-        self.sync()
-        if self.__BAD_ACCESS.get_error():
-            log.error("Can't use %s" % self.keycode2str(modifiers, keycode))
-
-    def grab_key(self, modifiers, keycode, numlock, capslock):
-        """Grab key.
-
-        Grab key alone, with CapsLock on and/or with NumLock on.
-
-        """
-        if numlock in [0, 2] and capslock in [0, 2]:
-            self.__grab_key(keycode, modifiers)
-        if numlock in [0, 2] and capslock in [1, 2]:
-            self.__grab_key(keycode, modifiers | X.LockMask)
-        if numlock in [1, 2] and capslock in [0, 2]:
-            self.__grab_key(keycode, modifiers | X.Mod2Mask)
-        if numlock in [1, 2] and capslock in [1, 2]:
-            self.__grab_key(keycode, modifiers | X.LockMask | X.Mod2Mask)
-
-    def ungrab_key(self, modifiers, keycode, numlock, capslock):
-        """Ungrab key.
-
-        Ungrab key alone, with CapsLock on and/or with NumLock on.
-
-        """
-        if numlock in [0, 2] and capslock in [0, 1]:
-            self._win.ungrab_key(keycode, modifiers)
-        if numlock in [0, 2] and capslock in [1, 2]:
-            self._win.ungrab_key(keycode, modifiers | X.LockMask)
-        if numlock in [1, 2] and capslock in [0, 2]:
-            self._win.ungrab_key(keycode, modifiers | X.Mod2Mask)
-        if numlock in [1, 2] and capslock in [1, 2]:
-            self._win.ungrab_key(keycode, modifiers | X.LockMask | X.Mod2Mask)
-
-    def draw_rectangle(self, x, y, width, height, line):
-        color = self.__DISPLAY.screen().black_pixel
-        gc = self.__root.create_gc(line_width=line,
-                                   #join_style=X.JoinRound,
-                                   foreground=color,
-                                   function=X.GXinvert,
-                                   subwindow_mode=X.IncludeInferiors,)
-        self.__root.rectangle(gc, x, y, width, height)
-
-    def _translate_coords(self, x, y):
-        """Return translated coordinates.
-        
-        Untranslated coordinates are relative to window.
-        Translated coordinates are relative to desktop.
-
-        """
-        return self._win.translate_coords(self.__root, x, y)
-
-    @classmethod
-    def str2modifiers(cls, masks, splitted=False):
-        # TODO: Check this part... not sure why it looks like that...
-        if not splitted:
-            masks = masks.split('-')
-        modifiers = 0
-        if len(masks) > 0:
-            for mask in masks:
-                if not mask:
-                    continue
-                mask = mask.capitalize()
-                if mask not in cls.__KEY_MODIFIERS.keys():
-                    raise ValueError('Invalid modifier: %s' % mask)
-                modifiers = modifiers | cls.__KEY_MODIFIERS[mask]
-
-        return modifiers or X.AnyModifier
-
-    @classmethod
-    def str2keycode(cls, key):
-        keysym = XK.string_to_keysym(key)
-        keycode = cls.__DISPLAY.keysym_to_keycode(keysym)
-        cls.__KEYCODES[keycode] = key
-        if keycode == 0:
-            raise ValueError('No key specified!')
-        return keycode
-
-    @classmethod
-    def str2modifiers_keycode(cls, code, key=''):
-        """Convert key as string(s) into (modifiers, keycode) pair.
-        
-        There must be both modifier(s) and key persent. If you send both
-        modifier(s) and key in one string, they must be separated using '-'. 
-        Modifiers must be separated using '-'.
-        Keys are case insensitive.
-        If you want to use upper case use Shift modifier.
-        Only modifiers defined in __KEY_MODIFIERS are valid.
-        For example: "Ctrl-A", "Super-Alt-x"
-        
-        """
-        if key:
-            code = '-'.join([code, key])
-        code = code.split('-')
-        key = code[-1]
-        masks = code[:-1]
-        
-        modifiers = cls.str2modifiers(masks, True)
-        keycode = cls.str2keycode(key)
-        return (modifiers, keycode)
-
-    @classmethod
-    def keycode2str(cls, modifiers, keycode):
-        """Convert key as (modifiers, keycode) pair into string.
-        
-        Works ONLY for already registered keycodes!
-        
-        """
-        key = []
-        for name, code in cls.__KEY_MODIFIERS.items():
-            if modifiers & code:
-                key.append(name)
-
-        key.append(cls.__KEYCODES[keycode])
-        return '-'.join(key)
-
-    @classmethod
-    def flush(cls):
-        """Flush request queue to X Server."""
-        cls.__DISPLAY.flush()
-
-    @classmethod
-    def sync(cls):
-        """Flush request queue to X Server, wait until server processes them."""
-        cls.__DISPLAY.sync()
 
 
 class Type(object):
@@ -554,7 +51,7 @@ class Type(object):
     NORMAL = XObject.atom('_NET_WM_WINDOW_TYPE_NORMAL')
     NONE = -1
 
-    # WindowManager Types
+    # Window manager Types
     COMPIZ = 1
     METACITY = 2
     KWIN = 3
@@ -568,6 +65,22 @@ class Type(object):
     SAWFISH = 11
     PEKWM = 12
     UNKNOWN = -1
+
+
+class Hacks(object):
+
+    """List of hacks caused by EWMH, ICCCM implementation inconsitences."""
+
+    DONT_TRANSLATE_COORDS = CustomTuple([Type.COMPIZ, 
+                                         Type.FLUXBOX, 
+                                         Type.WINDOW_MAKER])
+    ADJUST_GEOMETRY = CustomTuple([Type.COMPIZ, 
+                                   Type.KWIN, 
+                                   Type.ENLIGHTMENT, 
+                                   Type.ICEWM, 
+                                   Type.BLACKBOX])
+    PARENT_XY = CustomTuple([Type.FLUXBOX, 
+                             Type.WINDOW_MAKER])
 
 
 class State(object):
@@ -608,16 +121,6 @@ class Window(XObject):
 
     def __init__(self, win_id):
         XObject.__init__(self, win_id)
-        # Here comes the hacks for WMs strange behaviours....
-        # TODO: Use self._WM_TYPE in Hacks.TRANSLATE_COORDS
-        wm_name = WindowManager().name.lower()
-        if wm_name.startswith('icewm'):
-            wm_name = 'icewm'
-        self.__translate_coords =  \
-                wm_name not in ['compiz', 'fluxbox', 'window maker', ]
-        self.__adjust_geometry =  \
-                wm_name in ['compiz', 'kwin', 'e16', 'icewm', 'blackbox', ]
-        self.__parent_xy = wm_name in ['fluxbox', 'window maker', ]
 
     @property
     def type(self):
@@ -727,12 +230,12 @@ class Window(XObject):
     def __geometry(self):
         """Return raw geometry info (translated if needed)."""
         geometry = self._win.get_geometry()
-        if self.__parent_xy:
+        if self.wm_type in Hacks.PARENT_XY:
             # Hack for Fluxbox, Window Maker
             parent_geo = self._win.query_tree().parent.get_geometry()
             geometry.x = parent_geo.x
             geometry.y = parent_geo.y
-        if self.__translate_coords:
+        if self.wm_type not in Hacks.DONT_TRANSLATE_COORDS:
             # if neeeded translate coords and multiply them by -1
             translated = self._translate_coords(geometry.x, geometry.y)
             return (-translated.x, -translated.y, 
@@ -752,7 +255,7 @@ class Window(XObject):
         """
         x, y, width, height = self.__geometry()
         extents = self.extents
-        if self.__adjust_geometry:
+        if self.wm_type in Hacks.ADJUST_GEOMETRY:
             # Used in Compiz, KWin, E16, IceWM, Blackbox
             x -= extents.left
             y -= extents.top
@@ -1007,21 +510,22 @@ class WindowManager(XObject):
     @property
     def type(self):
         """Return tuple of window manager's type(s)."""
-        return CustomTuple([self._WM_TYPE])
+        return self.wm_type
     
     def update_type(self):
         """Update window manager's type."""
         recognize = {'compiz': Type.COMPIZ, 'metacity': Type.METACITY,
-                     'kwin': Type.KWIN, 'xfwm': Type.XFWM, 'pekwm': Type.PEKWM,
+                     'kwin': Type.KWIN, 'xfwm': Type.XFWM, 
                      'openbox': Type.OPENBOX, 'fluxbox': Type.FLUXBOX,
                      'blackbox': Type.BLACKBOX, 'icewm': Type.ICEWM,
                      'e1': Type.ENLIGHTMENT, 'sawfish': Type.SAWFISH,
-                     'window maker': Type.WINDOW_MAKER, }
+                     'window maker': Type.WINDOW_MAKER, 'pekwm': Type.PEKWM,
+                    }
         name = self.name.lower()
-        XObject._WM_TYPE = Type.UNKNOWN
+        XObject.set_wm_type(Type.UNKNOWN)
         for name_part, wm_type in recognize.items():
             if name_part in name:
-                XObject._WM_TYPE = wm_type
+                XObject.set_wm_type(wm_type)
 
     @property
     def desktops(self):
@@ -1192,10 +696,4 @@ class WindowManager(XObject):
         log.info('Desktop=%s' % self.desktop_size)
         log.info('Viewport=%s' % self.viewport_position)
         log.info('Workarea=%s' % self.workarea_geometry)
-
-
-# TODO: Window.is_fullscreen?
-
-# TODO: consider ability to connect to given screen (so Xvfb can be used) 
-#       Display(displayname=':0.0') 
 

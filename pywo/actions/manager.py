@@ -53,6 +53,7 @@ def load():
         module_name = 'pywo.actions.%s' % module
         if not module_name in sys.modules:
             log.debug("Importing <module '%s'>" % module_name)
+            # TODO: try/except in case of ImportErrors
             __import__(module_name)
     # TODO: use pkg_resources and pywo.actions entry point
     global __LOADED

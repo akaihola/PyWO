@@ -45,6 +45,7 @@ def load(config):
         module_name = 'pywo.services.%s' % module
         if getattr(config, module) or getattr(config, module_name):
             log.debug("Importing <module '%s'>" % module_name)
+            # TODO: try/except in case of ImportErrors
             __import__(module_name)
             __SERVICES.add(sys.modules[module_name])
     # TODO: use pkg_resources and pywo.actions entry point

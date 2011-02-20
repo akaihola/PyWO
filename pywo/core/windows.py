@@ -92,6 +92,7 @@ class State(object):
 
     """Enum of window states."""
 
+    # States described by EWMH
     MODAL = XObject.atom('_NET_WM_STATE_MODAL')
     STICKY = XObject.atom('_NET_WM_STATE_STICKY')
     MAXIMIZED_VERT = XObject.atom('_NET_WM_STATE_MAXIMIZED_VERT')
@@ -105,7 +106,7 @@ class State(object):
     ABOVE = XObject.atom('_NET_WM_STATE_ABOVE')
     BELOW = XObject.atom('_NET_WM_STATE_BELOW')
     DEMANDS_ATTENTION = XObject.atom('_NET_WM_STATE_DEMANDS_ATTENTION')
-    # TODO: add WM specific states like _OB_WM_STATE_*
+    # Window managers specific states
     OB_UNDECORATED = XObject.atom('_OB_WM_STATE_UNDECORATED')
 
 
@@ -581,7 +582,6 @@ class WindowManager(XObject):
         """Return size of current desktop."""
         # _NET_DESKTOP_GEOMETRY width, height, CARDINAL[2]/32
         geometry = self.get_property('_NET_DESKTOP_GEOMETRY').value
-        #print geometry
         return Size(geometry[0], geometry[1])
 
     # TODO: set_desktop_size, or set_viewports(columns, rows)
@@ -603,9 +603,9 @@ class WindowManager(XObject):
         """Return geometry of current workarea (desktop without panels)."""
         # _NET_WORKAREA, x, y, width, height CARDINAL[][4]/32
         workarea = self.get_property('_NET_WORKAREA').value
-        # TODO: this will return geometry for first, not current!
-        # TODO: what about all workareas, not only the current one?
-        #print workarea
+        # NOTE: this will return geometry for first, not current!
+        #       what about all workareas, not only the current one?
+        # TODO: multi monitor support by returning workarea for current monitor?
         return Geometry(workarea[0], workarea[1], 
                         workarea[2], workarea[3])
 
@@ -619,7 +619,6 @@ class WindowManager(XObject):
         # _NET_DESKTOP_VIEWPORT x, y, CARDINAL[][2]/32
         viewport = self.get_property('_NET_DESKTOP_VIEWPORT').value
         # TODO: Might not work correctly on all WMs
-        #print viewport
         return Position(viewport[0], viewport[1])
 
     def set_viewport_position(self, x, y):

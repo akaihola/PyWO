@@ -201,23 +201,23 @@ class XObject(object):
 
     @classmethod
     def str2modifiers(cls, masks, splitted=False):
-        # TODO: Check this part... not sure why it looks like that...
+        """Parse modifiers."""
         if not splitted:
             masks = masks.split('-')
         modifiers = 0
-        if len(masks) > 0:
-            for mask in masks:
-                if not mask:
-                    continue
-                mask = mask.capitalize()
-                if mask not in cls.__KEY_MODIFIERS.keys():
-                    raise ValueError('Invalid modifier: %s' % mask)
-                modifiers = modifiers | cls.__KEY_MODIFIERS[mask]
+        for mask in masks:
+            if not mask:
+                continue
+            mask = mask.capitalize()
+            if mask not in cls.__KEY_MODIFIERS.keys():
+                raise ValueError('Invalid modifier: %s' % mask)
+            modifiers = modifiers | cls.__KEY_MODIFIERS[mask]
 
         return modifiers or X.AnyModifier
 
     @classmethod
     def str2keycode(cls, key):
+        """Parse keycode."""
         keysym = XK.string_to_keysym(key)
         keycode = cls.__DISPLAY.keysym_to_keycode(keysym)
         cls.__KEYCODES[keycode] = key

@@ -41,7 +41,7 @@ def load_plugins():
         from pkg_resources import iter_entry_points
     except ImportError:
         return
-    for entry_point in iter_entry_points('pywo.service'):
+    for entry_point in iter_entry_points('pywo.services'):
         log.debug('Loading plugin %s' % entry_point.name)
         try:
             plugin = entry_point.load()
@@ -49,16 +49,16 @@ def load_plugins():
             log.exception('Exception %e while loading %s' % \
                           (e, entry_point.name))
             continue
-        if isinstance(action, type) and \
-           (issubclass(action, Service) or \
-            (hasattr(action, 'setup') and \
-             hasattr(action, 'start') and \
-             hasattr(action, 'stop'))):
+        if isinstance(plugin, type) and \
+           (issubclass(plugin, Service) or \
+            (hasattr(plugin, 'setup') and \
+             hasattr(plugin, 'start') and \
+             hasattr(plugin, 'stop'))):
             # subclass of Service, or implementing all needed methods
             __SERVICES.add(plugin())
-        elif hasattr(action, 'setup') and \
-             hasattr(action, 'start') and \
-             hasattr(action, 'stop'):
+        elif hasattr(plugin, 'setup') and \
+             hasattr(plugin, 'start') and \
+             hasattr(plugin, 'stop'):
             # module implementing all needed functions
             __SERVICES.add(plugin)
 
@@ -81,7 +81,7 @@ def load(config):
             except Exception, e:
                 log.exception('Exception %s while importing <module %s>' % \
                               (e, module_name))
-    # TODO: use pkg_resources and pywo.service entry point
+    load_plugins()
     log.debug('Registered %s services' % (len(__SERVICES),))
 
 

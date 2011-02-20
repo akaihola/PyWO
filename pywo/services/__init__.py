@@ -18,7 +18,15 @@
 # along with PyWO.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-"""services - core PyWO services classes and functions."""
+"""services - core PyWO services classes and functions.
+
+PyWO uses pkg_resources for services plugins discovery. 
+When writing your own actions please use 'pywo.services' entry point group. 
+As an entry point value you can use Service subclass, or module implementing
+setup(config), start(), stop() functions.
+Check /examples/plugins/services for an example of third-party services plugin.
+
+"""
 
 import logging
 

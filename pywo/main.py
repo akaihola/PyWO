@@ -67,7 +67,7 @@ def run():
     config = Config(options.config)
 
     if options.start_daemon:
-        log.info('Starting PyWO...')
+        log.info('Starting PyWO daemon...')
         daemon.setup(config)
         daemon.start(loop=True)
     elif options.list_windows:

@@ -30,7 +30,7 @@ Check /examples/plugins/actions for an example of third-party actions plugin.
 import logging
 
 from pywo.core import Window, WindowManager, Type, State, Mode
-from pywo import filters
+from pywo.core import filters
 from pywo.actions import manager
 
 

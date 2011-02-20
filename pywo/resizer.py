@@ -24,7 +24,7 @@ import logging
 import operator
 
 from pywo.core import WindowManager
-from pywo import filters
+from pywo.core import filters
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"

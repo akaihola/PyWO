@@ -24,9 +24,10 @@
 import logging
 from logging.handlers import RotatingFileHandler
 
-from pywo import actions, commandline, filters
+from pywo import actions, commandline
 from pywo.config import Config
 from pywo.core import Window, WindowManager, State, Type
+from pywo.core import filters
 from pywo.services import daemon
 
 

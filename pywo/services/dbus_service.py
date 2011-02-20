@@ -28,8 +28,9 @@ import dbus
 from dbus.mainloop.glib import DBusGMainLoop
 import dbus.service
 
-from pywo import actions, commandline, filters
+from pywo import actions, commandline
 from pywo.core import Window, WindowManager
+from pywo.core import filters
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"

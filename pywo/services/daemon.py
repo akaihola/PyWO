@@ -58,14 +58,28 @@ def setup(config):
     _CONFIG = config
     WM.update_type()
     manager.load(_CONFIG)
+    failed = []
     for service in manager.get_all():
-        service.setup(config)
+        try:
+            service.setup(config)
+        except Exception, e:
+            log.exception('Exception %s while %s setup' % (e, service))
+            failed.append(service)
+    for service in failed:
+        manager.remove(service)
 
 
 def start(loop=False):
     """Start all services."""
+    failed = []
     for service in manager.get_all():
-        service.start()
+        try:
+            service.start()
+        except Exception, e:
+            log.exception('Exception %s while %s start' % (e, service))
+            failed.append(service)
+    for service in failed:
+        manager.remove(service)
     log.info('PyWO ready and running!')
     # Simple loop for keeping main-thread running and make signal handlers work
     counter = 0
@@ -80,7 +94,10 @@ def start(loop=False):
 def stop():
     """Stop all services."""
     for service in manager.get_all():
-        service.stop()
+        try:
+            service.stop()
+        except Exception, e:
+            log.exception('Exception %s while %s stop' % (e, service))
 
 
 def reload_pywo(win, config=None, *args):

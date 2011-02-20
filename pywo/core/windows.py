@@ -18,7 +18,7 @@
 # along with PyWO.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-"""window.py - classes and functions related to windows and window managers."""
+"""windows.py - classes and functions related to windows and window managers."""
 
 import logging
 import time

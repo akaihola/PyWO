@@ -99,6 +99,8 @@ class EventDispatcher(object):
                 self.__handlers.pop(event_type)
         return self.__get_masks(window.id)
 
+    # TODO: pause, continue?
+
     def __get_masks(self, window_id):
         """Return event type masks for given window."""
         masks = set()

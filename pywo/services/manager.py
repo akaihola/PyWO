@@ -24,6 +24,8 @@ import logging
 import os.path
 import sys
 
+from pywo.services import Service
+
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
@@ -31,6 +33,34 @@ __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 log = logging.getLogger(__name__)
 
 __SERVICES = set()
+
+
+def load_plugins():
+    """Load third party service plugins."""
+    try:
+        from pkg_resources import iter_entry_points
+    except ImportError:
+        return
+    for entry_point in iter_entry_points('pywo.service'):
+        log.debug('Loading plugin %s' % entry_point.name)
+        try:
+            plugin = entry_point.load()
+        except Exception, e:
+            log.exception('Exception %e while loading %s' % \
+                          (e, entry_point.name))
+            continue
+        if isinstance(action, type) and \
+           (issubclass(action, Service) or \
+            (hasattr(action, 'setup') and \
+             hasattr(action, 'start') and \
+             hasattr(action, 'stop'))):
+            # subclass of Service, or implementing all needed methods
+            __SERVICES.add(plugin())
+        elif hasattr(action, 'setup') and \
+             hasattr(action, 'start') and \
+             hasattr(action, 'stop'):
+            # module implementing all needed functions
+            __SERVICES.add(plugin)
 
 
 def load(config):
@@ -53,6 +83,11 @@ def load(config):
                               (e, module_name))
     # TODO: use pkg_resources and pywo.service entry point
     log.debug('Registered %s services' % (len(__SERVICES),))
+
+
+def remove(service):
+    if service in __SERVICES:
+        __SERVICES.remove(service)
 
 
 def get_all():

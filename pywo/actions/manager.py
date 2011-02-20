@@ -42,6 +42,21 @@ def register(action):
     log.debug('Registered %s' % action)
 
 
+def load_plugins():
+    """Load third party pywo.actions plugins."""
+    try:
+        from pkg_resources import iter_entry_points
+    except ImportError:
+        return
+    for entry_point in iter_entry_points('pywo.actions'):
+        log.debug('Loading plugin %s' % entry_point.name)
+        try:
+            entry_point.load()
+        except Exception, e:
+            log.exception('Exception %e while loading %s' % \
+                          (e, entry_point.name))
+
+
 def load():
     """Load actions from modules and plugins."""
     # import all local modules
@@ -58,7 +73,7 @@ def load():
             except Exception, e:
                 log.exception('Exception %s while importing <module %s>' % \
                               (e, module_name))
-    # TODO: use pkg_resources and pywo.actions entry point
+    load_plugins()
     global __LOADED
     log.debug('Registered %s actions' % (len(_ACTIONS),))
     __LOADED = True

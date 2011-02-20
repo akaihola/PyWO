@@ -33,7 +33,8 @@ class Service(object):
 
     """Service interface.
 
-    Service can be a class or module that provide these three functions.
+    Service can be a subclass of Service or a module.
+    These three methods/functions must be implemented.
     You can't rely on the order of services to be loaded, started, or stopped.
 
     """

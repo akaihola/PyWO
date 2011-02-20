@@ -645,6 +645,11 @@ class WindowManager(XObject):
             return Window(window_id)
         return None
 
+    def get_window(self, window_id):
+        """Return Window with given id."""
+        window = Window(window_id)
+        return window
+
     def windows_ids(self, stacking=True):
         """Return list of all windows' ids (newest/on top first)."""
         if stacking:

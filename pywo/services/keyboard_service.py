@@ -24,7 +24,7 @@ import logging
 
 from pywo import actions
 from pywo.core import WindowManager
-from pywo.events import KeyHandler
+from pywo.core.events import KeyHandler
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"

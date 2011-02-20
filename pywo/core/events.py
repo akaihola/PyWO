@@ -30,7 +30,8 @@ import logging
 
 from Xlib import X 
 
-from pywo.core import Window, Geometry
+from pywo.core.basic import Geometry
+from pywo.core.windows import Window
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"

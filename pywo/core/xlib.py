@@ -70,7 +70,6 @@ class XObject(object):
         self._root_id = self.__root.id
         if win_id and win_id != self.__root.id:
             # Normal window
-            # FIXME: Xlib.error.BadWindow if invalid win_id is provided!
             self._win = self.__DISPLAY.create_resource_object('window', win_id)
             self.id = win_id
         else:

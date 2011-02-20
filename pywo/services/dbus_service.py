@@ -37,6 +37,8 @@ __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
 log = logging.getLogger(__name__)
 
+WM = WindowManager()
+
 
 class DBusService(dbus.service.Object):
 
@@ -74,14 +76,13 @@ class DBusService(dbus.service.Object):
     @dbus.service.method("net.kosciak.PyWO", 
                          in_signature='s', out_signature='a(is)')
     def GetWindows(self, match):
-        WM = WindowManager()
         windows = WM.windows(filters.NORMAL_TYPE, match=match)
         return [(win.id, win.name) for win in windows]
 
     @dbus.service.method("net.kosciak.PyWO", 
                          in_signature='i', out_signature='a(issi(ii)(ii))')
     def GetWindowInfo(self, win_id):
-        win = Window(win_id)
+        win = WM.get_window(win_id)
         geometry = win.geometry
         return [(win.id, 
                  win.class_name, win.name,

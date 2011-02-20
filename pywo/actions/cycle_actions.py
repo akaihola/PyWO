@@ -24,7 +24,7 @@ import logging
 
 from pywo.actions import Action, TYPE_FILTER
 from pywo.core import Window, WindowManager
-from pywo.events import PropertyNotifyHandler
+from pywo.core.events import PropertyNotifyHandler
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
@@ -62,7 +62,7 @@ class SwitchCycleAction(Action):
 
     def perform(self, win, **kwargs):
         """Perform action on window and with given arguments."""
-        from_win = Window(self.__from_win_id)
+        from_win = WM.get_window(self.__from_win_id)
         from_geo, to_geo = from_win.geometry, win.geometry
         from_win.set_geometry(to_geo)
         win.set_geometry(from_geo)

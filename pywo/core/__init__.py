@@ -20,7 +20,7 @@
 
 """core - wrapper around Xlib.
 
-core package (with events module) encapsulates all comunication with X Server.
+core package encapsulates all comunication with X Server.
 It contains objects representing Window Manager, Windows, and other basic
 concepts needed for repositioning and resizing windows (size, position,
 extents, gravity, etc).

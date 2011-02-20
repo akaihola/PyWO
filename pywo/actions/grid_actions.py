@@ -125,7 +125,7 @@ class GeometryCycler(object):
 
     def next(self, cycle):
         """Return new window geometry."""
-        win = Window(self.win_id)
+        win = WM.get_window(self.win_id)
         if cycle == CYCLE_WIDTH:
             width = self.sizes_iterator.width.next()
             height = self.previous.height

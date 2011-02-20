@@ -94,7 +94,10 @@ class Action(object):
                              for key, value in kwargs.items()])))
         self.check_filter(win)
         self.pre_perform(win, **kwargs)
-        self.perform(win, **kwargs)
+        try:
+            self.perform(win, **kwargs)
+        except Exception, e:
+            log.exception('Exception %s while performing %s' % (e, self))
         self.post_perform(win, **kwargs)
 
     def check_filter(self, win):
@@ -210,8 +213,8 @@ def perform(args, config, options={}, win_id=0):
         raise ActionException('Missing %s' % ', '.join(missing_args))
 
     if win_id or options.win_id:
-        # TODO: try/except invalid options.win_id, or non existant Window
-        window = Window(win_id or int(options.win_id, 0))
+        window_id = win_id or int(options.win_id, 0)
+        window = WM.get_window(window_id)
     elif args:
         # TODO: check system encoding?
         args = [arg.decode('utf-8') for arg in args]

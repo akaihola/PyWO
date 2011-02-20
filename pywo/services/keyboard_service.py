@@ -60,7 +60,6 @@ HANDLER = KeyPressHandler()
 
 
 def setup(config):
-    raise ValueError('adfas')
     MAPPINGS.clear()
     for action in actions.manager.get_all():
         if 'direction' in action.args or \

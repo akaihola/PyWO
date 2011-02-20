@@ -36,7 +36,7 @@ __SERVICES = set()
 
 
 def load_plugins():
-    """Load third party service plugins."""
+    """Load third party pywo.service plugins."""
     try:
         from pkg_resources import iter_entry_points
     except ImportError:

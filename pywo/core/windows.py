@@ -183,6 +183,7 @@ class Window(XObject):
 
     @property
     def client_machine(self):
+        """Return name of window's client machine."""
         client = self._win.get_wm_client_machine()
         return client
 
@@ -645,7 +646,8 @@ class WindowManager(XObject):
             return Window(window_id)
         return None
 
-    def get_window(self, window_id):
+    @staticmethod
+    def get_window(window_id):
         """Return Window with given id."""
         window = Window(window_id)
         return window

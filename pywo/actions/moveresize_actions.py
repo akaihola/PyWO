@@ -22,7 +22,7 @@
 
 import logging
 
-from pywo.actions import register, TYPE_FILTER, TYPE_STATE_FILTER
+from pywo.actions import register, TYPE_STATE_FILTER
 from pywo.core import WindowManager
 from pywo.resizer import expand_window, shrink_window
 

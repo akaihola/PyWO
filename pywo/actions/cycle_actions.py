@@ -23,7 +23,7 @@
 import logging
 
 from pywo.actions import Action, TYPE_FILTER
-from pywo.core import Window, WindowManager
+from pywo.core import WindowManager
 from pywo.core.events import PropertyNotifyHandler
 
 

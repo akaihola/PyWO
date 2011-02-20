@@ -86,6 +86,7 @@ def load(config):
 
 
 def remove(service):
+    """Remove servive."""
     if service in __SERVICES:
         __SERVICES.remove(service)
 

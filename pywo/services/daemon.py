@@ -26,7 +26,6 @@ It works almost like any other service, except it doesn't start new thread.
 
 import logging
 import signal
-import sys
 import time
 import threading
 

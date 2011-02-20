@@ -129,7 +129,7 @@ class KeyHandler(EventHandler):
     """Handler for X.KeyPress events."""
 
     def __init__(self, key_press=None, key_release=None,
-                 keys=[], numlock=0, capslock=0):
+                 keys=None, numlock=0, capslock=0):
         """
         key_press - function that will handle events 
         keys - list of (mask, keycode) pairs
@@ -141,7 +141,7 @@ class KeyHandler(EventHandler):
                                X.KeyRelease: (KeyEvent, self.key_release)})
         self.__key_press = key_press
         self.__key_release = key_release
-        self.keys = keys
+        self.keys = keys or []
         self.numlock = numlock
         self.capslock = capslock
 

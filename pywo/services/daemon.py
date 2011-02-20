@@ -26,6 +26,7 @@ It works almost like any other service, except it doesn't start new thread.
 
 import logging
 import signal
+import sys
 import time
 import threading
 
@@ -69,9 +70,9 @@ def start(loop=False):
     # Simple loop for keeping main-thread running and make signal handlers work
     counter = 0
     while loop and len(threading.enumerate()) > 1: 
-        time.sleep(0.5)
+        time.sleep(0.2)
         counter += 1
-        if counter % 10 == 0:
+        if counter % 25 == 0:
             counter = 0
             WM.update_type() # update WM type every 5 seconds
 
@@ -97,7 +98,7 @@ def exit_pywo(*args):
     """Stop sevices, and exit PyWO."""
     log.info('Exiting PyWO...')
     stop() # stop all services
-    WM.unlisten_all() # unregister all remaining EventHandlers
+    WM.unregister_all() # unregister all remaining EventHandlers
 
 
 def interrupt_handler(sig, frame):
@@ -105,5 +106,6 @@ def interrupt_handler(sig, frame):
     log.error('Interrupted!')
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     signal.signal(signal.SIGTERM, signal.SIG_IGN)
+    # TODO: SIGTSTP to unregister keyboard hander, and rergister on SIGCONT
     exit_pywo(True)
 

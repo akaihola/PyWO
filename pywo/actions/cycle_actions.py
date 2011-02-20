@@ -57,7 +57,7 @@ class SwitchCycleAction(Action):
         Action.__init__(self, name=name, doc=doc, filter=TYPE_FILTER)
         self.args = ['window']
         self.keep_active = keep_active
-        self.__listener = ActiveChangedEventHandler(self)
+        self.__handler = ActiveChangedEventHandler(self)
         self.__from_win_id = 0
 
     def perform(self, win, **kwargs):
@@ -77,14 +77,12 @@ class SwitchCycleAction(Action):
         if not win == active_win:
             # TODO: What about 'switch win1' from some dbus client window?
             self.__from_win_id = active_win.id
-            WM.unlisten(self.__listener)
-            Action.__call__(self, win)
-        elif self.__from_win_id:
-            WM.unlisten(self.__listener)
+        if self.__from_win_id:
+            WM.unregister(self.__handler)
             Action.__call__(self, win)
         else:
             self.__from_win_id = win.id
-            WM.listen(self.__listener)
+            WM.register(self.__handler)
 
 
 SwitchCycleAction('switch', 

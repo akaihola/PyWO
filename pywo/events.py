@@ -164,13 +164,13 @@ class KeyHandler(EventHandler):
         """Grab keys and start listening to window's events."""
         for mask, code in self.keys:
             window.grab_key(mask, code, self.numlock, self.capslock)
-        window.listen(self)
+        window.register(self)
 
     def ungrab_keys(self, window):
         """Ungrab keys and stop listening to window's events."""
         for mask, code in self.keys:
             window.ungrab_key(mask, code, self.numlock, self.capslock)
-        window.unlisten(self)
+        window.unregister(self)
 
 
 class DestroyNotifyEvent(Event):

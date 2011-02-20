@@ -699,9 +699,9 @@ class WindowManager(XObject):
         windows = [win for win, points in windows if points]
         return windows
 
-    def unlisten_all(self):
-        """Unlisten all."""
-        self._unlisten_all()
+    def unregister_all(self):
+        """Unregister all event handlers for all windows."""
+        self._unregister_all()
 
     def __str__(self):
         return '<WindowManager id=%s>' % (self.id,)

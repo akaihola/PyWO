@@ -112,12 +112,12 @@ class XObject(object):
                     data=(32, (data)))
         self.__root.send_event(event, event_mask=mask)
 
-    def listen(self, event_handler):
+    def register(self, event_handler):
         """Register new event handler and update event mask."""
         masks = self.__EVENT_DISPATCHER.register(self, event_handler)
         self.__set_event_mask(masks)
 
-    def unlisten(self, event_handler=None):
+    def unregister(self, event_handler=None):
         """Unregister event handler(s) and update event mask.
         
         If event_handler is None all handlers will be unregistered.
@@ -126,9 +126,10 @@ class XObject(object):
         masks = self.__EVENT_DISPATCHER.unregister(self, event_handler)
         self.__set_event_mask(masks)
 
-    def _unlisten_all(self):
+    def _unregister_all(self):
         """Unregister all event handlers for all windows."""
         masks = self.__EVENT_DISPATCHER.unregister()
+        # TODO: this will set event mask only on root window!
         self.__set_event_mask(masks)
 
     def __set_event_mask(self, masks):

@@ -18,7 +18,14 @@
 # along with PyWO.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-"""actions - core PyWO actions classes and functions."""
+"""actions - core PyWO actions classes and functions.
+
+PyWO uses pkg_resources for actions plugins discovery. 
+When writing your own actions please use 'pywo.actions' entry point group, 
+and use module name as an value for entry point. 
+Check /examples/plugins/actions for an example of third-party actions plugin.
+
+"""
 
 import logging
 
@@ -64,7 +71,7 @@ class Action(object):
 
     def __init__(self, name='', doc='', filter=None, unshade=False):
         self.name = name
-        self.__doc__ = doc
+        self.__doc__ = doc or self.__doc__
         self.__filter = filter or filters.ALL_FILTER
         self.__unshade = unshade
         args = self.perform.func_code.co_varnames
@@ -142,7 +149,7 @@ class SimpleActionWrapper(Action):
         self.__action(win, **kwargs)
 
 
-def register(name='', filter=filters.ALL_FILTER, unshade=False):
+def register(name, filter=filters.ALL_FILTER, unshade=False):
     """Register function or Action subclass as PyWO action with given name."""
     def register_action(action):
         if isinstance(action, type) and issubclass(action, Action):

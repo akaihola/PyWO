@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 #from distutils.core import setup, find_packages
 from setuptools import setup, find_packages
 
@@ -21,15 +23,19 @@ setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
         "License :: OSI Approved :: GNU General Public License (GPL)",
     ],
-    packages=find_packages(exclude=['ez_setup', 'tests', 'tests.*']),
+    packages=find_packages(exclude=['ez_setup', 
+                                    'tests', 'tests.*'
+                                    'examples', 'examples.*']),
     data_files=[
         ('/etc/pywo', ['etc/pyworc']),
-        ('/etc/pywo/layouts', ['etc/layouts/grid_2x2', 'etc/layouts/grid_3x2', 'etc/layouts/grid_3x3',]),
+        ('/etc/pywo/layouts', ['etc/layouts/grid_2x2', 
+                               'etc/layouts/grid_3x2', 
+                               'etc/layouts/grid_3x3',]),
     ],
     test_suite='nose.collector',
     tests_require=['nose'],
     entry_points={
-        'console_scripts':[
+        'console_scripts': [
             'pywo = pywo.main:run',
         ],
     },

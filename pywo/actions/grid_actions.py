@@ -23,9 +23,9 @@
 import itertools
 import logging
 
-from pywo.actions import Action, TYPE_FILTER
 from pywo.core import Gravity, Geometry, Size, Position, Window, WindowManager
-from pywo.resizer import expand_window
+from pywo.actions import Action, TYPE_FILTER
+from pywo.actions.resizer import expand_window
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"

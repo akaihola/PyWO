@@ -454,28 +454,28 @@ class Window(XObject):
     def __str__(self):
         return '<Window id=%s>' % (self.id,)
 
-    def debug_info(self, log=log):
+    def debug_info(self, logger=log):
         """Print full window's info, for debug use only."""
-        log.info('ID=%s' % self.id)
-        log.info('Client_machine=%s' % self.client_machine)
-        log.info('Name=%s' % self.name)
-        log.info('Class=%s' % self.class_name)
-        log.info('Type=%s' % [self.atom_name(e) for e in self.type])
-        log.info('State=%s' % [self.atom_name(e) for e in self.state])
-        log.info('WM State=%s' % self._win.get_wm_state())
-        log.info('Desktop=%s' % self.desktop)
-        log.info('Extents=%s' % self.extents)
-        log.info('Extents_raw=%s' % [str(e) for e in self.__extents()])
-        log.info('Geometry=%s' % self.geometry)
-        log.info('Geometry_raw=%s' % self._win.get_geometry())
+        logger.info('ID=%s' % self.id)
+        logger.info('Client_machine=%s' % self.client_machine)
+        logger.info('Name=%s' % self.name)
+        logger.info('Class=%s' % self.class_name)
+        logger.info('Type=%s' % [self.atom_name(e) for e in self.type])
+        logger.info('State=%s' % [self.atom_name(e) for e in self.state])
+        logger.info('WM State=%s' % self._win.get_wm_state())
+        logger.info('Desktop=%s' % self.desktop)
+        logger.info('Extents=%s' % self.extents)
+        logger.info('Extents_raw=%s' % [str(e) for e in self.__extents()])
+        logger.info('Geometry=%s' % self.geometry)
+        logger.info('Geometry_raw=%s' % self._win.get_geometry())
         geometry = self._win.get_geometry()
         translated = self._translate_coords(geometry.x, geometry.y)
-        log.info('Geometry_translated=%s' % translated)
-        log.info('Parent=%s %s' % (self.parent_id, self.parent))
-        log.info('Normal_hints=%s' % self._win.get_wm_normal_hints())
+        logger.info('Geometry_translated=%s' % translated)
+        logger.info('Parent=%s %s' % (self.parent_id, self.parent))
+        logger.info('Normal_hints=%s' % self._win.get_wm_normal_hints())
         #log.info('Hints=%s' % self._win.get_wm_hints())
-        log.info('Attributes=%s' % self._win.get_attributes())
-        log.info('Query_tree=%s' % self._win.query_tree())
+        logger.info('Attributes=%s' % self._win.get_attributes())
+        logger.info('Query_tree=%s' % self._win.query_tree())
 
 
 class WindowManager(XObject):
@@ -712,11 +712,11 @@ class WindowManager(XObject):
     def __str__(self):
         return '<WindowManager id=%s>' % (self.id,)
 
-    def debug_info(self, log=log):
+    def debug_info(self, logger=log):
         """Print full windows manager's info, for debug use only."""
-        log.info('WindowManager=%s' % self.name)
-        log.info('Desktops=%s, current=%s' % (self.desktops, self.desktop))
-        log.info('Desktop=%s' % self.desktop_size)
-        log.info('Viewport=%s' % self.viewport_position)
-        log.info('Workarea=%s' % self.workarea_geometry)
+        logger.info('WindowManager=%s' % self.name)
+        logger.info('Desktops=%s, current=%s' % (self.desktops, self.desktop))
+        logger.info('Desktop=%s' % self.desktop_size)
+        logger.info('Viewport=%s' % self.viewport_position)
+        logger.info('Workarea=%s' % self.workarea_geometry)
 

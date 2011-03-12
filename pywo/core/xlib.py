@@ -23,8 +23,8 @@
 import logging
 
 from Xlib import X, XK, error
-from Xlib.protocol.event import ClientMessage
 from Xlib.display import Display
+from Xlib.protocol.event import ClientMessage
 
 from pywo.core.basic import CustomTuple
 from pywo.core.dispatch import EventDispatcher

@@ -23,7 +23,7 @@
 import itertools
 import logging
 
-from pywo.core import Gravity, Geometry, Size, Position, Window, WindowManager
+from pywo.core import Gravity, Geometry, Size, Position, WindowManager
 from pywo.actions import Action, TYPE_FILTER
 from pywo.actions.resizer import expand_window
 

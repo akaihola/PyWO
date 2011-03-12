@@ -35,13 +35,37 @@ log = logging.getLogger(__name__)
 __SERVICES = set()
 
 
-def load_plugins():
-    """Load third party pywo.service plugins."""
+def load_local(config):
+    """Load Services from local modules."""
+    log.debug('Loading local services modules...')
+    path = os.path.dirname(os.path.abspath(__file__))
+    modules = [filename[0:-3] for filename in os.listdir(path) 
+                              if filename.endswith('_service.py')]
+    for module in modules:
+        module_name = 'pywo.services.%s' % module
+        if not (getattr(config, module) or \
+                getattr(config, module_name)):
+            continue
+        log.debug("Importing <module '%s'>" % module_name)
+        try:
+            __import__(module_name)
+            __SERVICES.add(sys.modules[module_name])
+        except Exception, e:
+            log.exception('Exception %s while importing <module %s>' % \
+                          (e, module_name))
+
+
+def load_plugins(config):
+    """Load third party pywo.services plugins."""
+    log.debug('Loading third-party services modules...')
     try:
         from pkg_resources import iter_entry_points
     except ImportError:
         return
     for entry_point in iter_entry_points('pywo.services'):
+        if not (getattr(config, entry_point.module_name) or \
+                getattr(config, entry_point.name)):
+            continue
         log.debug('Loading plugin %s' % entry_point.name)
         try:
             plugin = entry_point.load()
@@ -64,24 +88,10 @@ def load_plugins():
 
 
 def load(config):
-    """Load Services from modules and plugins."""
+    """Load Services from local modules and plugins."""
     __SERVICES.clear()
-    # import all local modules
-    log.debug('Loading local services modules...')
-    path = os.path.dirname(os.path.abspath(__file__))
-    modules = [filename[0:-3] for filename in os.listdir(path) 
-                              if filename.endswith('_service.py')]
-    for module in modules:
-        module_name = 'pywo.services.%s' % module
-        if getattr(config, module) or getattr(config, module_name):
-            log.debug("Importing <module '%s'>" % module_name)
-            try:
-                __import__(module_name)
-                __SERVICES.add(sys.modules[module_name])
-            except Exception, e:
-                log.exception('Exception %s while importing <module %s>' % \
-                              (e, module_name))
-    load_plugins()
+    load_local(config)
+    load_plugins(config)
     log.debug('Registered %s services' % (len(__SERVICES),))
 
 

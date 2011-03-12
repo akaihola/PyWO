@@ -68,7 +68,7 @@ def setup(config):
         manager.remove(service)
 
 
-def start(loop=False):
+def start():
     """Start all services."""
     failed = []
     for service in manager.get_all():
@@ -82,12 +82,14 @@ def start(loop=False):
     log.info('PyWO ready and running!')
     # Simple loop for keeping main-thread running and make signal handlers work
     counter = 0
-    while loop and len(threading.enumerate()) > 1: 
-        time.sleep(0.2)
+    while threading.currentThread().getName() == 'MainThread'  and \
+          threading.activeCount() > 1: 
+        time.sleep(1)
         counter += 1
-        if counter % 25 == 0:
+        if counter % 10 == 0:
             counter = 0
-            WM.update_type() # update WM type every 5 seconds
+            WM.update_type() # update WM type every 10 seconds
+    log.debug('Exited daemon loop, in %s' % threading.currentThread())
 
 
 def stop():
@@ -97,6 +99,7 @@ def stop():
             service.stop()
         except Exception, e:
             log.exception('Exception %s while %s stop' % (e, service))
+    WM.unregister_all() # unregister all remaining EventHandlers
 
 
 def reload_pywo(win, config=None, *args):
@@ -114,7 +117,6 @@ def exit_pywo(*args):
     """Stop sevices, and exit PyWO."""
     log.info('Exiting PyWO...')
     stop() # stop all services
-    WM.unregister_all() # unregister all remaining EventHandlers
 
 
 def interrupt_handler(sig, frame):

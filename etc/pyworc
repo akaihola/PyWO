@@ -1,6 +1,6 @@
 [SETTINGS]
 keyboard_service = on
-dbus_service = on
+dbus_service = off
 
 ; NumLock and CapsLock state settings:
 ;     1/on/yes/true - work only when NumLock is on
@@ -55,6 +55,8 @@ maximize_horz =
 fullscreen = 
 shade = 
 sticky = 
+above = 
+below = 
 activate = 
 close = 
 

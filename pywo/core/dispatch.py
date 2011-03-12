@@ -31,7 +31,7 @@ __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 log = logging.getLogger(__name__)
 
 
-class EventDispatcher(object):
+class EventDispatcher(threading.Thread):
 
     """Checks the event queue and dispatches events to correct handlers.
 
@@ -42,25 +42,23 @@ class EventDispatcher(object):
     """
 
     def __init__(self, display):
-        # What about integration with gobject?
-        # gobject.io_add_watch(root.display, gobject.IO_IN, handle_xevent)
+        threading.Thread.__init__(self, name='EventDispatcher')
         self.__display = display
         self.__root = display.screen().root
         self.__handlers = {} # {event.type: {window.id: set([handler, ]), }, }
-        self.__thread = None
 
     def run(self):
         """Main loop - perform event queue checking.
 
-        Every 50ms check event queue for pending events and dispatch them.
-        If there's no registered handlers stop running.
+        Every 100ms check event queue for pending events and dispatch them.
+        If there are no registered handlers stop running.
 
         """
         log.debug('EventDispatcher started')
         while self.__handlers:
             while self.__display.pending_events():
                 self.__dispatch(self.__display.next_event())
-            time.sleep(0.05)
+            time.sleep(0.1)
         log.debug('EventDispatcher stopped')
 
     def register(self, window, handler):
@@ -70,7 +68,8 @@ class EventDispatcher(object):
             type_handlers = self.__handlers.setdefault(event_type, {})
             win_handlers = type_handlers.setdefault(window.id, set())
             win_handlers.add(handler)
-        self.__start()
+        if not self.isAlive():
+            self.start()
         return self.__get_masks(window.id)
 
     def unregister(self, window=None, handler=None):
@@ -109,14 +108,6 @@ class EventDispatcher(object):
             for handler in win_handlers:
                 masks.update(handler.masks)
         return masks
-
-    def __start(self):
-        """Start new thread only if not already running."""
-        if not self.__thread or \
-           (self.__thread and not self.__thread.isAlive()):
-            self.__thread = threading.Thread(name='EventDispatcher', 
-                                             target=self.run)
-            self.__thread.start()
 
     def __dispatch(self, event):
         """Dispatch raw X event to correct handler.

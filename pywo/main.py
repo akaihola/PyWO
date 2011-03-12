@@ -70,7 +70,7 @@ def run():
     if options.start_daemon:
         log.info('Starting PyWO daemon...')
         daemon.setup(config)
-        daemon.start(loop=True)
+        daemon.start()
     elif options.list_windows:
         WM = WindowManager()
         windows = WM.windows(filters.AND(

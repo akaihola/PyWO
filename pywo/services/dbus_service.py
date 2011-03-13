@@ -26,6 +26,7 @@ import threading
 # TODO: try catch imports
 import dbus
 from dbus.mainloop.glib import DBusGMainLoop
+#from dbus.mainloop.qt import DBusQtMainLoop
 import dbus.service
 
 from pywo import actions
@@ -48,7 +49,8 @@ class DBusService(dbus.service.Object):
     CONFIG = None
 
     @dbus.service.method("net.kosciak.PyWO", 
-                         in_signature='si', out_signature='s')
+                         in_signature='si', 
+                         out_signature='s')
     def PerformAction(self, command, win_id):
         log.debug('DBUS: command="%s", win_id=%s' % (command, win_id))
         try:
@@ -65,12 +67,14 @@ class DBusService(dbus.service.Object):
             return 'ERROR: %s' % e
 
     @dbus.service.method("net.kosciak.PyWO", 
-                         in_signature='', out_signature='a(ssasas)')
+                         in_signature='', 
+                         out_signature='a(ssasasb)')
     def GetActions(self):
         return [(action.name, 
                  (action.__doc__ or '').split('\n')[0],
                  action.args, 
-                 action.obligatory_args) for action in manager.get_all()]
+                 action.obligatory_args,
+                 action.need_section) for action in manager.get_all()]
 
     @dbus.service.method("net.kosciak.PyWO", 
                          in_signature='', out_signature='as')
@@ -78,34 +82,43 @@ class DBusService(dbus.service.Object):
         return self.CONFIG.sections.keys()
 
     @dbus.service.method("net.kosciak.PyWO", 
-                         in_signature='s', out_signature='a(is)')
+                         in_signature='s', 
+                         out_signature='a(is)')
     def GetWindows(self, match):
         windows = WM.windows(filters.NORMAL_TYPE, match=match)
         return [(win.id, win.name) for win in windows]
 
     @dbus.service.method("net.kosciak.PyWO", 
-                         in_signature='i', out_signature='a(issi(ii)(ii))')
+                         in_signature='i', 
+                         out_signature='a(issiaiai(ii)(ii))')
     def GetWindowInfo(self, win_id):
         win = WM.get_window(win_id)
         geometry = win.geometry
         return [(win.id, 
                  win.class_name, win.name,
-                 win.desktop
+                 win.desktop,
+                 win.type, win.state,
                  (geometry.x, geometry.y),
-                 (geometry.width, geometry.height))]
+                 (geometry.width, geometry.height),
+                )]
 
     # TODO: GetDesktops
     # TODO: GetDesktopInfo
 
 
-DBusGMainLoop(set_as_default=True)
-session_bus = dbus.SessionBus()
+dbus_loop = DBusGMainLoop(set_as_default=True)
+#dbus_loop = DBusQtMainLoop(set_as_default=True)
+session_bus = dbus.SessionBus(mainloop=dbus_loop)
 name = dbus.service.BusName("net.kosciak.PyWO", session_bus)
 service = DBusService(session_bus, "/net/kosciak/PyWO")
 
 import gobject
 gobject.threads_init()
 loop = gobject.MainLoop()
+
+# NOTE: not sure how to start Qt event loop in separate thread...
+#from PyQt4 import QtCore
+#loop = QtCore.QEventLoop()
 
 def setup(config):
     service.CONFIG = config

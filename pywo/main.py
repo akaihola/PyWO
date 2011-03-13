@@ -102,7 +102,7 @@ def run():
         commandline.print_help_more(config)
     elif args or options.action:
         try:
-            actions.perform(args, config, options)
+            actions.perform(options, args, config)
         except actions.ActionException, e:
             commandline.print_error(e)
     else:

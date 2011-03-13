@@ -40,23 +40,23 @@ __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 log = logging.getLogger(__name__)
 
 
-_CONFIG = None
+__CONFIG = None
 WM = WindowManager()
 
 
 def setup(config):
     """Import and setup all services."""
-    global _CONFIG
-    if not _CONFIG:
+    global __CONFIG
+    if not __CONFIG:
         # First time start, we are im main-thread - register signal handlers
         signal.signal(signal.SIGINT, interrupt_handler)
         signal.signal(signal.SIGTERM, interrupt_handler)
         # and required actions
         actions.register(name='exit')(exit_pywo)
         actions.register(name='reload')(reload_pywo)
-    _CONFIG = config
+    __CONFIG = config
     WM.update_type()
-    manager.load(_CONFIG)
+    manager.load(__CONFIG)
     failed = []
     for service in manager.get_all():
         try:
@@ -106,10 +106,10 @@ def reload_pywo(win, config=None, *args):
     """Stop services, (re)load configuration file, and start again."""
     log.info('Reloading PyWO...')
     stop()
-    filename = config or _CONFIG.filename
+    filename = config or __CONFIG.filename
     log.info('Reloading configuration file: %s' % filename)
-    config = _CONFIG.load(filename)
-    setup(_CONFIG)
+    config = __CONFIG.load(filename)
+    setup(__CONFIG)
     start()
 
 
@@ -124,6 +124,5 @@ def interrupt_handler(sig, frame):
     log.error('Interrupted!')
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     signal.signal(signal.SIGTERM, signal.SIG_IGN)
-    # TODO: SIGTSTP to unregister keyboard hander, and rergister on SIGCONT
     exit_pywo(True)
 

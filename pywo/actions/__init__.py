@@ -93,6 +93,22 @@ class Action(object):
                              if arg not in self.obligatory_args]
         return optional_args
 
+    @property
+    def need_section(self):
+        return 'direction' in self.args or \
+               'position' in self.args or \
+               'gravity' in self.args
+
+    def get_kwargs(self, config, section=None, options=None):
+        kwargs = {}
+        for arg in self.args:
+            for obj in [options, section, config]:
+                value = getattr(obj, arg, None)
+                if value is not None:
+                    kwargs[arg] = value
+                    break
+        return kwargs
+
     def __call__(self, win, **kwargs):
         """Perform action on window and with given arguments."""
         log.debug('%s win=%s, kwargs={%s}' % 
@@ -176,21 +192,9 @@ def _debug_info(win):
     log.info('-= End of debug =-')
 
 
-def get_args(action, config, section=None, options=None):
-    # TODO: move to Action class?
-    kwargs = {}
-    for arg in action.args:
-        for obj in [options, section, config]:
-            value = getattr(obj, arg, None)
-            if value is not None:
-                kwargs[arg] = value
-                break
-    return kwargs
-
 
 # TODO: move to commandline.py as perform_action?
-def perform(args, config, options={}, win_id=0):
-    # FIXME: options can't be defaulted to dict!!!
+def perform(options, args, config, win_id=0):
     if not options.action and not args:
         # This will never be called...
         raise ActionException('No ACTION provided')
@@ -199,15 +203,12 @@ def perform(args, config, options={}, win_id=0):
     action = manager.get(name)
     if not action:
         raise ActionException('Invalid ACTION name: %s' % name)
-    need_section = 'direction' in action.args or \
-                   'position' in action.args or \
-                   'gravity' in action.args
-    if need_section and options.section:
+    if action.need_section and options.section:
         name = options.section
         section = config.section(name)
         if not section:
             raise ActionException('Invalid SECTION name: %s' % name)
-    elif need_section and args and config.section(args[0]):
+    elif action.need_section and args and config.section(args[0]):
         section = config.section(args.pop(0))
     else:
         section = None
@@ -216,7 +217,7 @@ def perform(args, config, options={}, win_id=0):
     for arg in action.obligatory_args:
         if not getattr(options, arg):
             missing_args.append(arg.upper())
-    if need_section and not section and missing_args:
+    if action.need_section and not section and missing_args:
         raise ActionException('Missing %s' % ', '.join(missing_args))
 
     if win_id or options.win_id:
@@ -234,6 +235,6 @@ def perform(args, config, options={}, win_id=0):
     else:
         window = WM.active_window()
 
-    kwargs = get_args(action, config, section, options)
+    kwargs = action.get_kwargs(config, section, options)
     action(window, **kwargs)
 

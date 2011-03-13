@@ -34,56 +34,62 @@ log = logging.getLogger(__name__)
 
 WM = WindowManager()
 
-MAPPINGS = {} # {(modifiers, keycode): (action, args), }
 
 class KeyPressHandler(KeyHandler):
 
     """EventHandler for KeyPress events."""
 
+    def __init__(self, config=None):
+        KeyHandler.__init__(self)
+        self.config = config
+        self.mappings = {} # {(modifiers, keycode): (action, section), }
+        if self.config:
+            self.set_config(self.config)
+
     def key_press(self, event):
         """Event handler method for KeyPressEventHandler."""
         log.debug('%s' % (event,))
-        if not (event.modifiers, event.keycode) in MAPPINGS:
+        if not (event.modifiers, event.keycode) in self.mappings:
             log.exception('Unrecognized key!')
             return
-        window = WM.active_window()
-        action, kwargs = MAPPINGS[event.modifiers, event.keycode]
+        action, section = self.mappings[event.modifiers, event.keycode]
         try:
+            window = WM.active_window()
+            kwargs = action.get_kwargs(self.config, section)
             action(window, **kwargs)
         except actions.ActionException, e:
             log.error(e)
         except Exception, err:
             log.exception(err)
+    
+    def set_config(self, config):
+        self.config = config
+        self.mappings.clear()
+        for action in actions.manager.get_all():
+            if action.need_section:
+                mask = config.keys.get(action.name)
+                if not mask:
+                    continue
+                for section in config.sections.values():
+                    key = section.key
+                    if key and action not in section.ignored:
+                        (mod, keycode) = WM.str2modifiers_keycode(mask, key)
+                        self.mappings[(mod, keycode)] = (action, section)
+            else:
+                key = config.keys.get(action.name)
+                if key and action not in config.ignored:
+                    (mod, keycode) = WM.str2modifiers_keycode(key)
+                    self.mappings[(mod, keycode)] = (action, None)
+        self.keys = self.mappings.keys()
+        self.numlock = config.numlock
+        self.capslock = config.capslock
 
 
 HANDLER = KeyPressHandler()
 
 
 def setup(config):
-    MAPPINGS.clear()
-    for action in actions.manager.get_all():
-        if 'direction' in action.args or \
-           'position' in action.args or \
-           'gravity' in action.args:
-            mask = config.keys.get(action.name)
-            if not mask:
-                continue
-            for section in config.sections.values():
-                key = section.key
-                if key and action not in section.ignored:
-                    (modifiers, keycode) = WM.str2modifiers_keycode(mask, key)
-                    kwargs = actions.get_args(action, config, section)
-                    MAPPINGS[(modifiers, keycode)] = (action, kwargs)
-        else:
-            key = config.keys.get(action.name)
-            if key and action not in config.ignored:
-                (modifiers, keycode) = WM.str2modifiers_keycode(key)
-                kwargs = actions.get_args(action, config)
-                MAPPINGS[(modifiers, keycode)] = (action, kwargs)
-    # set new mappings
-    HANDLER.set_keys(MAPPINGS.keys(), 
-                     config.numlock,
-                     config.capslock)
+    HANDLER.set_config(config)
 
 def start():
     log.info('Registering keyboard shortcuts')

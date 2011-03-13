@@ -39,8 +39,7 @@ __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
 log = logging.getLogger(__name__)
 
-_SUBSTRUCTURE = {True: X.SubstructureNotifyMask,
-                 False: X.StructureNotifyMask}
+_SUBSTRUCTURE = [X.StructureNotifyMask, X.SubstructureNotifyMask]
 
 
 class Event(object):
@@ -155,12 +154,6 @@ class KeyHandler(EventHandler):
         if self.__key_release:
             self.__key_release(event)
 
-    def set_keys(self, keys, numlock, capslock):
-        """Set new keys list."""
-        self.keys = keys
-        self.numlock = numlock
-        self.capslock = capslock
-
     def grab_keys(self, window):
         """Grab keys and start listening to window's events."""
         for mask, code in self.keys:
@@ -196,7 +189,7 @@ class DestroyNotifyHandler(EventHandler):
         children - False - listen for children windows' events
                    True - listen for window's events
         """
-        EventHandler.__init__(self, [_SUBSTRUCTURE[children]],
+        EventHandler.__init__(self, [_SUBSTRUCTURE[bool(children)]],
                               {X.DestroyNotify: (DestroyNotifyEvent, 
                                                  self.destroy)})
         self.__destroy = destroy
@@ -329,7 +322,7 @@ class ConfigureNotifyHandler(EventHandler):
         children - False - listen for children windows' events
                    True - listen for window's events
         """
-        EventHandler.__init__(self, [_SUBSTRUCTURE[children]], 
+        EventHandler.__init__(self, [_SUBSTRUCTURE[bool(children)]], 
                               {X.ConfigureNotify: (ConfigureNotifyEvent, 
                                                    self.configure)})
         self.__configure = configure

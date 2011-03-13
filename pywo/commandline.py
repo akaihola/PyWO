@@ -58,7 +58,7 @@ class TextWrapperWithNewLines:
 optparse.textwrap = TextWrapperWithNewLines()
 
 
-usage = '%prog [OPTIONS]\n   or: %prog ACTION [SECTION] [OPTIONS] [WINDOW NAME]'
+usage = '%prog [OPTIONS]\n   or: %prog ACTION [SECTION] [OPTIONS] [WINDOW_NAME]'
 version = 'PyWO - Python Window Organizer 0.3'
 description = version
 epilog = '' 

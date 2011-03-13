@@ -37,8 +37,6 @@ __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
 log = logging.getLogger(__name__)
 
-__OPTION_LIST = []
-
 
 class ParserException(Exception):
 
@@ -51,33 +49,42 @@ class ParserException(Exception):
         return self.msg
 
 
-class Parser(optparse.OptionParser):
+class OptionParser(optparse.OptionParser):
 
-    """OptionParser that raises exception on errors."""
+    """OptionParser that raises exception on errors.
+    
+    This class should not be used directly, use parse_args instead.
+    
+    """
+
+    OPTION_LIST = []
+
+    def __init__(self, *args, **kwargs):
+        optparse.OptionParser.__init__(self, *args, **kwargs)
+        self.set_defaults(action=None, section=None)
+        for option in self.OPTION_LIST:
+            self.add_option(option)
 
     def error(self, msg):
         """Raise ParserException instead of printing on console and exiting."""
         raise ParserException(msg)
 
 
-option_list = __OPTION_LIST
+option_list = OptionParser.OPTION_LIST
 
 
 def add_option(*args, **kwargs):
     """Add new option to actions.parser."""
     option = optparse.make_option(*args, **kwargs)
-    __OPTION_LIST.append(option)
+    OptionParser.OPTION_LIST.append(option)
 
 
 def parse_args(args=None, values=None):
-    """Parse arguments using new instance of Parser (to make it thread sage)."""
+    """Parse arguments using new instance of Parser (to make it thread safe)."""
     #if line:
     #    line_args = shlex.split(line)
     #    args.expand(line_args)
-    parser = Parser(conflict_handler='resolve')
-    parser.set_defaults(action=None, section=None)
-    for option in __OPTION_LIST:
-        parser.add_option(option)
+    parser = OptionParser(conflict_handler='resolve')
     return parser.parse_args(args, values)
 
 

@@ -30,15 +30,15 @@ __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
 log = logging.getLogger(__name__)
 
-_ACTIONS = {}
+__ACTIONS = {}
 __LOADED = False
 
 
 def register(action):
     """Register new Action object."""
-    if action.name in _ACTIONS:
+    if action.name in __ACTIONS:
         log.warning('Action with name %s already registered!' % action.name)
-    _ACTIONS[action.name] = action
+    __ACTIONS[action.name] = action
     log.debug('Registered %s' % action)
 
 
@@ -80,7 +80,7 @@ def load():
     load_local()
     load_plugins()
     global __LOADED
-    log.debug('Registered %s actions' % (len(_ACTIONS),))
+    log.debug('Registered %s actions' % (len(__ACTIONS),))
     __LOADED = True
 
 
@@ -88,12 +88,12 @@ def get(name):
     """Return action with given name or None."""
     if not __LOADED:
         load()
-    return _ACTIONS.get(name, None)
+    return __ACTIONS.get(name, None)
 
 
 def get_all():
     """Return set of all actions."""
     if not __LOADED:
         load()
-    return _ACTIONS.values()
+    return __ACTIONS.values()
 

@@ -28,6 +28,8 @@ so it can be used like real OptionParser instance.
 import logging
 import optparse
 import shlex
+import threading
+import types
 
 from pywo.core import Size, Gravity, Position
 
@@ -36,6 +38,8 @@ __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 
 
 log = logging.getLogger(__name__)
+
+THREAD_DATA = threading.local()
 
 
 class ParserException(Exception):
@@ -79,13 +83,19 @@ def add_option(*args, **kwargs):
     OptionParser.OPTION_LIST.append(option)
 
 
-def parse_args(args=None, values=None):
-    """Parse arguments using new instance of Parser (to make it thread safe)."""
-    #if line:
-    #    line_args = shlex.split(line)
-    #    args.expand(line_args)
-    parser = OptionParser(conflict_handler='resolve')
-    return parser.parse_args(args, values)
+def parse_args(args, values=None):
+    """Parse arguments.
+
+    args can be both string (utf-8 encoded) or list of strings
+    To provide thread safety there's separate OptionParser instance for 
+    every thread.
+
+    """
+    if type(args) is types.StringType:
+        args = shlex.split(args)
+    if not hasattr(THREAD_DATA, 'parser'):
+        THREAD_DATA.parser = OptionParser(conflict_handler='resolve')
+    return THREAD_DATA.parser.parse_args(args, values)
 
 
 #

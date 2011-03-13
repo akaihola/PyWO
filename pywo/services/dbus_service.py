@@ -28,9 +28,11 @@ import dbus
 from dbus.mainloop.glib import DBusGMainLoop
 import dbus.service
 
-from pywo import actions, commandline
+from pywo import actions
 from pywo.core import WindowManager
 from pywo.core import filters
+from pywo.actions import manager
+from pywo.actions import parser
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
@@ -50,12 +52,13 @@ class DBusService(dbus.service.Object):
     def PerformAction(self, command, win_id):
         log.debug('DBUS: command="%s", win_id=%s' % (command, win_id))
         try:
-            (options, args) = commandline.parse_args(command.split())
-        except commandline.ParserException, e:
+            (options, args) = parser.parse_args(command.encode('utf-8'))
+            log.info(options)
+        except parser.ParserException, e:
             log.exception('ParserException: %s' % e)
             return 'ERROR: %s' % e
         try:
-            actions.perform(args, self.CONFIG, options, win_id)
+            actions.perform(options, args, self.CONFIG, win_id)
             return ''
         except actions.ActionException, e:
             log.exception('ActionException: %s' % e)
@@ -67,7 +70,7 @@ class DBusService(dbus.service.Object):
         return [(action.name, 
                  (action.__doc__ or '').split('\n')[0],
                  action.args, 
-                 action.obligatory_args) for action in actions.manager.get_all()]
+                 action.obligatory_args) for action in manager.get_all()]
 
     @dbus.service.method("net.kosciak.PyWO", 
                          in_signature='', out_signature='as')

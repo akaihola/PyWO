@@ -288,6 +288,13 @@ class Extents(object):
         """Return sum of top and bottom extents."""
         return self.top + self.bottom
 
+    def __eq__(self, other):
+        return ((self.left, self.right, self.top, self.bottom) ==
+                (other.left, other.right, other.top, other.bottom))
+
+    def __ne__(self, other):
+        return not self == other
+
     def __str__(self):
         return '<Extents left=%s, right=%s, top=%s, bottom=%s>' % \
                (self.left, self.right, self.top, self.bottom)

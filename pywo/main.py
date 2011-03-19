@@ -23,6 +23,8 @@
 
 import logging
 from logging.handlers import RotatingFileHandler
+import os.path
+import tempfile
 
 from pywo import actions, commandline
 from pywo.config import Config
@@ -37,11 +39,12 @@ __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
 log = logging.getLogger('pywo')
 
 
-def setup_loggers(debug=False):
+def setup_loggers(debug=False, logpath=None):
     """Setup file, and console loggers."""
     log.setLevel(logging.DEBUG)
     format = '%(levelname)s: %(name)s.%(funcName)s(%(lineno)d): %(message)s'
-    rotating = RotatingFileHandler('/tmp/PyWO.log', 'a', 1024*100)
+    logfile = os.path.join(logpath or tempfile.gettempdir(), 'PyWO.log')
+    rotating = RotatingFileHandler(logfile, 'a', 1024*100)
     rotating.setFormatter(logging.Formatter(format))
     rotating.setLevel(logging.DEBUG)
     log.addHandler(rotating)
@@ -61,7 +64,7 @@ def run():
     (options, args) = commandline.parse_args()
 
     # setup loggers
-    setup_loggers(options.debug)
+    setup_loggers(options.debug, options.logpath)
 
     # load config settings
     config = Config(options.config)

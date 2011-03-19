@@ -80,6 +80,9 @@ parser.add_option('--help-more',
 parser.add_option('--debug', '--verbose',
                   action='store_true', dest='debug', default=False,
                   help='print debug informations')
+parser.add_option('--log_path', 
+                  dest='logpath', metavar='PATH',
+                  help='use given PATH for logging')
 parser.add_option('--config',
                   action='store', dest='config', default='',
                   help='use given config FILE', 

@@ -32,7 +32,6 @@ from pywo.services import daemon
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
-__version__ = "0.3"
 
 
 log = logging.getLogger('pywo')

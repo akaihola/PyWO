@@ -26,6 +26,7 @@ from optparse import OptionParser, OptionGroup
 import textwrap
 import sys
 
+import pywo
 from pywo import actions
 import pywo.actions.parser
 
@@ -59,7 +60,7 @@ optparse.textwrap = TextWrapperWithNewLines()
 
 
 usage = '%prog [OPTIONS]\n   or: %prog ACTION [SECTION] [OPTIONS] [WINDOW_NAME]'
-version = 'PyWO - Python Window Organizer 0.3'
+version = 'PyWO - Python Window Organizer %s' % pywo.__version__
 description = version
 epilog = '' 
 # TODO: add some examples of usage

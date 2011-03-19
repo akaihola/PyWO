@@ -23,6 +23,10 @@
 import logging
 
 
+__author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
+__version__ = "0.3"
+
+
 class NullHandler(logging.Handler):
 
     """logging.Handler that does not emit anything."""

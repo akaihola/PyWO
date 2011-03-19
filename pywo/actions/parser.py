@@ -199,6 +199,7 @@ add_option('-p', '--position',
 #
 # Set geometry
 #
+# TODO: option --reltive -e
 add_option('-w', '--width',
            action='callback', dest='width', type='string',
            callback=size_callback,)

@@ -3,9 +3,12 @@
 #from distutils.core import setup, find_packages
 from setuptools import setup, find_packages
 
+import pywo
+
+
 setup(
     name='PyWO',
-    version='0.3',
+    version=pywo.__version__
     author="Wojciech 'KosciaK' Pietrzok",
     author_email='kosciak@kosciak.net',
     description='PyWO allows you to easily organize windows on the desktop using keyboard shortcuts.',

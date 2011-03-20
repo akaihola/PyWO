@@ -41,6 +41,7 @@ class TestMockedCore(unittest.TestCase):
 
     def map_window(self, 
                    type=core.Type.NORMAL,
+                   modal=False,
                    name=WIN_NAME, class_name=WIN_CLASS_NAME,
                    x=WIN_X, y=WIN_Y, 
                    width=WIN_WIDTH, height=WIN_HEIGHT,
@@ -54,6 +55,7 @@ class TestMockedCore(unittest.TestCase):
                       mock_Xlib.EXTENTS_NORMAL.bottom))
         window = mock_Xlib.Window(display=self.display,
                                   type=[type],
+                                  modal=modal,
                                   name=name,
                                   class_name=class_name,
                                   geometry=geometry)

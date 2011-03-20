@@ -40,7 +40,7 @@ class IncludeType(object):
 
     def __call__(self, window):
         type = window.type
-        # NOTE: Some normal windows have now type set (e.g. tvtime)
+        # NOTE: Some normal windows have no type set (e.g. tvtime)
         for allowed_type in self.allowed_types:
             if allowed_type in type:
                 return True
@@ -100,9 +100,7 @@ class Desktop(object):
         self.desktop = desktop
 
     def __call__(self, window):
-        if self.desktop is None:
-            self.desktop = WindowManager().desktop
-        desktop = self.desktop
+        desktop = self.desktop or WindowManager().desktop
         win_desktop = window.desktop
         return win_desktop == desktop or \
                win_desktop == Window.ALL_DESKTOPS
@@ -114,18 +112,16 @@ class Workarea(Desktop):
 
     def __init__(self):
         Desktop.__init__(self)
-        self.workarea = None
 
     def __call__(self, window):
         if not Desktop.__call__(self, window):
             return False
-        if self.workarea is None:
-            self.workarea = WindowManager().workarea_geometry
+        workarea = WindowManager().workarea_geometry
         geometry = window.geometry
-        return geometry.x < self.workarea.x2 and \
-               geometry.x2 > self.workarea.x and \
-               geometry.y < self.workarea.y2 and \
-               geometry.y2 > self.workarea.y
+        return geometry.x < workarea.x2 and \
+               geometry.x2 > workarea.x and \
+               geometry.y < workarea.y2 and \
+               geometry.y2 > workarea.y
 
 
 class AND(object):

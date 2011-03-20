@@ -290,7 +290,8 @@ class Window(AbstractWindow):
                  class_name=['', ''], 
                  extents=EXTENTS_NORMAL, 
                  normal_hints=HINTS_NORMAL,
-                 type=[]):
+                 type=[],
+                 modal=False):
         AbstractWindow.__init__(self, display)
         # Always place windows on FIRST desktop
         desktop = 0
@@ -302,7 +303,8 @@ class Window(AbstractWindow):
             Xatom.WM_ICON_NAME: name,
             self.atom('_NET_WM_WINDOW_TYPE'): 
                 type or [self.atom('_NET_WM_WINDOW_TYPE_NORMAL'),],
-            self.atom('_NET_WM_STATE'): [],
+            self.atom('_NET_WM_STATE'): 
+                modal and [self.atom('_NET_WM_STATE_MODAL')] or [],
             self.atom('WM_STATE'): [Xutil.NormalState, X.NONE],
             self.atom('_NET_WM_DESKTOP'): desktop,
         }

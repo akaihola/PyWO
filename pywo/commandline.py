@@ -95,7 +95,7 @@ parser.add_option('--windows',
                   help='list all windows: <id> <desktop> <state> <name>')
 #parser.add_option('--desktops',
 #                  action='store_true', dest='list_desktops', default=False,
-#                  help='list dekstops') # TODO output format
+#                  help='list desktops') # TODO output format
 
 
 #

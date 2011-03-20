@@ -193,8 +193,8 @@ def _debug_info(win):
 
 
 
-# TODO: move to commandline.py as perform_action?
 def perform(options, args, config, win_id=0):
+    """Perform action based on options and args returned by parser."""
     if not options.action and not args:
         # This will never be called...
         raise ActionException('No ACTION provided')

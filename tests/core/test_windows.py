@@ -25,6 +25,12 @@ class TestWindowManager(TestMockedCore):
     def test_name(self):
         self.assertEqual(self.WM.name, 'mock-wm')
 
+    def test_type(self):
+        self.WM.update_type()
+        self.assertEqual(self.WM.type, (Type.UNKNOWN, ))
+        self.assertEqual(self.WM.wm_type, (Type.UNKNOWN, ))
+        self.assertEqual(self.win.wm_type, (Type.UNKNOWN, ))
+
     def test_desktop(self):
         self.assertEqual(self.WM.desktop, 0)
         # change to current

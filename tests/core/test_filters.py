@@ -8,7 +8,6 @@ sys.path.insert(0, './')
 
 from tests.test_common import TestMockedCore
 from tests.test_common import DESKTOPS, DESKTOP_WIDTH, DESKTOP_HEIGHT, VIEWPORTS
-from tests.test_common import WIN_X, WIN_Y, WIN_WIDTH, WIN_HEIGHT
 from pywo.core import Geometry, State, Type, Mode, Window
 from pywo.core import filters
 
@@ -16,6 +15,7 @@ from pywo.core import filters
 class TestFilters(TestMockedCore):
 
     def assertWindows(self, filter, windows):
+        """Assert that after using given filters you get given windows."""
         filtered_windows = self.WM.windows(filter)
         filtered_windows_ids = set([win.id for win in filtered_windows])
         windows_ids = set([win.id for win in windows])
@@ -26,6 +26,7 @@ class TestTypeFilters(TestFilters):
 
     def setUp(self):
         super(TestTypeFilters, self).setUp()
+        # map windows of all types
         self.normal_win = self.win
         self.desktop_win = self.map_window(type=Type.DESKTOP)
         self.dock_win = self.map_window(type=Type.DOCK)
@@ -52,6 +53,7 @@ class TestStateFilters(TestFilters):
 
     def setUp(self):
         super(TestStateFilters, self).setUp()
+        # map windows of all states
         self.no_state_win = self.win
         self.modal_win = self.map_window(modal=True)
         self.sticky_win = self.map_window()
@@ -118,12 +120,23 @@ class TestDesktopFilter(TestFilters):
                            [self.desktop2_win, self.all_desktops_win])
         self.assertWindows(filters.DESKTOP,
                            [self.desktop2_win, self.all_desktops_win])
+        self.WM.set_desktop(0)
+        self.assertWindows(filters.Desktop(), 
+                           [self.desktop1_win, self.all_desktops_win])
+        self.assertWindows(filters.DESKTOP,
+                           [self.desktop1_win, self.all_desktops_win])
 
     def test_selected(self):
+        # windows on selected desktop
         self.assertWindows(filters.Desktop(0), 
                            [self.desktop1_win, self.all_desktops_win])
+        self.assertWindows(filters.Desktop(1), 
+                           [self.desktop2_win, self.all_desktops_win])
         # all desktops only
         self.assertWindows(filters.Desktop(Window.ALL_DESKTOPS), 
+                           [self.all_desktops_win])
+        # invalid desktop number
+        self.assertWindows(filters.Desktop(-1), 
                            [self.all_desktops_win])
 
 
@@ -144,6 +157,9 @@ class TestWorkareaFilter(TestFilters):
         self.WM.set_desktop(1)
         self.assertWindows(filters.Workarea(),
                            [self.desktop2_viewport1_win])
+        self.WM.set_desktop(0)
+        self.assertWindows(filters.Workarea(),
+                           [self.desktop1_viewport1_win])
         # TODO: not implemented yet in mock_Xlib
         #self.WM.set_viewport_position(DESKTOP_WIDTH, 0)
         #self.assertWindows(filters.Workarea(),

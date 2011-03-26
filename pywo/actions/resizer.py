@@ -71,7 +71,7 @@ class Resizer(object):
         current = win.geometry
         workarea = WM.workarea_geometry
         windows = [window.geometry for window 
-                                   in WM.windows(filters.NORMAL_ON_WORKAREA) 
+                                   in WM.windows(filters.STANDARD_ON_WORKAREA) 
                                    if window.id != win.id]
         axis_order = [['x', 'y'], ['y', 'x']]
         for axis in axis_order[vertical_first]:

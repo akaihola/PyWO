@@ -41,8 +41,7 @@ log = logging.getLogger(__name__)
 
 WM = WindowManager()
 
-TYPE_FILTER = filters.ExcludeType(Type.DESKTOP, Type.DOCK, 
-                                  Type.SPLASH, Type.MENU)
+TYPE_FILTER = filters.STANDARD_TYPE
 STATE_FILTER = filters.ExcludeState(State.MAXIMIZED, State.FULLSCREEN)
 TYPE_STATE_FILTER = filters.AND(TYPE_FILTER, STATE_FILTER)
 

@@ -22,6 +22,8 @@
 
 import logging
 
+# NOTE: without this import python-xlib is not thread-safe!
+from Xlib import threaded
 from Xlib import X, XK, error
 from Xlib.display import Display
 from Xlib.protocol.event import ClientMessage

@@ -231,7 +231,11 @@ class TestExtents(unittest.TestCase):
 
 if __name__ == '__main__':
     main_suite = unittest.TestSuite()
-    for suite in [TestSize, TestPostion, TestGravity, TestGeometry, TestExtents]:
+    for suite in [TestSize, 
+                  TestPostion, 
+                  TestGravity, 
+                  TestGeometry, 
+                  TestExtents]:
         main_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(suite))
     unittest.TextTestRunner(verbosity=2).run(main_suite)
 

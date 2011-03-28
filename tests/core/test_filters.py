@@ -48,6 +48,11 @@ class TestTypeFilters(TestFilters):
     def test_normal_type(self):
         self.assertWindows(filters.NORMAL_TYPE, [self.normal_win])
 
+    def test_standard_type(self):
+        self.assertWindows(filters.STANDARD_TYPE, 
+                           [self.normal_win, self.dock_win, 
+                            self.utility_win, self.dialog_win])
+
 
 class TestStateFilters(TestFilters):
 
@@ -227,10 +232,37 @@ class TestCombinedFilters(TestFilters):
                            [self.sticky_win, 
                             self.desktop2_viewport1_win])
 
+    def test_standard(self):
+        self.assertWindows(filters.STANDARD,
+                           [self.win, 
+                            self.dialog_win,
+                            self.utility_win,
+                            self.dock_win,
+                            self.sticky_win, 
+                            self.vert_maximized_win, self.horz_maximized_win, 
+                            self.above_win, self.below_win,
+                            self.desktop1_viewport1_win, 
+                            self.desktop1_viewport2_win, 
+                            self.desktop2_viewport1_win, 
+                            self.desktop2_viewport2_win])
+        self.assertWindows(filters.STANDARD_ON_WORKAREA,
+                           [self.win, 
+                            self.dialog_win,
+                            self.utility_win,
+                            self.dock_win,
+                            self.sticky_win, 
+                            self.vert_maximized_win, self.horz_maximized_win, 
+                            self.above_win, self.below_win,
+                            self.desktop1_viewport1_win])
+
 
 if __name__ == '__main__':
     main_suite = unittest.TestSuite()
-    for suite in [TestTypeFilters, TestStateFilters, TestDesktopFilter, TestWorkareaFilter, TestCombinedFilters, ]:
+    for suite in [TestTypeFilters, 
+                  TestStateFilters, 
+                  TestDesktopFilter, 
+                  TestWorkareaFilter, 
+                  TestCombinedFilters, ]:
         main_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(suite))
     unittest.TextTestRunner(verbosity=2).run(main_suite)
 

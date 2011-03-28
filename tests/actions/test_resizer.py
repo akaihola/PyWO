@@ -127,7 +127,8 @@ class TestShrinkWindow(TestMockedCore):
 
 if __name__ == '__main__':
     main_suite = unittest.TestSuite()
-    for suite in [TestExpandWindow, TestShrinkWindow]:
+    for suite in [TestExpandWindow, 
+                  TestShrinkWindow]:
         main_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(suite))
     unittest.TextTestRunner(verbosity=2).run(main_suite)
 

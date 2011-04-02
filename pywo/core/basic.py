@@ -241,10 +241,12 @@ class Geometry(Position, Size):
 
     @property
     def x2(self):
+        """X coordinate of bottom right corner."""
         return self.x + self.width
 
     @property
     def y2(self):
+        """Y coordinate of bottom right corner."""
         return self.y + self.height
 
     def set_position(self, x, y, gravity=__DEFAULT_GRAVITY):

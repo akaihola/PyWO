@@ -76,7 +76,7 @@ def run():
     elif options.list_windows:
         WM = WindowManager()
         windows = WM.windows(filters.AND(
-                    filters.ExcludeType(Type.DESKTOP, Type.DOCK, Type.SPLASH),
+                    filters.ExcludeType(Type.DESKTOP, Type.SPLASH),
                     filters.ExcludeState(State.SKIP_PAGER, State.SKIP_TASKBAR)))
         for window in windows:
             state = window.state
@@ -97,6 +97,7 @@ def run():
                 state_flags = 'H'
             else:
                 state_flags = ' '
+            # TODO: State.ABOVE, State.BELOW
             state_flags += [' ', 's'][State.SHADED in state]# and \
                                       #not State.HIDDEN in state]
             print '%s %s %s %s' % (window.id, desktop, state_flags, window.name)

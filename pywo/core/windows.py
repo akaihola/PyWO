@@ -38,7 +38,7 @@ log = logging.getLogger(__name__)
 
 class Type(object):
 
-    """Enum of window and window manager types."""
+    """Enum of window, and window manager types."""
 
     # Window Types
     DESKTOP = XObject.atom('_NET_WM_WINDOW_TYPE_DESKTOP')
@@ -69,7 +69,7 @@ class Type(object):
 
 class Hacks(object):
 
-    """List of hacks caused by EWMH, ICCCM implementation inconsitences."""
+    """List of hacks caused by EWMH, ICCCM implementation inconsistences."""
 
     DONT_TRANSLATE_COORDS = CustomTuple([Type.COMPIZ, 
                                          Type.FLUXBOX, 
@@ -112,7 +112,11 @@ class State(object):
 
 class Mode(object):
 
-    """Enum of mode values."""
+    """Enum of mode values. 
+    
+    Used while changing window's states.
+    
+    """
 
     UNSET = 0
     SET = 1
@@ -189,11 +193,14 @@ class Window(XObject):
 
     @property
     def desktop(self):
-        """Return desktop number the window is on."""
+        """Return desktop number the window is on.
+
+        Returns 0xFFFFFFFF when "show on all desktops"
+
+        """
         desktop = self.get_property('_NET_WM_DESKTOP')
         if not desktop:
             return 0
-        # returns 0xFFFFFFFF when "show on all desktops"
         return desktop.value[0]
 
     def set_desktop(self, desktop_id):
@@ -338,6 +345,33 @@ class Window(XObject):
             y = y + (geometry_size[1] - height) * on_resize.y
         self._win.configure(x=x, y=y, width=width, height=height)
 
+    def moveresize(self, geometry):
+        """like set_geometry, but using _NET_MOVERESIZE_WINDOW
+
+        This gives finer control: 
+        - it allows to use gravity, so there are no problems with static windows
+        - x, y coordinates includes window's extents
+        - allow to move part of the window outside the workarea, while 
+          configure will resize window to fit workarea
+
+        WARNING! It seems that x,y coords must be unsigned ints!!! 
+                 So it is not possible to move window to the left viewport!
+                 Not sure it it is EWMH, Xlib, or python-xlib fault...
+                 But it makes _NET_MOVERESIZE_WINDOW rather useless...
+
+        """
+        # TODO: check the border_width issue
+        # TODO: what about max/min/incremental size?
+        event_type = self.atom('_NET_MOVERESIZE_WINDOW')
+        mask = X.SubstructureRedirectMask
+        flags = 1 << 8 | 1 << 9 | 1 << 10 | 1 << 11 | 1 << 13
+        data = [X.NorthWestGravity | flags,
+                max([0, geometry.x]),
+                max([0, geometry.y]),
+                geometry.width,
+                geometry.height]
+        self.send_event(data, event_type, mask)
+
     def activate(self):
         """Make this window active (and unshade, unminimize)."""
         # NOTE: In Metacity this WON'T change desktop to window's desktop!
@@ -456,26 +490,28 @@ class Window(XObject):
 
     def debug_info(self, logger=log):
         """Print full window's info, for debug use only."""
+        win = self._win
         logger.info('ID=%s' % self.id)
         logger.info('Client_machine=%s' % self.client_machine)
         logger.info('Name=%s' % self.name)
         logger.info('Class=%s' % self.class_name)
         logger.info('Type=%s' % [self.atom_name(e) for e in self.type])
         logger.info('State=%s' % [self.atom_name(e) for e in self.state])
-        logger.info('WM State=%s' % self._win.get_wm_state())
+        logger.info('WM State=%s' % win.get_wm_state())
         logger.info('Desktop=%s' % self.desktop)
         logger.info('Extents=%s' % self.extents)
         logger.info('Extents_raw=%s' % [str(e) for e in self.__extents()])
         logger.info('Geometry=%s' % self.geometry)
-        logger.info('Geometry_raw=%s' % self._win.get_geometry())
+        logger.info('Geometry_raw=%s' % getattr(win.get_geometry(), '_data'))
         geometry = self._win.get_geometry()
         translated = self._translate_coords(geometry.x, geometry.y)
-        logger.info('Geometry_translated=%s' % translated)
+        logger.info('Geometry_translated=%s' % getattr(translated, '_data'))
         logger.info('Parent=%s %s' % (self.parent_id, self.parent))
-        logger.info('Normal_hints=%s' % self._win.get_wm_normal_hints())
+        logger.info('Normal_hints=%s' % getattr(win.get_wm_normal_hints(), 
+                                                '_data'))
         #log.info('Hints=%s' % self._win.get_wm_hints())
-        logger.info('Attributes=%s' % self._win.get_attributes())
-        logger.info('Query_tree=%s' % self._win.query_tree())
+        logger.info('Attributes=%s' % getattr(win.get_attributes(), '_data'))
+        logger.info('Query_tree=%s' % getattr(win.query_tree(), '_data'))
 
 
 class WindowManager(XObject):
@@ -555,9 +591,16 @@ class WindowManager(XObject):
             return 1
         return number.value[0]
 
-    # TODO: desktop names
-    # _NET_DESKTOP_NAMES, UTF8_STRING[]
+    @property
+    def desktop_names(self):
+        """Return list of desktop names."""
+        # _NET_DESKTOP_NAMES, UTF8_STRING[]
+        names = self.get_property('_NET_DESKTOP_NAMES')
+        if not names:
+            return []
+        return names.value.decode('utf-8').split('\x00')[:-1]
 
+    # TODO: set_desktop_name ???
     # TODO: add_desktop, remove_desktop
 
     @property
@@ -580,7 +623,7 @@ class WindowManager(XObject):
 
     @property
     def desktop_size(self):
-        """Return size of current desktop."""
+        """Return Size of current desktop."""
         # _NET_DESKTOP_GEOMETRY width, height, CARDINAL[2]/32
         geometry = self.get_property('_NET_DESKTOP_GEOMETRY').value
         return Size(geometry[0], geometry[1])
@@ -590,7 +633,8 @@ class WindowManager(XObject):
     @property
     def desktop_layout(self):
         """Return desktops layout, as set by pager."""
-        # _NET_DESKTOP_LAYOUT, orientation, columns, rows, starting_corner CARDINAL[4]/32
+        # _NET_DESKTOP_LAYOUT, orientation, columns, rows, starting_corner 
+        #                      CARDINAL[4]/32
         layout = self.get_property('_NET_DESKTOP_LAYOUT')
         orientation, cols, rows, corner = layout.value
         desktops = self.desktops
@@ -630,6 +674,8 @@ class WindowManager(XObject):
                 0, 0, 0]
         mask = X.PropertyChangeMask
         self.send_event(data, event_type, mask)
+
+    # TODO: set_viewport(viewport) similar to set_desktop(desktop)
 
     def active_window_id(self):
         """Return id of active window."""
@@ -673,7 +719,9 @@ class WindowManager(XObject):
         return windows
 
     def __name_matcher(self, windows, match):
+        """Filter and sort windows with matching name or class name."""
         match = match.strip().lower()
+        # TODO: match.decode('utf-8') if not unicode
         desktop = self.desktop
         workarea = self.workarea_geometry
         def mapper(window, points=0):
@@ -716,6 +764,9 @@ class WindowManager(XObject):
         """Print full windows manager's info, for debug use only."""
         logger.info('WindowManager=%s' % self.name)
         logger.info('Desktops=%s, current=%s' % (self.desktops, self.desktop))
+        logger.info('Names=[%s]' % ', '.join(self.desktop_names))
+        logger.info('Layout: orientation=%s, cols=%s, rows=%s, corner=%s' % \
+                    self.desktop_layout)
         logger.info('Desktop=%s' % self.desktop_size)
         logger.info('Viewport=%s' % self.viewport_position)
         logger.info('Workarea=%s' % self.workarea_geometry)

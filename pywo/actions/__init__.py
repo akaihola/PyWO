@@ -150,7 +150,7 @@ class Action(object):
 
 class SimpleActionWrapper(Action):
 
-    """Wrapper for simple function actions."""
+    """Wrapper for simple function based actions."""
 
     def __init__(self, action, name, filter=None, unshade=False):
         Action.__init__(self, name=name, filter=filter, unshade=unshade)
@@ -167,6 +167,7 @@ class SimpleActionWrapper(Action):
 def register(name, filter=filters.ALL_FILTER, unshade=False):
     """Register function or Action subclass as PyWO action with given name."""
     def register_action(action):
+        """Registers action."""
         if isinstance(action, type) and issubclass(action, Action):
             action = action(name=name, filter=filter, unshade=unshade)
         elif callable(action):
@@ -195,7 +196,6 @@ def _debug_info(win):
 def perform(options, args, config, win_id=0):
     """Perform action based on options and args returned by parser."""
     if not options.action and not args:
-        # This will never be called...
         raise ActionException('No ACTION provided')
     name = options.action or args.pop(0)
     name = config.alias(name)

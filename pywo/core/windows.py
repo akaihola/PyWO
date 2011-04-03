@@ -462,6 +462,11 @@ class Window(XObject):
         data = [0, 0, 0, 0, 0]
         self.send_event(data, event_type, mask)
 
+    def destroy(self):
+        """Unmap and destroy window."""
+        self._win.unmap()
+        self._win.destroy()
+
     def __change_state(self, data):
         """Send _NET_WM_STATE event to the root window."""
         event_type = self.atom('_NET_WM_STATE')
@@ -478,6 +483,17 @@ class Window(XObject):
         self.draw_rectangle(geo.x+10, geo.y+10, 
                             geo.width-20, geo.height-20, 20)
         self.flush()
+
+    def create_input_only_window(self):
+        """Create and map X.InputOnly child window."""
+        window = self._win.create_window(-1, -1, 1, 1, 0, 
+                                         X.CopyFromParent, X.InputOnly)
+        window.map()
+        return Window(window.id)
+
+    def set_input_focus(self):
+        """Set input focus on window."""
+        self._win.set_input_focus(X.RevertToParent, X.CurrentTime)
 
     def __eq__(self, other):
         return self.id == other.id

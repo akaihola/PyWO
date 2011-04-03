@@ -23,8 +23,8 @@
 import logging
 
 from pywo import actions
-from pywo.core import WindowManager
-from pywo.core.events import KeyHandler
+from pywo.core import WindowManager, Type, Mode
+from pywo.core import events
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
@@ -35,12 +35,12 @@ log = logging.getLogger(__name__)
 WM = WindowManager()
 
 
-class KeyPressHandler(KeyHandler):
+class PywoKeyPressHandler(events.KeyHandler):
 
-    """EventHandler for KeyPress events."""
+    """EventHandler for "PyWO mode" keyboard shortcuts."""
 
     def __init__(self, config=None):
-        KeyHandler.__init__(self)
+        events.KeyHandler.__init__(self)
         self.config = config
         self.mappings = {} # {(modifiers, keycode): (action, section), }
         if self.config:
@@ -48,10 +48,9 @@ class KeyPressHandler(KeyHandler):
 
     def key_press(self, event):
         """Event handler method for KeyPressEventHandler."""
-        log.debug('%s' % (event,))
         if not (event.modifiers, event.keycode) in self.mappings:
-            log.exception('Unrecognized key!')
             return
+        log.debug('%s' % (event,))
         action, section = self.mappings[event.modifiers, event.keycode]
         try:
             window = WM.active_window()
@@ -63,6 +62,7 @@ class KeyPressHandler(KeyHandler):
             log.exception(err)
     
     def set_config(self, config):
+        """Set key mappings from config."""
         self.config = config
         self.mappings.clear()
         for action in actions.manager.get_all():
@@ -88,7 +88,92 @@ class KeyPressHandler(KeyHandler):
         self.capslock = config.capslock
 
 
-HANDLER = KeyPressHandler()
+class ModalKeyHandler(events.KeyHandler):
+
+    """Support for modality.
+
+    Depending on config settings work as decorator for PywoKeyPressHandler,
+    or separate KeyPressHandler responsible of handling key shortcuts for
+    entering and exiting "Pywo mode"
+
+    """
+
+    def __init__(self, config=None):
+        events.KeyHandler.__init__(self)
+        self.window = None
+        self.use_modal_mode = False
+        self.pywo_handler = PywoKeyPressHandler()
+        self.focus_out_handler = events.FocusHandler(focus_out=self.normal_mode)
+        keys = [WM.str2modifiers_keycode('Escape')]
+        self.escape_handler = events.KeyHandler(key_press=self.normal_mode,
+                                                keys=keys)
+        if config:
+            self.set_config(config)
+
+    def key_press(self, event):
+        """Enter PyWO mode.
+
+        Blink window to indicate entering "Pywo mode".
+        Press ESC, or change focus to another window to go back to normal mode.
+        
+        """
+        log.debug('%s' % (event,))
+        active_window = WM.active_window()
+        if Type.DESKTOP in active_window.type:
+            return
+        # NOTE: if window is shaded BadMatch is raised on set_input_focus()
+        active_window.shade(Mode.UNSET)
+        self.window = active_window.create_input_only_window()
+        self.window.flush()
+        self.pywo_handler.grab_keys(self.window)
+        self.escape_handler.grab_keys(self.window)
+        self.window.set_input_focus()
+        self.window.register(self.focus_out_handler)
+        self.ungrab_keys(WM)
+        active_window.blink()
+
+    def normal_mode(self, event):
+        """Leave PyWO mode, enter normal mode."""
+        log.debug('%s' % (event,))
+        if self.window:
+            self.window.unregister()
+            self.window.destroy()
+            self.window = None
+        self.grab_keys(WM)
+
+    def set_config(self, config):
+        """Set key mappings from config."""
+        self.pywo_handler.set_config(config)
+        pywo_mode_key = config.keys.get('pywo_mode')
+        if not pywo_mode_key:
+            self.use_modal_mode = False
+            return
+        self.keys = [WM.str2modifiers_keycode(pywo_mode_key)]
+        self.numlock = config.numlock
+        self.capslock = config.capslock
+        self.use_modal_mode = config.modal_mode
+
+
+    def grab_keys(self, window):
+        """Grab keys for self, or PywoKeyPressHandler."""
+        if self.use_modal_mode:
+            events.KeyHandler.grab_keys(self, window)
+        else:
+            self.pywo_handler.grab_keys(window)
+
+    def ungrab_keys(self, window, force=False):
+        """Ungrab keys for self, or PywoKeyPressHandler."""
+        if self.use_modal_mode:
+            events.KeyHandler.ungrab_keys(self, window)
+        else:
+            self.pywo_handler.ungrab_keys(window)
+        if force and self.window:
+            self.window.unregister()
+            self.window.destroy()
+            self.window = None
+
+
+HANDLER = ModalKeyHandler()
 
 
 def setup(config):
@@ -100,7 +185,7 @@ def start():
 
 
 def stop():
-    HANDLER.ungrab_keys(WM)
+    HANDLER.ungrab_keys(WM, force=True)
     log.info('Keyboard shortcuts unregistered')
 
 

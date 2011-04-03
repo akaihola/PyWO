@@ -48,7 +48,7 @@ def _maximize(win, mode=Mode.TOGGLE):
     elif mode == Mode.TOGGLE:
         mode = Mode.SET
     if State.FULLSCREEN in state:
-        win.fullscreen(win.MODE_UNSET)
+        win.fullscreen(Mode.UNSET)
     win.maximize(mode)
 
 @register(name='maximize_vert', filter=TYPE_FILTER, unshade=True)
@@ -65,15 +65,15 @@ def _maximize_horz(win, mode=Mode.TOGGLE):
 @register(name='shade', filter=TYPE_FILTER)
 def _shade(win, mode=Mode.TOGGLE):
     """Shade window."""
-    #win.maximize(win.MODE_UNSET)
-    win.fullscreen(win.MODE_UNSET)
+    #win.maximize(Mode.UNSET)
+    win.fullscreen(Mode.UNSET)
     win.shade(mode)
 
 
 @register(name='fullscreen', filter=TYPE_FILTER, unshade=True)
 def _fullscreen(win, mode=Mode.TOGGLE):
     """Fullscreen window."""
-    #win.maximize(win.MODE_UNSET)
+    #win.maximize(Mode.UNSET)
     win.fullscreen(mode)
 
 

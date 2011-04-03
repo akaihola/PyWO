@@ -73,7 +73,10 @@ class KeyPressHandler(KeyHandler):
                 for section in config.sections.values():
                     key = section.key
                     if key and action not in section.ignored:
-                        (mod, keycode) = WM.str2modifiers_keycode(mask, key)
+                        try:
+                            (mod, keycode) = WM.str2modifiers_keycode(mask, key)
+                        except ValueError:
+                            log.exception('Invalid key for section %s' % section)
                         self.mappings[(mod, keycode)] = (action, section)
             else:
                 key = config.keys.get(action.name)

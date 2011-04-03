@@ -191,7 +191,7 @@ class XObject(object):
         """Draw simple rectangle on screen."""
         color = self.__DISPLAY.screen().black_pixel
         gc = self.__root.create_gc(line_width=line,
-                                   #join_style=X.JoinRound,
+                                   join_style=X.JoinRound,
                                    foreground=color,
                                    function=X.GXinvert,
                                    subwindow_mode=X.IncludeInferiors,)

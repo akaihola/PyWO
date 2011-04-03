@@ -474,14 +474,21 @@ class Window(XObject):
         self.send_event(data, event_type, mask)
 
     def blink(self):
-        """For 0.25 second show border around window."""
+        """For 0.075 second show border around window."""
         geo = self.geometry
-        self.draw_rectangle(geo.x+10, geo.y+10, 
-                            geo.width-20, geo.height-20, 20)
+        extents = self.extents
+        self.draw_rectangle(geo.x+2,
+                            geo.y+2,
+                            geo.width-4,
+                            geo.height-4,
+                            4)
         self.flush()
-        time.sleep(0.25)
-        self.draw_rectangle(geo.x+10, geo.y+10, 
-                            geo.width-20, geo.height-20, 20)
+        time.sleep(0.075)
+        self.draw_rectangle(geo.x+2,
+                            geo.y+2,
+                            geo.width-4,
+                            geo.height-4,
+                            4)
         self.flush()
 
     def create_input_only_window(self):

@@ -476,31 +476,11 @@ class Window(XObject):
     def blink(self):
         """For 0.075 second show border around window."""
         geo = self.geometry
-        extents = self.extents
-        self.draw_rectangle(geo.x+2,
-                            geo.y+2,
-                            geo.width-4,
-                            geo.height-4,
-                            4)
+        self.draw_rectangle(geo.x+2, geo.y+2, geo.width-4, geo.height-4, 4)
         self.flush()
         time.sleep(0.075)
-        self.draw_rectangle(geo.x+2,
-                            geo.y+2,
-                            geo.width-4,
-                            geo.height-4,
-                            4)
+        self.draw_rectangle(geo.x+2, geo.y+2, geo.width-4, geo.height-4, 4)
         self.flush()
-
-    def create_input_only_window(self):
-        """Create and map X.InputOnly child window."""
-        window = self._win.create_window(-1, -1, 1, 1, 0, 
-                                         X.CopyFromParent, X.InputOnly)
-        window.map()
-        return Window(window.id)
-
-    def set_input_focus(self):
-        """Set input focus on window."""
-        self._win.set_input_focus(X.RevertToParent, X.CurrentTime)
 
     def __eq__(self, other):
         return self.id == other.id

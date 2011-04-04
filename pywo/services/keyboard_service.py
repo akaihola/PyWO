@@ -21,6 +21,7 @@
 """keyboard_service.py - provides keyboard shortcuts handling."""
 
 import logging
+import time
 
 from pywo import actions
 from pywo.core import WindowManager, Type, Mode
@@ -100,10 +101,9 @@ class ModalKeyHandler(events.KeyHandler):
 
     def __init__(self, config=None):
         events.KeyHandler.__init__(self)
-        self.window = None
         self.use_modal_mode = False
+        self.in_pywo_mode = False
         self.pywo_handler = PywoKeyPressHandler()
-        self.focus_out_handler = events.FocusHandler(focus_out=self.normal_mode)
         keys = [WM.str2modifiers_keycode('Escape')]
         self.escape_handler = events.KeyHandler(key_press=self.normal_mode,
                                                 keys=keys)
@@ -113,33 +113,34 @@ class ModalKeyHandler(events.KeyHandler):
     def key_press(self, event):
         """Enter PyWO mode.
 
-        Blink window to indicate entering "Pywo mode".
-        Press ESC, or change focus to another window to go back to normal mode.
+        Blink to indicate entering "Pywo mode".
+        Press ESC to go back to normal mode.
         
         """
         log.debug('%s' % (event,))
-        active_window = WM.active_window()
-        if Type.DESKTOP in active_window.type:
-            return
-        # NOTE: if window is shaded BadMatch is raised on set_input_focus()
-        active_window.shade(Mode.UNSET)
-        self.window = active_window.create_input_only_window()
-        self.window.flush()
-        self.pywo_handler.grab_keys(self.window)
-        self.escape_handler.grab_keys(self.window)
-        self.window.set_input_focus()
-        self.window.register(self.focus_out_handler)
+        self.blink()
         self.ungrab_keys(WM)
-        active_window.blink()
+        self.pywo_handler.grab_keys(WM)
+        self.escape_handler.grab_keys(WM)
+        self.in_pywo_mode = True
 
     def normal_mode(self, event):
         """Leave PyWO mode, enter normal mode."""
         log.debug('%s' % (event,))
-        if self.window:
-            self.window.unregister()
-            self.window.destroy()
-            self.window = None
+        self.blink()
+        self.pywo_handler.ungrab_keys(WM)
+        self.escape_handler.ungrab_keys(WM)
         self.grab_keys(WM)
+        self.in_pywo_mode = False
+
+    def blink(self):
+        """Visual bell."""
+        geo = WM.workarea_geometry
+        WM.draw_rectangle(geo.x+2, geo.y+2, geo.width-4, geo.height-4, 4)
+        WM.flush()
+        time.sleep(0.075)
+        WM.draw_rectangle(geo.x+2, geo.y+2, geo.width-4, geo.height-4, 4)
+        WM.flush()
 
     def set_config(self, config):
         """Set key mappings from config."""
@@ -152,7 +153,8 @@ class ModalKeyHandler(events.KeyHandler):
         self.numlock = config.numlock
         self.capslock = config.capslock
         self.use_modal_mode = config.modal_mode
-
+        if not self.use_modal_mode:
+            self.in_pywo_mode = True
 
     def grab_keys(self, window):
         """Grab keys for self, or PywoKeyPressHandler."""
@@ -161,16 +163,15 @@ class ModalKeyHandler(events.KeyHandler):
         else:
             self.pywo_handler.grab_keys(window)
 
-    def ungrab_keys(self, window, force=False):
+    def ungrab_keys(self, window):
         """Ungrab keys for self, or PywoKeyPressHandler."""
-        if self.use_modal_mode:
-            events.KeyHandler.ungrab_keys(self, window)
+        log.info('!!!!!!!!!!')
+        if self.in_pywo_mode and self.use_modal_mode:
+            self.escape_handler.ungrab_keys(WM)
+        if self.in_pywo_mode:
+            self.pywo_handler.ungrab_keys(WM)
         else:
-            self.pywo_handler.ungrab_keys(window)
-        if force and self.window:
-            self.window.unregister()
-            self.window.destroy()
-            self.window = None
+            events.KeyHandler.ungrab_keys(self, window)
 
 
 HANDLER = ModalKeyHandler()
@@ -185,7 +186,7 @@ def start():
 
 
 def stop():
-    HANDLER.ungrab_keys(WM, force=True)
+    HANDLER.ungrab_keys(WM)
     log.info('Keyboard shortcuts unregistered')
 
 

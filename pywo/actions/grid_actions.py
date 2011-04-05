@@ -97,7 +97,7 @@ class GeometryCycler(object):
         self.win_id = win.id
         self.args = (position, gravity, size, width, height) # TOD: remove me!?
         self.gravity = gravity
-        workarea = WM.workarea_geometry
+        workarea = WM.nearest_screen_geometry(win.geometry)
         self.position = absolute_position(workarea, position)
         self.sizes = absolute_size(win, workarea, size, width, height)
         dummy = DummyWindow(win, self.position, self.sizes, self.gravity)

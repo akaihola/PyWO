@@ -69,7 +69,7 @@ class Resizer(object):
         """Return new geometry for the window."""
         #TODO: add limit? and use limit geometry instead of workarea?
         current = win.geometry
-        workarea = WM.workarea_geometry
+        workarea = WM.nearest_screen_geometry(current)
         windows = [window.geometry for window 
                                    in WM.windows(filters.STANDARD_ON_WORKAREA) 
                                    if window.id != win.id]

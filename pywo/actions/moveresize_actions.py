@@ -78,8 +78,8 @@ def _move(win, direction, vertical_first=True):
 def _put(win, position, gravity=None):
     """Put window in given position (without resizing)."""
     gravity = gravity or position
-    workarea = WM.workarea_geometry
     geometry = win.geometry
+    workarea = WM.nearest_screen_geometry(geometry)
     x = workarea.x + workarea.width * position.x
     y = workarea.y + workarea.height * position.y
     geometry.set_position(x, y, gravity)

@@ -21,10 +21,11 @@
 """keyboard_service.py - provides keyboard shortcuts handling."""
 
 import logging
+import time
 
 from pywo import actions
-from pywo.core import WindowManager
-from pywo.core.events import KeyHandler
+from pywo.core import WindowManager, Type, Mode
+from pywo.core import events
 
 
 __author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
@@ -35,12 +36,12 @@ log = logging.getLogger(__name__)
 WM = WindowManager()
 
 
-class KeyPressHandler(KeyHandler):
+class PywoKeyPressHandler(events.KeyHandler):
 
-    """EventHandler for KeyPress events."""
+    """EventHandler for "PyWO mode" keyboard shortcuts."""
 
     def __init__(self, config=None):
-        KeyHandler.__init__(self)
+        events.KeyHandler.__init__(self)
         self.config = config
         self.mappings = {} # {(modifiers, keycode): (action, section), }
         if self.config:
@@ -48,10 +49,9 @@ class KeyPressHandler(KeyHandler):
 
     def key_press(self, event):
         """Event handler method for KeyPressEventHandler."""
-        log.debug('%s' % (event,))
         if not (event.modifiers, event.keycode) in self.mappings:
-            log.exception('Unrecognized key!')
             return
+        log.debug('%s' % (event,))
         action, section = self.mappings[event.modifiers, event.keycode]
         try:
             window = WM.active_window()
@@ -63,6 +63,7 @@ class KeyPressHandler(KeyHandler):
             log.exception(err)
     
     def set_config(self, config):
+        """Set key mappings from config."""
         self.config = config
         self.mappings.clear()
         for action in actions.manager.get_all():
@@ -73,7 +74,10 @@ class KeyPressHandler(KeyHandler):
                 for section in config.sections.values():
                     key = section.key
                     if key and action not in section.ignored:
-                        (mod, keycode) = WM.str2modifiers_keycode(mask, key)
+                        try:
+                            (mod, keycode) = WM.str2modifiers_keycode(mask, key)
+                        except ValueError:
+                            log.exception('Invalid key for section %s' % section)
                         self.mappings[(mod, keycode)] = (action, section)
             else:
                 key = config.keys.get(action.name)
@@ -85,7 +89,92 @@ class KeyPressHandler(KeyHandler):
         self.capslock = config.capslock
 
 
-HANDLER = KeyPressHandler()
+class ModalKeyHandler(events.KeyHandler):
+
+    """Support for modality.
+
+    Depending on config settings work as decorator for PywoKeyPressHandler,
+    or separate KeyPressHandler responsible of handling key shortcuts for
+    entering and exiting "Pywo mode"
+
+    """
+
+    def __init__(self, config=None):
+        events.KeyHandler.__init__(self)
+        self.use_modal_mode = False
+        self.in_pywo_mode = False
+        self.pywo_handler = PywoKeyPressHandler()
+        keys = [WM.str2modifiers_keycode('Escape')]
+        self.escape_handler = events.KeyHandler(key_press=self.normal_mode,
+                                                keys=keys)
+        if config:
+            self.set_config(config)
+
+    def key_press(self, event):
+        """Enter PyWO mode.
+
+        Blink to indicate entering "Pywo mode".
+        Press ESC to go back to normal mode.
+        
+        """
+        log.debug('%s' % (event,))
+        self.blink()
+        self.ungrab_keys(WM)
+        self.pywo_handler.grab_keys(WM)
+        self.escape_handler.grab_keys(WM)
+        self.in_pywo_mode = True
+
+    def normal_mode(self, event):
+        """Leave PyWO mode, enter normal mode."""
+        log.debug('%s' % (event,))
+        self.blink()
+        self.pywo_handler.ungrab_keys(WM)
+        self.escape_handler.ungrab_keys(WM)
+        self.grab_keys(WM)
+        self.in_pywo_mode = False
+
+    def blink(self):
+        """Visual bell."""
+        geo = WM.workarea_geometry
+        WM.draw_rectangle(geo.x+2, geo.y+2, geo.width-4, geo.height-4, 4)
+        WM.flush()
+        time.sleep(0.075)
+        WM.draw_rectangle(geo.x+2, geo.y+2, geo.width-4, geo.height-4, 4)
+        WM.flush()
+
+    def set_config(self, config):
+        """Set key mappings from config."""
+        self.pywo_handler.set_config(config)
+        pywo_mode_key = config.keys.get('pywo_mode')
+        if not pywo_mode_key:
+            self.use_modal_mode = False
+            return
+        self.keys = [WM.str2modifiers_keycode(pywo_mode_key)]
+        self.numlock = config.numlock
+        self.capslock = config.capslock
+        self.use_modal_mode = config.modal_mode
+        if not self.use_modal_mode:
+            self.in_pywo_mode = True
+
+    def grab_keys(self, window):
+        """Grab keys for self, or PywoKeyPressHandler."""
+        if self.use_modal_mode:
+            events.KeyHandler.grab_keys(self, window)
+        else:
+            self.pywo_handler.grab_keys(window)
+
+    def ungrab_keys(self, window):
+        """Ungrab keys for self, or PywoKeyPressHandler."""
+        log.info('!!!!!!!!!!')
+        if self.in_pywo_mode and self.use_modal_mode:
+            self.escape_handler.ungrab_keys(WM)
+        if self.in_pywo_mode:
+            self.pywo_handler.ungrab_keys(WM)
+        else:
+            events.KeyHandler.ungrab_keys(self, window)
+
+
+HANDLER = ModalKeyHandler()
 
 
 def setup(config):

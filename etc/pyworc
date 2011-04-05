@@ -1,5 +1,6 @@
 [SETTINGS]
 keyboard_service = on
+modal_mode = off
 dbus_service = off
 
 ; NumLock and CapsLock state settings:
@@ -24,6 +25,8 @@ layout = grid_3x2
 ignore_actions = 
 
 [KEYS]
+; pywo_mode - shortcut to enter "PyWO mode" if modal_mode is on
+pywo_mode = 
 ; section/point-name =  key
 top-left = KP_7
 top = KP_8

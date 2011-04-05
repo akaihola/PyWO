@@ -48,6 +48,9 @@ def _expand(win, direction, vertical_first=True):
 @register(name='shrink', filter=TYPE_STATE_FILTER, unshade=True)
 def _shrink(win, direction, vertical_first=True):
     """Shrink window in given direction."""
+    if direction.is_middle:
+        # NOTE: This is not working correctly witn is_middle anyway
+        return
     geometry = shrink_window(win, direction.invert(), 
                              vertical_first=vertical_first)
     log.debug('Setting %s' % (geometry,))

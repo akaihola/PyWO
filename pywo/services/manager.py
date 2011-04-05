@@ -43,8 +43,8 @@ def load_local(config):
                               if filename.endswith('_service.py')]
     for module in modules:
         module_name = 'pywo.services.%s' % module
-        if not (getattr(config, module) or \
-                getattr(config, module_name)):
+        if not (getattr(config, module, False) or \
+                getattr(config, module_name, False)):
             continue
         log.debug("Importing <module '%s'>" % module_name)
         try:

@@ -57,7 +57,13 @@ class XObject(object):
                        'Shift': X.ShiftMask,
                        'Super': X.Mod4Mask,
                        'NumLock': X.Mod2Mask,
-                       'CapsLock': X.LockMask}
+                       'CapsLock': X.LockMask,
+                       'Mod1': X.Mod1Mask,
+                       'Mod2': X.Mod2Mask,
+                       'Mod3': X.Mod3Mask,
+                       'Mod4': X.Mod4Mask,
+                       'Mod5': X.Mod5Mask,
+                      }
 
     __KEYCODES = {}
 
@@ -185,7 +191,7 @@ class XObject(object):
         """Draw simple rectangle on screen."""
         color = self.__DISPLAY.screen().black_pixel
         gc = self.__root.create_gc(line_width=line,
-                                   #join_style=X.JoinRound,
+                                   join_style=X.JoinRound,
                                    foreground=color,
                                    function=X.GXinvert,
                                    subwindow_mode=X.IncludeInferiors,)

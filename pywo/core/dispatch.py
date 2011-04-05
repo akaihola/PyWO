@@ -43,6 +43,7 @@ class EventDispatcher(threading.Thread):
 
     def __init__(self, display):
         threading.Thread.__init__(self, name='EventDispatcher')
+        self.setDaemon(True)
         self.__display = display
         self.__root = display.screen().root
         self.__handlers = {} # {event.type: {window.id: set([handler, ]), }, }

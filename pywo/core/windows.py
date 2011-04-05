@@ -462,6 +462,11 @@ class Window(XObject):
         data = [0, 0, 0, 0, 0]
         self.send_event(data, event_type, mask)
 
+    def destroy(self):
+        """Unmap and destroy window."""
+        self._win.unmap()
+        self._win.destroy()
+
     def __change_state(self, data):
         """Send _NET_WM_STATE event to the root window."""
         event_type = self.atom('_NET_WM_STATE')
@@ -469,14 +474,12 @@ class Window(XObject):
         self.send_event(data, event_type, mask)
 
     def blink(self):
-        """For 0.25 second show border around window."""
+        """For 0.075 second show border around window."""
         geo = self.geometry
-        self.draw_rectangle(geo.x+10, geo.y+10, 
-                            geo.width-20, geo.height-20, 20)
+        self.draw_rectangle(geo.x+2, geo.y+2, geo.width-4, geo.height-4, 4)
         self.flush()
-        time.sleep(0.25)
-        self.draw_rectangle(geo.x+10, geo.y+10, 
-                            geo.width-20, geo.height-20, 20)
+        time.sleep(0.075)
+        self.draw_rectangle(geo.x+2, geo.y+2, geo.width-4, geo.height-4, 4)
         self.flush()
 
     def __eq__(self, other):

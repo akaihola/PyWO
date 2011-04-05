@@ -54,6 +54,21 @@ class TestSize(unittest.TestCase):
         self.assertRaises(ValueError, Size.parse, 'tttgf', '0')
 
 
+    def test_area(self):
+        self.assertEqual(Size.parse('HALF', 'FULL').area, 0.5)
+        self.assertEqual(Size.parse('HALF', '1').area, 0.5)
+        self.assertEqual(Size.parse('HALF', '1.0').area, 0.5)
+        self.assertEqual(Size.parse('HALF', 'HALF*2').area, 0.5)
+        self.assertEqual(Size.parse('HALF', 'QUARTER*2+HALF').area, 0.5)
+        self.assertEqual(Size.parse('1.0/2', '0.1*6-0.1+HALF').area, 0.5)
+        try:  # assertRaises doesn't work with properties
+            Size.parse('HALF, FULL', '1').area
+        except ValueError:  # "Size.area doesn't support multiple dimensions"
+            pass
+        else:
+            raise AssertionError
+
+
 class TestPostion(unittest.TestCase):
 
     def test_equal(self):

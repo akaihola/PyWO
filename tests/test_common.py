@@ -16,6 +16,7 @@ DESKTOP_WIDTH = 800
 DESKTOP_HEIGHT = 600
 DESKTOPS = 2
 VIEWPORTS = [2, 1]
+EXTENSIONS = ['XINERAMA']
 
 WIN_NAME = 'Test Window'
 WIN_CLASS_NAME = ['test', 'Window']
@@ -32,7 +33,8 @@ class TestMockedCore(unittest.TestCase):
         display = mock_Xlib.Display(screen_width=DESKTOP_WIDTH, 
                                     screen_height=DESKTOP_HEIGHT,
                                     desktops=DESKTOPS,
-                                    viewports=VIEWPORTS)
+                                    viewports=VIEWPORTS,
+                                    extensions=EXTENSIONS)
         self.display = display
         xlib.ClientMessage = mock_Xlib.ClientMessage
         xlib.XObject._XObject__DISPLAY = display

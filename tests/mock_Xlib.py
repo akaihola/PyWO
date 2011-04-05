@@ -132,7 +132,7 @@ class Display(Xlib.display.Display):
     """Xlib.display.Display mock."""
 
     def __init__(self, screen_width, screen_height, 
-                 desktops=1, viewports=[1,1]):
+                 desktops=1, viewports=[1,1], extensions=None):
         Xlib.display.Display.__init__(self)
         self.screen_width = screen_width
         self.screen_height = screen_height
@@ -142,6 +142,7 @@ class Display(Xlib.display.Display):
         self.windows_stack = collections.deque()
         self.root_id = Xlib.display.Display.screen(self).root.id
         self.root = RootWindow(self, desktops, viewports)
+        self.extensions = extensions or []
 
     def intern_atom(self, name, only_if_exists=0):
         # Just delegate to real Display
@@ -569,3 +570,7 @@ class RootWindow(AbstractWindow):
 
 # Use Xvfb to run different window managers headless for tests
 
+
+class ScreensQuery(object):
+    def __init__(self, *geometries):
+        self.screens = [Geometry(*geometry) for geometry in geometries]

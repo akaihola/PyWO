@@ -235,6 +235,65 @@ class TestGeometry(unittest.TestCase):
         self.assertEqual(geo.x, 10)
         self.assertEqual(geo.y, 10)
 
+    def test_intersection_no_overlap(self):
+        self.assertEqual(Geometry(0, 0, 1, 1) & Geometry(2, 0, 1, 1), None)
+
+    def test_intersection_se_nw_corners_touch(self):
+        self.assertEqual(Geometry(0, 0, 1, 1) & Geometry(1, 1, 1, 1),
+                         Geometry(1, 1, 0, 0))
+
+    def test_intersection_sw_ne_corners_touch(self):
+        self.assertEqual(Geometry(1, 0, 1, 1) & Geometry(0, 1, 1, 2),
+                         Geometry(1, 1, 0, 0))
+
+    def test_intersection_nw_se_corners_touch(self):
+        self.assertEqual(Geometry(1, 1, 1, 1) & Geometry(0, 0, 1, 1),
+                         Geometry(1, 1, 0, 0))
+
+    def test_intersection_ne_sw_corners_touch(self):
+        self.assertEqual(Geometry(0, 1, 1, 1) & Geometry(1, 0, 1, 1),
+                         Geometry(1, 1, 0, 0))
+
+    def test_intersection_e_w_sides_touch(self):
+        self.assertEqual(Geometry(0, 0, 1, 1) & Geometry(1, 0, 1, 1),
+                         Geometry(1, 0, 0, 1))
+
+    def test_intersection_w_e_sides_touch(self):
+        self.assertEqual(Geometry(1, 0, 1, 1) & Geometry(0, 0, 1, 1),
+                         Geometry(1, 0, 0, 1))
+
+    def test_intersection_s_n_sides_touch(self):
+        self.assertEqual(Geometry(0, 0, 1, 1) & Geometry(0, 1, 1, 1),
+                         Geometry(0, 1, 1, 0))
+
+    def test_intersection_n_s_sides_touch(self):
+        self.assertEqual(Geometry(0, 1, 1, 1) & Geometry(0, 0, 1, 1),
+                         Geometry(0, 1, 1, 0))
+
+    def test_intersection_se_nw_corners_overlap(self):
+        self.assertEqual(Geometry(0, 0, 2, 2) & Geometry(1, 1, 2, 2),
+                         Geometry(1, 1, 1, 1))
+
+    def test_intersection_sw_ne_corners_overlap(self):
+        self.assertEqual(Geometry(1, 0, 2, 2) & Geometry(0, 1, 2, 2),
+                         Geometry(1, 1, 1, 1))
+
+    def test_intersection_nw_se_corners_overlap(self):
+        self.assertEqual(Geometry(1, 1, 2, 2) & Geometry(0, 0, 2, 2),
+                         Geometry(1, 1, 1, 1))
+
+    def test_intersection_ne_sw_corners_overlap(self):
+        self.assertEqual(Geometry(0, 1, 2, 2) & Geometry(1, 0, 2, 2),
+                         Geometry(1, 1, 1, 1))
+
+    def test_intersection_inside(self):
+        self.assertEqual(Geometry(1, 1, 1, 1) & Geometry(0, 0, 3, 3),
+                         Geometry(1, 1, 1, 1))
+
+    def test_intersection_outside(self):
+        self.assertEqual(Geometry(0, 0, 3, 3) & Geometry(1, 1, 1, 1),
+                         Geometry(1, 1, 1, 1))
+
 
 class TestExtents(unittest.TestCase):
 

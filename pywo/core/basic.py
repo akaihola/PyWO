@@ -266,6 +266,21 @@ class Geometry(Position, Size):
     # TODO: def set_size(self, size, gravity)
     #       int() !!!
 
+    def __and__(self, other):
+        """Return the intersection with another geometry
+
+        Returns None if the geometries don't intersect.  Returns a geometry
+        with a zero width and/or height if the geometries touch each other but
+        don't intersect.
+
+        """
+        x = max(self.x, other.x)
+        y = max(self.y, other.y)
+        w = min(self.x2, other.x2) - x
+        h = min(self.y2, other.y2) - y
+        if w >= 0 and h >= 0:
+            return Geometry(x, y, w, h)
+
     def __eq__(self, other):
         return ((self.x, self.y, self.width, self.height) ==
                 (other.x, other.y, other.width, other.height))

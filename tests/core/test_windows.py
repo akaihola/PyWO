@@ -282,7 +282,7 @@ class TestWindowProperties(TestMockedCore):
         other = Geometry(x, y, width, height)
         self.assertEqual(geometry, other)
 
-    def test_geometry(self):
+    def test_geometry_normal_window(self):
         # initial geometry
         geometry = self.win.geometry
         self.assertEqualGeometry(geometry, WIN_X, WIN_Y, WIN_WIDTH, WIN_HEIGHT)
@@ -298,9 +298,10 @@ class TestWindowProperties(TestMockedCore):
         self.win.set_geometry(Geometry(0, 0, 138, 45))
         geometry = self.win.geometry
         self.assertEqualGeometry(geometry, 0, 0, 138, 45)
-        # TODO: test with incremental windows!
-        # TODO: test windows with maximal, and minimal size
-        # TODO: test with windows with border_width > 0
+
+    # TODO: test with incremental windows!
+    # TODO: test windows with maximal, and minimal size
+    # TODO: test with windows with border_width > 0
 
     def test_extents(self):
         # normal extents
@@ -482,18 +483,21 @@ class TestWindowState(TestMockedCore):
         self.assertFalse(State.SHADED in self.win.state)
         self.assertFalse(State.HIDDEN in self.win.state)
         self.assertEqual(self.win._win.get_wm_state().state, Xutil.NormalState)
+        # set shade
         self.win.shade(1)
         self.assertTrue(State.SHADED in self.win.state)
         self.assertTrue(State.HIDDEN in self.win.state)
         self.assertEqual(self.win._win.get_wm_state().state, Xutil.IconicState)
         geometry = self.win.geometry
         self.assertEqual(geometry, win_geometry)
+        # unset shade
         self.win.shade(0)
         geometry = self.win.geometry
         self.assertFalse(State.SHADED in self.win.state)
         self.assertFalse(State.HIDDEN in self.win.state)
         self.assertEqual(self.win._win.get_wm_state().state, Xutil.NormalState)
         self.assertEqual(geometry, win_geometry)
+        # toggle back and forth
         self.win.shade(2)
         self.assertTrue(State.SHADED in self.win.state)
         self.assertTrue(State.HIDDEN in self.win.state)

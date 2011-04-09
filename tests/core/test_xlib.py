@@ -20,8 +20,7 @@ class TestXObject(TestMockedCore):
         name = XObject.atom_name(atom)
         self.assertEqual(name, '_NET_WM_NAME')
 
-    def test_str2_methods(self):
-        # test if not case sensitive
+    def test_str2_methods_case_sensitivity(self):
         self.assertEqual(XObject.str2keycode('a'),
                          XObject.str2keycode('A'))
         self.assertEqual(XObject.str2modifiers('Alt'),
@@ -30,7 +29,8 @@ class TestXObject(TestMockedCore):
                          XObject.str2modifiers('ALT'))
         self.assertEqual(XObject.str2modifiers('alt'),
                          XObject.str2modifiers('ALT'))
-        # modifiers-keycode
+
+    def test_str2_methods_modifiers_keycode(self):
         modifiers = XObject.str2modifiers('Alt-Shift')
         keycode = XObject.str2keycode('A')
         modifiers_keycode = XObject.str2modifiers_keycode('Alt-Shift-A')
@@ -39,15 +39,18 @@ class TestXObject(TestMockedCore):
         modifiers_keycode = XObject.str2modifiers_keycode('Alt-Shift', 'A')
         self.assertEqual(modifiers, modifiers_keycode[0])
         self.assertEqual(keycode, modifiers_keycode[1])
-        # no modifiers
+
+    def test_str2_methods_no_modifiers(self):
         modifiers = XObject.str2modifiers('')
+        keycode = XObject.str2keycode('A')
         modifiers_keycode = XObject.str2modifiers_keycode('A')
         self.assertEqual(modifiers, modifiers_keycode[0])
         self.assertEqual(keycode, modifiers_keycode[1])
         modifiers_keycode = XObject.str2modifiers_keycode('', 'A')
         self.assertEqual(modifiers, modifiers_keycode[0])
         self.assertEqual(keycode, modifiers_keycode[1])
-        # invalid input
+
+    def test_str2_methods_invalid_input(self):
         self.assertRaises(ValueError, XObject.str2modifiers, 'fsdfd')
         self.assertRaises(ValueError, XObject.str2keycode, 'Alt')
         self.assertRaises(ValueError, XObject.str2modifiers_keycode, 'Alt')

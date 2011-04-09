@@ -32,130 +32,185 @@ class TestPositionChangingAction(TestMockedCore):
 
 class TestActionPut(TestPositionChangingAction):
 
-    def test_position(self):
-        action = actions.manager.get('put')
-        action(self.win, position=TOP_LEFT)
+    def setUp(self):
+        TestPositionChangingAction.setUp(self)
+        self.action = actions.manager.get('put')
+
+    def test_position_top_left(self):
+        self.action(self.win, position=TOP_LEFT)
         geometry = self.get_geometry(0, 0)
         self.assertEqual(self.win.geometry, geometry)
-        action(self.win, position=TOP)
+
+    def test_position_top(self):
+        self.action(self.win, position=TOP)
         geometry = self.get_geometry(DESKTOP_WIDTH/2-WIN_WIDTH/2, 0)
         self.assertEqual(self.win.geometry, geometry)
-        action(self.win, position=TOP_RIGHT)
+
+    def test_position_top_right(self):
+        self.action(self.win, position=TOP_RIGHT)
         geometry = self.get_geometry(DESKTOP_WIDTH-WIN_WIDTH, 0)
         self.assertEqual(self.win.geometry, geometry)
-        action(self.win, position=LEFT)
+
+    def test_position_left(self):
+        self.action(self.win, position=LEFT)
         geometry = self.get_geometry(0, DESKTOP_HEIGHT/2-WIN_HEIGHT/2)
         self.assertEqual(self.win.geometry, geometry)
-        action(self.win, position=MIDDLE)
+
+    def test_position_middle(self):
+        self.action(self.win, position=MIDDLE)
         geometry = self.get_geometry(DESKTOP_WIDTH/2-WIN_WIDTH/2, 
                                      DESKTOP_HEIGHT/2-WIN_HEIGHT/2)
         self.assertEqual(self.win.geometry, geometry)
-        action(self.win, position=RIGHT)
+
+    def test_position_right(self):
+        self.action(self.win, position=RIGHT)
         geometry = self.get_geometry(DESKTOP_WIDTH-WIN_WIDTH, 
                                      DESKTOP_HEIGHT/2-WIN_HEIGHT/2)
         self.assertEqual(self.win.geometry, geometry)
-        action(self.win, position=BOTTOM_LEFT)
+
+    def test_position_bottom_left(self):
+        self.action(self.win, position=BOTTOM_LEFT)
         geometry = self.get_geometry(0, DESKTOP_HEIGHT-WIN_HEIGHT)
         self.assertEqual(self.win.geometry, geometry)
-        action(self.win, position=BOTTOM)
+
+    def test_position_bottom(self):
+        self.action(self.win, position=BOTTOM)
         geometry = self.get_geometry(DESKTOP_WIDTH/2-WIN_WIDTH/2, 
                                      DESKTOP_HEIGHT-WIN_HEIGHT)
         self.assertEqual(self.win.geometry, geometry)
-        action(self.win, position=BOTTOM_RIGHT)
+
+    def test_position_bottom_right(self):
+        self.action(self.win, position=BOTTOM_RIGHT)
         geometry = self.get_geometry(DESKTOP_WIDTH-WIN_WIDTH, 
                                      DESKTOP_HEIGHT-WIN_HEIGHT)
         self.assertEqual(self.win.geometry, geometry)
 
-    def test_position_gravity(self):
-        action = actions.manager.get('put')
-        action(self.win, position=MIDDLE, gravity=TOP_LEFT)
+    def test_position_gravity_top_left(self):
+        self.action(self.win, position=MIDDLE, gravity=TOP_LEFT)
         geometry = self.get_geometry(DESKTOP_WIDTH/2, 
                                      DESKTOP_HEIGHT/2)
         self.assertEqual(self.win.geometry, geometry)
-        action(self.win, position=MIDDLE, gravity=TOP)
+
+    def test_position_gravity_top(self):
+        self.action(self.win, position=MIDDLE, gravity=TOP)
         geometry = self.get_geometry(DESKTOP_WIDTH/2-WIN_WIDTH/2, 
                                      DESKTOP_HEIGHT/2)
         self.assertEqual(self.win.geometry, geometry)
-        action(self.win, position=MIDDLE, gravity=TOP_RIGHT)
+
+    def test_position_gravity_top_right(self):
+        self.action(self.win, position=MIDDLE, gravity=TOP_RIGHT)
         geometry = self.get_geometry(DESKTOP_WIDTH/2-WIN_WIDTH, 
                                      DESKTOP_HEIGHT/2)
         self.assertEqual(self.win.geometry, geometry)
-        action(self.win, position=MIDDLE, gravity=LEFT)
+
+    def test_position_gravity_left(self):
+        self.action(self.win, position=MIDDLE, gravity=LEFT)
         geometry = self.get_geometry(DESKTOP_WIDTH/2, 
                                      DESKTOP_HEIGHT/2-WIN_HEIGHT/2)
         self.assertEqual(self.win.geometry, geometry)
-        action(self.win, position=MIDDLE, gravity=MIDDLE)
+
+    def test_position_gravity_middle(self):
+        self.action(self.win, position=MIDDLE, gravity=MIDDLE)
         geometry = self.get_geometry(DESKTOP_WIDTH/2-WIN_WIDTH/2, 
                                      DESKTOP_HEIGHT/2-WIN_HEIGHT/2)
         self.assertEqual(self.win.geometry, geometry)
-        action(self.win, position=MIDDLE, gravity=RIGHT)
+
+    def test_position_gravity_right(self):
+        self.action(self.win, position=MIDDLE, gravity=RIGHT)
         geometry = self.get_geometry(DESKTOP_WIDTH/2-WIN_WIDTH, 
                                      DESKTOP_HEIGHT/2-WIN_HEIGHT/2)
         self.assertEqual(self.win.geometry, geometry)
-        action(self.win, position=MIDDLE, gravity=BOTTOM_LEFT)
+
+    def test_position_gravity_bottom_left(self):
+        self.action(self.win, position=MIDDLE, gravity=BOTTOM_LEFT)
         geometry = self.get_geometry(DESKTOP_WIDTH/2, 
                                      DESKTOP_HEIGHT/2-WIN_HEIGHT)
         self.assertEqual(self.win.geometry, geometry)
-        action(self.win, position=MIDDLE, gravity=BOTTOM)
+
+    def test_position_gravity_bottom(self):
+        self.action(self.win, position=MIDDLE, gravity=BOTTOM)
         geometry = self.get_geometry(DESKTOP_WIDTH/2-WIN_WIDTH/2, 
                                      DESKTOP_HEIGHT/2-WIN_HEIGHT)
         self.assertEqual(self.win.geometry, geometry)
-        action(self.win, position=MIDDLE, gravity=BOTTOM_RIGHT)
+
+    def test_position_gravity_bottom_right(self):
+        self.action(self.win, position=MIDDLE, gravity=BOTTOM_RIGHT)
         geometry = self.get_geometry(DESKTOP_WIDTH/2-WIN_WIDTH, 
                                      DESKTOP_HEIGHT/2-WIN_HEIGHT)
         self.assertEqual(self.win.geometry, geometry)
 
     def test_same_position_twice(self):
-        action = actions.manager.get('put')
+        self.action = actions.manager.get('put')
         geometry = self.get_geometry(DESKTOP_WIDTH/2-WIN_WIDTH/2, 
                                      DESKTOP_HEIGHT/2-WIN_HEIGHT/2)
-        action(self.win, position=MIDDLE)
+        self.action(self.win, position=MIDDLE)
         self.assertEqual(self.win.geometry, geometry)
-        action(self.win, position=MIDDLE)
+        self.action(self.win, position=MIDDLE)
         self.assertEqual(self.win.geometry, geometry)
 
 
 class TestActionFloat(TestPositionChangingAction):
 
-    def test_empty_desktop(self):
-        action = actions.manager.get('float')
-        action(self.win, direction=MIDDLE)
+
+    def setUp(self):
+        TestPositionChangingAction.setUp(self)
+        self.action = actions.manager.get('float')
+        # always start in the middle of the screen
+        self.action(self.win, direction=MIDDLE)
+
+    def test_empty_desktop_top_left(self):
+        self.action(self.win, direction=TOP_LEFT)
+        geometry = self.get_geometry(0, 0)
+        self.assertEqual(self.win.geometry, geometry)
+
+    def test_empty_desktop_top(self):
+        self.action(self.win, direction=TOP)
+        geometry = self.get_geometry(DESKTOP_WIDTH/2-WIN_WIDTH/2, 0)
+        self.assertEqual(self.win.geometry, geometry)
+
+    def test_empty_desktop_top_right(self):
+        self.action(self.win, direction=TOP_RIGHT)
+        geometry = self.get_geometry(DESKTOP_WIDTH-WIN_WIDTH, 0)
+        self.assertEqual(self.win.geometry, geometry)
+
+    def test_empty_desktop_left(self):
+        self.action(self.win, direction=LEFT)
+        geometry = self.get_geometry(0, DESKTOP_HEIGHT/2-WIN_HEIGHT/2)
+        self.assertEqual(self.win.geometry, geometry)
+
+    def test_empty_desktop_middle(self):
+        self.action(self.win, direction=MIDDLE)
         geometry = self.get_geometry(DESKTOP_WIDTH/2-WIN_WIDTH/2, 
                                      DESKTOP_HEIGHT/2-WIN_HEIGHT/2)
         self.assertEqual(self.win.geometry, geometry)
-        action(self.win, direction=LEFT)
-        geometry = self.get_geometry(0, DESKTOP_HEIGHT/2-WIN_HEIGHT/2)
+
+    def test_empty_desktop_right(self):
+        self.action(self.win, direction=RIGHT)
+        geometry = self.get_geometry(DESKTOP_WIDTH-WIN_WIDTH, 
+                                     DESKTOP_HEIGHT/2-WIN_HEIGHT/2)
         self.assertEqual(self.win.geometry, geometry)
-        action(self.win, direction=TOP)
-        geometry = self.get_geometry(0, 0)
-        self.assertEqual(self.win.geometry, geometry)
-        action(self.win, direction=RIGHT)
-        geometry = self.get_geometry(DESKTOP_WIDTH-WIN_WIDTH, 0)
-        self.assertEqual(self.win.geometry, geometry)
-        action(self.win, direction=BOTTOM_LEFT)
+
+    def test_empty_desktop_bottom_left(self):
+        self.action(self.win, direction=BOTTOM_LEFT)
         geometry = self.get_geometry(0, DESKTOP_HEIGHT-WIN_HEIGHT)
         self.assertEqual(self.win.geometry, geometry)
-        action(self.win, direction=TOP_RIGHT)
-        geometry = self.get_geometry(DESKTOP_WIDTH-WIN_WIDTH, 0)
-        self.assertEqual(self.win.geometry, geometry)
-        action(self.win, direction=BOTTOM)
-        geometry = self.get_geometry(DESKTOP_WIDTH-WIN_WIDTH, 
+
+    def test_empty_desktop_bottom(self):
+        self.action(self.win, direction=BOTTOM)
+        geometry = self.get_geometry(DESKTOP_WIDTH/2-WIN_WIDTH/2, 
                                      DESKTOP_HEIGHT-WIN_HEIGHT)
         self.assertEqual(self.win.geometry, geometry)
-        action(self.win, direction=TOP_LEFT)
-        geometry = self.get_geometry(0, 0)
-        self.assertEqual(self.win.geometry, geometry)
-        action(self.win, direction=BOTTOM_RIGHT)
+
+    def test_empty_desktop_bottom_right(self):
+        self.action(self.win, direction=BOTTOM_RIGHT)
         geometry = self.get_geometry(DESKTOP_WIDTH-WIN_WIDTH, 
                                      DESKTOP_HEIGHT-WIN_HEIGHT)
         self.assertEqual(self.win.geometry, geometry)
 
     def test_same_direction_twice(self):
-        action = actions.manager.get('float')
-        action(self.win, direction=MIDDLE)
-        action(self.win, direction=LEFT)
+        self.action(self.win, direction=LEFT)
         geometry = self.get_geometry(0, DESKTOP_HEIGHT/2-WIN_HEIGHT/2)
-        action(self.win, direction=LEFT)
+        self.action(self.win, direction=LEFT)
         geometry = self.get_geometry(0, DESKTOP_HEIGHT/2-WIN_HEIGHT/2)
 
 

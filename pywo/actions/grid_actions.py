@@ -95,7 +95,7 @@ class GeometryCycler(object):
 
     def __init__(self, win, position, gravity, size, width, height, cycle):
         self.win_id = win.id
-        self.args = (position, gravity, size, width, height) # TOD: remove me!?
+        self.args = (position, gravity, size, width, height) # TODO: remove me!?
         self.gravity = gravity
         workarea = WM.workarea_geometry
         self.position = absolute_position(workarea, position)

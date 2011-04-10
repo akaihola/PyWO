@@ -12,7 +12,8 @@ from tests import Xlib_mock
 from tests.common_test import MockedXlibTests
 from tests.common_test import DESKTOPS, DESKTOP_WIDTH, DESKTOP_HEIGHT, VIEWPORTS
 from tests.common_test import WIN_X, WIN_Y, WIN_WIDTH, WIN_HEIGHT
-from pywo.core import Position, Geometry, State, Type, Window, WindowManager
+from pywo.core import Window, WindowManager, State, Type
+from pywo.core import Position, Geometry, Layout
 from pywo.core.xlib import XObject
 
 
@@ -66,13 +67,17 @@ class WindowManagerTests(MockedXlibTests):
 
     def test_desktop_layout(self):
         self.assertEqual(self.WM.desktop_layout, 
-                         (0, self.WM.desktops, 1, 0))
+                         Layout(self.WM.desktops, 1))
         # TODO: change number of desktops and check again
 
-    def test_viewports(self):
+    def test_viewport_position(self):
         self.assertEqual(self.WM.viewport_position, Position(0, 0))
         # TODO: test set_viewport_position()
         # TODO: changing desktop_size (and number of viewports)
+
+    def test_viewport_layout(self):
+        self.assertEqual(self.WM.viewport_layout, 
+                         Layout(VIEWPORTS[1], VIEWPORTS[0]))
 
     def test_workarea_geometry(self):
         # No panels!

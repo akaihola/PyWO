@@ -27,7 +27,7 @@ __author__ = "Wojciech 'KosciaK' Pietrzok, Antti Kaihola"
 __credits__ = ["Wojciech 'KosciaK' Pietrzok", 
                "Antti Kaihola"]
 __license__ = 'GPL'
-__version__ = "0.3.0dev"
+__version__ = "0.3.0"
 __maintainer__ = "Wojciech 'KosciaK' Pietrzok"
 __email__ = 'kosciak@kosciak.net'
 

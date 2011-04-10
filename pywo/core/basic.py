@@ -331,3 +331,47 @@ class Extents(object):
         return '<Extents left=%s, right=%s, top=%s, bottom=%s>' % \
                (self.left, self.right, self.top, self.bottom)
 
+class Layout(object):
+
+    """Layout encapsulates Desktop / Viewport layout info.
+    
+    Examples:
+    cols = 3, rows=2, orientation=ORIENTATION_HORZ, corner=CORNER_TOPLEFT
+    0 1 2
+    3 4 5
+
+    cols = 3, rows=2, orientation=ORIENTATION_VERT, corner=CORNER_TOPLEFT
+    0 2 4
+    1 3 5
+
+    cols = 3, rows=2, orientation=ORIENTATION_HORZ, corner=CORNER_TOPRIGHT
+    2 1 0
+    5 3 4
+    
+    """
+
+    # Orientations
+    ORIENTATION_HORZ = 0 #XObject.atom('_NET_WM_ORIENTATION_HORZ')
+    ORIENTATION_VERT = 1 #XObject.atom('_NET_WM_ORIENTATION_VERT')
+
+    # Starting corners
+    CORNER_TOPLEFT = 0 #XObject.atom('_NET_WM_TOPLEFT')
+    CORNER_TOPRIGHT = 1 #XObject.atom('_NET_WM_TOPRIGHT')
+    CORNER_BOTTOMRIGHT = 2 #XObject.atom('_NET_WM_BOTTOMRIGHT')
+    CORNER_BOTTOMLEFT = 3 #XObject.atom('_NET_WM_BOTTOMLEFT')
+
+    def __init__(self, cols, rows, 
+                 orientation=ORIENTATION_HORZ, corner=CORNER_TOPLEFT):
+        self.cols = cols
+        self.rows = rows
+        self.orientation = orientation
+        self.corner = corner
+
+    def __eq__(self, other):
+        return ((self.cols, self.rows, self.orientation, self.corner) ==
+                (other.cols, other.rows, other.orientation, other.corner))
+
+    def __str__(self):
+        return '<Layout cols=%s, rows=%s, orientation=%s, corner=%s>' % \
+               (self.cols, self.rows, self.orientation, self.corner)
+

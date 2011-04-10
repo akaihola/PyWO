@@ -271,19 +271,29 @@ class XObject(object):
         return '-'.join(key)
 
     # TODO: check other XINERAMA methods
-    # TODO: consider change of methods names
     @classmethod
-    def has_xinerama(cls):
-        """Return True if the XINERAMA extension is available"""
-        return cls.__DISPLAY.has_extension('XINERAMA')
+    def has_extension(cls, extension):
+        """Return True if given extension is available."""
+        return cls.__DISPLAY.has_extension(extension)
 
     @classmethod
-    def get_xinerama_geometries(cls):
-        """Return geometries for xinerama screens with fallback to non-xinerama"""
+    def has_xinerama(cls):
+        """Return True if the Xinerama extension is available."""
+        return cls.has_extension('XINERAMA')
+
+    @classmethod
+    def screen_geometries(cls):
+        """Return list of screen geometries. 
+        
+        If Xinerama extension is not avaialbe fallback to non-Xinerama.
+        
+        """
         try:
-            return [
-                Geometry(screen.x, screen.y, screen.width, screen.height)
-                for screen in cls.__DISPLAY.xinerama_query_screens().screens]
+            geometries = []
+            for screen in cls.__DISPLAY.xinerama_query_screens().screens:
+                geometries.append(Geometry(screen.x, screen.y,
+                                           screen.width, screen.height))
+            return geometries
         except AttributeError:
             root = cls.__DISPLAY.root
             return [Geometry(0, 0, root.screen_width, root.screen_height)]

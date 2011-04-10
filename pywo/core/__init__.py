@@ -29,7 +29,7 @@ extents, gravity, etc).
 
 import logging
 
-from pywo.core.basic import Gravity, Size, Position, Geometry, Extents
+from pywo.core.basic import Gravity, Size, Position, Geometry, Extents, Layout
 from pywo.core.windows import Type, State, Mode, Window, WindowManager
 
 

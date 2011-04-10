@@ -184,16 +184,15 @@ def register(name, filter=filters.ALL_FILTER, unshade=False):
 @register(name='debug')
 def _debug_info(win):
     """Print debug info about Window Manager, and current Window."""
-    log.info('-= Window Manager =-')
     WindowManager().debug_info(log)
-    log.info('-= Current Window =-')
     win.debug_info(log)
-    log.info('-= Move with same geometry =-')
-    geo =  win.geometry
-    win.set_geometry(geo)
+    log.info('-= Move using same geometry =-')
+    old_geometry =  win.geometry
+    win.set_geometry(old_geometry)
     win.sync()
+    log.info('Old geometry=%s' % old_geometry)
     log.info('New geometry=%s' % win.geometry)
-    log.info('-= End of debug =-')
+    log.info('-= End of debug output =-')
 
 
 

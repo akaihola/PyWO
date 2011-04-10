@@ -56,6 +56,10 @@ class XObjectTests(MockedXlibTests):
         self.assertRaises(ValueError, XObject.str2keycode, 'Alt')
         self.assertRaises(ValueError, XObject.str2modifiers_keycode, 'Alt')
 
+    def test_has_extension(self):
+        self.assertTrue(XObject.has_extension('XINERAMA'))
+        self.assertFalse(XObject.has_extension('FOO_BAR'))
+
     def test_has_xinerama(self):
         self.assertEqual(XObject.has_xinerama(), True)
 
@@ -63,17 +67,17 @@ class XObjectTests(MockedXlibTests):
         self.display.extensions = []
         self.assertEqual(XObject.has_xinerama(), False)
 
-    def test_get_xinerama_geometries(self):
+    def test_screen_geometries__with_xinerama(self):
         self.display.xinerama_query_screens = lambda: Xlib_mock.ScreensQuery(
             (0, 0, 640, 400),
             (640, 0, 960, 200))
-        self.assertEqual(XObject.get_xinerama_geometries(),
+        self.assertEqual(XObject.screen_geometries(),
                          [Xlib_mock.Geometry(0, 0, 640, 400),
                           Xlib_mock.Geometry(640, 0, 960, 200)])
 
-    def test_get_no_xinerama_geometries(self):
+    def test_screen_geometries__without_xinerama(self):
         self.display.xinerama_query_screens = AttributeError
-        self.assertEqual(XObject.get_xinerama_geometries(),
+        self.assertEqual(XObject.screen_geometries(),
                          [Xlib_mock.Geometry(0, 0, 800, 600)])
 
 

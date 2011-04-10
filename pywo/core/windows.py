@@ -30,7 +30,7 @@ from pywo.core.basic import Gravity, Position, Size, Geometry, Extents
 from pywo.core.xlib import XObject
 
 
-__author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
+__author__ = "Wojciech 'KosciaK' Pietrzok, Antti Kaihola"
 
 
 log = logging.getLogger(__name__)

@@ -27,7 +27,7 @@ from pywo.core import WindowManager
 from pywo.core.events import PropertyNotifyHandler
 
 
-__author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
+__author__ = "Wojciech 'KosciaK' Pietrzok"
 
 
 log = logging.getLogger(__name__)

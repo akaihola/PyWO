@@ -24,8 +24,7 @@ import logging
 import re
 
 
-__author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>, "\
-             "Antti Kaihola"
+__author__ = "Wojciech 'KosciaK' Pietrzok, Antti Kaihola"
 
 
 log = logging.getLogger(__name__)

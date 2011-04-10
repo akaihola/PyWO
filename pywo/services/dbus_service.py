@@ -36,7 +36,7 @@ from pywo.actions import manager
 from pywo.actions import parser
 
 
-__author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
+__author__ = "Wojciech 'KosciaK' Pietrzok"
 
 
 log = logging.getLogger(__name__)

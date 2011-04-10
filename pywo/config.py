@@ -27,7 +27,7 @@ from ConfigParser import ConfigParser
 from pywo.core import Gravity, Size
 
 
-__author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
+__author__ = "Wojciech 'KosciaK' Pietrzok"
 
 
 log = logging.getLogger(__name__)

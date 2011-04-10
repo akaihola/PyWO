@@ -27,7 +27,7 @@ from pywo.actions import register, TYPE_STATE_FILTER
 from pywo.actions.resizer import expand_window, shrink_window
 
 
-__author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
+__author__ = "Wojciech 'KosciaK' Pietrzok"
 
 
 log = logging.getLogger(__name__)

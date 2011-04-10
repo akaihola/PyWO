@@ -28,7 +28,7 @@ from pywo.core import WindowManager, Type, Mode
 from pywo.core import events
 
 
-__author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
+__author__ = "Wojciech 'KosciaK' Pietrzok"
 
 
 log = logging.getLogger(__name__)

@@ -26,7 +26,7 @@ import threading
 from pywo import services
 
 
-__author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
+__author__ = "Wojciech 'KosciaK' Pietrzok"
 
 
 # NOTE: Use logger in 'pywo.services.*' hierarchy!

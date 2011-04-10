@@ -32,7 +32,7 @@ from pywo.core.basic import CustomTuple, Geometry
 from pywo.core.dispatch import EventDispatcher
 
 
-__author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
+__author__ = "Wojciech 'KosciaK' Pietrzok, Antti Kaihola"
 
 
 log = logging.getLogger(__name__)

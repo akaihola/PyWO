@@ -34,7 +34,7 @@ from pywo.core.basic import Geometry
 from pywo.core.windows import Window
 
 
-__author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
+__author__ = "Wojciech 'KosciaK' Pietrzok"
 
 
 log = logging.getLogger(__name__)

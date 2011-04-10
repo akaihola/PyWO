@@ -6,9 +6,9 @@ import sys
 sys.path.insert(0, '../')
 sys.path.insert(0, './')
 
-from tests.test_common import TestMockedCore
-from tests.test_common import DESKTOP_WIDTH, DESKTOP_HEIGHT
-from tests.test_common import WIN_WIDTH, WIN_HEIGHT
+from tests.common_test import MockedXlibTests
+from tests.common_test import DESKTOP_WIDTH, DESKTOP_HEIGHT
+from tests.common_test import WIN_WIDTH, WIN_HEIGHT
 
 from pywo import actions, core
 
@@ -24,16 +24,16 @@ BOTTOM = core.Gravity.parse('S')
 BOTTOM_RIGHT = core.Gravity.parse('SE')
 
 
-class TestPositionChangingAction(TestMockedCore):
+class MoveresizeActionsTests(MockedXlibTests):
 
     def get_geometry(self, x, y):
         return core.Geometry(x, y, WIN_WIDTH, WIN_HEIGHT)
 
 
-class TestActionPut(TestPositionChangingAction):
+class PutActionTests(MoveresizeActionsTests):
 
     def setUp(self):
-        TestPositionChangingAction.setUp(self)
+        MoveresizeActionsTests.setUp(self)
         self.action = actions.manager.get('put')
 
     def test_position_top_left(self):
@@ -149,11 +149,10 @@ class TestActionPut(TestPositionChangingAction):
         self.assertEqual(self.win.geometry, geometry)
 
 
-class TestActionFloat(TestPositionChangingAction):
-
+class FloatActionTests(MoveresizeActionsTests):
 
     def setUp(self):
-        TestPositionChangingAction.setUp(self)
+        MoveresizeActionsTests.setUp(self)
         self.action = actions.manager.get('float')
         # always start in the middle of the screen
         self.action(self.win, direction=MIDDLE)
@@ -216,8 +215,8 @@ class TestActionFloat(TestPositionChangingAction):
 
 if __name__ == '__main__':
     main_suite = unittest.TestSuite()
-    for suite in [TestActionPut, 
-                  TestActionFloat, ]:
+    for suite in [PutActionTests, 
+                  FloatActionTests, ]:
         main_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(suite))
     unittest.TextTestRunner(verbosity=2).run(main_suite)
 

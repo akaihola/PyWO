@@ -8,13 +8,13 @@ sys.path.insert(0, './')
 
 from Xlib import Xutil
 
-from tests import mock_Xlib
-from tests.test_common import TestMockedCore
+from tests import Xlib_mock
+from tests.common_test import MockedXlibTests
 from pywo.core.basic import Geometry
 from pywo.core.xlib import XObject
 
 
-class TestXObject(TestMockedCore):
+class XObjectTests(MockedXlibTests):
 
     def test_atom(self):
         atom = XObject.atom('_NET_WM_NAME')
@@ -64,23 +64,23 @@ class TestXObject(TestMockedCore):
         self.assertEqual(XObject.has_xinerama(), False)
 
     def test_get_xinerama_geometries(self):
-        self.display.xinerama_query_screens = lambda: mock_Xlib.ScreensQuery(
+        self.display.xinerama_query_screens = lambda: Xlib_mock.ScreensQuery(
             (0, 0, 640, 400),
             (640, 0, 960, 200))
         self.assertEqual(XObject.get_xinerama_geometries(),
-                         [mock_Xlib.Geometry(0, 0, 640, 400),
-                          mock_Xlib.Geometry(640, 0, 960, 200)])
+                         [Xlib_mock.Geometry(0, 0, 640, 400),
+                          Xlib_mock.Geometry(640, 0, 960, 200)])
 
     def test_get_no_xinerama_geometries(self):
         self.display.xinerama_query_screens = AttributeError
         self.assertEqual(XObject.get_xinerama_geometries(),
-                         [mock_Xlib.Geometry(0, 0, 800, 600)])
+                         [Xlib_mock.Geometry(0, 0, 800, 600)])
 
 
 
 if __name__ == '__main__':
     main_suite = unittest.TestSuite()
-    for suite in [TestXObject, ]:
+    for suite in [XObjectTests, ]:
         main_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(suite))
     unittest.TextTestRunner(verbosity=2).run(main_suite)
 

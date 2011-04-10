@@ -6,7 +6,7 @@ import sys
 sys.path.insert(0, '../')
 sys.path.insert(0, './')
 
-from tests import mock_Xlib
+from tests import Xlib_mock
 
 from pywo.core import xlib
 from pywo import core
@@ -27,17 +27,17 @@ WIN_WIDTH = 100
 WIN_HEIGHT = 150
 
 
-class TestMockedCore(unittest.TestCase):
+class MockedXlibTests(unittest.TestCase):
 
     def setUp(self):
         # setup Window Manager
-        display = mock_Xlib.Display(screen_width=DESKTOP_WIDTH, 
+        display = Xlib_mock.Display(screen_width=DESKTOP_WIDTH, 
                                     screen_height=DESKTOP_HEIGHT,
                                     desktops=DESKTOPS,
                                     viewports=VIEWPORTS,
                                     extensions=EXTENSIONS)
         self.display = display
-        xlib.ClientMessage = mock_Xlib.ClientMessage
+        xlib.ClientMessage = Xlib_mock.ClientMessage
         xlib.XObject._XObject__DISPLAY = display
         self.WM = core.WindowManager()
         self.win = self.map_window()
@@ -49,14 +49,14 @@ class TestMockedCore(unittest.TestCase):
                    x=WIN_X, y=WIN_Y, 
                    width=WIN_WIDTH, height=WIN_HEIGHT,
                    desktop=0):
-        geometry = mock_Xlib.Geometry(
-            x + mock_Xlib.EXTENTS_NORMAL.left,
-            y + mock_Xlib.EXTENTS_NORMAL.top,
-            width - (mock_Xlib.EXTENTS_NORMAL.left +
-                     mock_Xlib.EXTENTS_NORMAL.right),
-            height - (mock_Xlib.EXTENTS_NORMAL.top +
-                      mock_Xlib.EXTENTS_NORMAL.bottom))
-        window = mock_Xlib.Window(display=self.display,
+        geometry = Xlib_mock.Geometry(
+            x + Xlib_mock.EXTENTS_NORMAL.left,
+            y + Xlib_mock.EXTENTS_NORMAL.top,
+            width - (Xlib_mock.EXTENTS_NORMAL.left +
+                     Xlib_mock.EXTENTS_NORMAL.right),
+            height - (Xlib_mock.EXTENTS_NORMAL.top +
+                      Xlib_mock.EXTENTS_NORMAL.bottom))
+        window = Xlib_mock.Window(display=self.display,
                                   type=[type],
                                   modal=modal,
                                   name=name,

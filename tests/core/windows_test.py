@@ -8,15 +8,15 @@ sys.path.insert(0, './')
 
 from Xlib import Xutil
 
-from tests import mock_Xlib
-from tests.test_common import TestMockedCore
-from tests.test_common import DESKTOPS, DESKTOP_WIDTH, DESKTOP_HEIGHT, VIEWPORTS
-from tests.test_common import WIN_X, WIN_Y, WIN_WIDTH, WIN_HEIGHT
+from tests import Xlib_mock
+from tests.common_test import MockedXlibTests
+from tests.common_test import DESKTOPS, DESKTOP_WIDTH, DESKTOP_HEIGHT, VIEWPORTS
+from tests.common_test import WIN_X, WIN_Y, WIN_WIDTH, WIN_HEIGHT
 from pywo.core import Position, Geometry, State, Type, Window, WindowManager
 from pywo.core.xlib import XObject
 
 
-class TestWindowManager(TestMockedCore):
+class WindowManagerTests(MockedXlibTests):
 
     def test_singleton(self):
         self.assertEqual(self.WM, WindowManager())
@@ -80,14 +80,14 @@ class TestWindowManager(TestMockedCore):
                          Geometry(0, 0, DESKTOP_WIDTH, DESKTOP_HEIGHT))
 
     def test_nearest_screen_geometry(self):
-        self.display.xinerama_query_screens = lambda: mock_Xlib.ScreensQuery(
+        self.display.xinerama_query_screens = lambda: Xlib_mock.ScreensQuery(
             (0, 0, 640, 400),
             (640, 0, 960, 200))
         screen = self.WM.nearest_screen_geometry(Geometry(600, 300, 650, 410))
         self.assertEqual(screen, Geometry(0, 0, 640, 400))
 
     def test_nearest_screen_geometry_2(self):
-        self.display.xinerama_query_screens = lambda: mock_Xlib.ScreensQuery(
+        self.display.xinerama_query_screens = lambda: Xlib_mock.ScreensQuery(
             (0, 0, 640, 400),
             (640, 0, 960, 200))
         screen = self.WM.nearest_screen_geometry(Geometry(630, 390, 700, 500))
@@ -147,7 +147,7 @@ class TestWindowManager(TestMockedCore):
         self.assertEqual(len(windows), 1)
 
 
-class TestWindowsNameMatcher(TestMockedCore):
+class WindowManagerTests_name_matcher(MockedXlibTests):
 
     def test_no_match(self):
         self.map_window(name='Foo bar')
@@ -253,7 +253,7 @@ class TestWindowsNameMatcher(TestMockedCore):
         self.assertEqual(windows, [win2, win4, win3, win1])
 
 
-class TestWindowProperties(TestMockedCore):
+class WindowTests_properties(MockedXlibTests):
 
     def test_name(self):
         self.assertEqual(self.win.name, 'Test Window')
@@ -319,22 +319,22 @@ class TestWindowProperties(TestMockedCore):
 
     def test_extents(self):
         # normal extents
-        self.assertEqual(self.win.extents, mock_Xlib.EXTENTS_NORMAL)
+        self.assertEqual(self.win.extents, Xlib_mock.EXTENTS_NORMAL)
         # extents for maximized
         self.win.maximize(1)
-        self.assertEqual(self.win.extents, mock_Xlib.EXTENTS_MAXIMIZED)
+        self.assertEqual(self.win.extents, Xlib_mock.EXTENTS_MAXIMIZED)
         # unmaximize, back to normal extents
         self.win.maximize(0)
-        self.assertEqual(self.win.extents, mock_Xlib.EXTENTS_NORMAL)
+        self.assertEqual(self.win.extents, Xlib_mock.EXTENTS_NORMAL)
         # extents for fullscreen
         self.win.fullscreen(1)
-        self.assertEqual(self.win.extents, mock_Xlib.EXTENTS_FULLSCREEN)
+        self.assertEqual(self.win.extents, Xlib_mock.EXTENTS_FULLSCREEN)
         # and back to normal extents
         self.win.fullscreen(0)
-        self.assertEqual(self.win.extents, mock_Xlib.EXTENTS_NORMAL)
+        self.assertEqual(self.win.extents, Xlib_mock.EXTENTS_NORMAL)
 
 
-class TestWindowState(TestMockedCore):
+class WindowTests_state(MockedXlibTests):
 
     def test_close(self):
         win = self.WM.active_window()
@@ -380,7 +380,7 @@ class TestWindowState(TestMockedCore):
         geometry = self.win.geometry
         self.assertNotEqual(geometry, workarea)
         extents = self.win.extents
-        self.assertEqual(extents, mock_Xlib.EXTENTS_NORMAL)
+        self.assertEqual(extents, Xlib_mock.EXTENTS_NORMAL)
         # set maximize
         self.win.maximize(1)
         self.assertTrue(State.MAXIMIZED in self.win.state)
@@ -389,7 +389,7 @@ class TestWindowState(TestMockedCore):
         geometry = self.win.geometry
         self.assertEqual(geometry, workarea)
         extents = self.win.extents
-        self.assertEqual(extents, mock_Xlib.EXTENTS_MAXIMIZED)
+        self.assertEqual(extents, Xlib_mock.EXTENTS_MAXIMIZED)
         # unset maximize
         self.win.maximize(0)
         self.assertFalse(State.MAXIMIZED in self.win.state)
@@ -399,7 +399,7 @@ class TestWindowState(TestMockedCore):
         self.assertNotEqual(geometry, workarea)
         self.assertEqual(geometry, win_geometry)
         extents = self.win.extents
-        self.assertEqual(extents, mock_Xlib.EXTENTS_NORMAL)
+        self.assertEqual(extents, Xlib_mock.EXTENTS_NORMAL)
         # toggle back and forth
         self.win.maximize(2)
         self.assertTrue(State.MAXIMIZED in self.win.state)
@@ -418,7 +418,7 @@ class TestWindowState(TestMockedCore):
         geometry = self.win.geometry
         self.assertNotEqual(geometry, workarea)
         extents = self.win.extents
-        self.assertEqual(extents, mock_Xlib.EXTENTS_NORMAL)
+        self.assertEqual(extents, Xlib_mock.EXTENTS_NORMAL)
         # set maximize
         self.win.maximize(1, horz=False)
         self.assertFalse(State.MAXIMIZED_HORZ in self.win.state)
@@ -433,7 +433,7 @@ class TestWindowState(TestMockedCore):
         self.assertEqual(win_geometry.width, geometry.width)
         self.assertNotEqual(win_geometry.height, geometry.height)
         extents = self.win.extents
-        self.assertEqual(extents, mock_Xlib.EXTENTS_NORMAL)
+        self.assertEqual(extents, Xlib_mock.EXTENTS_NORMAL)
         # unset maximize
         self.win.maximize(0, horz=False)
         self.assertFalse(State.MAXIMIZED_HORZ in self.win.state)
@@ -442,7 +442,7 @@ class TestWindowState(TestMockedCore):
         self.assertNotEqual(geometry, workarea)
         self.assertEqual(geometry, win_geometry)
         extents = self.win.extents
-        self.assertEqual(extents, mock_Xlib.EXTENTS_NORMAL)
+        self.assertEqual(extents, Xlib_mock.EXTENTS_NORMAL)
         # toggle back and forth
         self.win.maximize(2, horz=False)
         self.assertFalse(State.MAXIMIZED_HORZ in self.win.state)
@@ -459,7 +459,7 @@ class TestWindowState(TestMockedCore):
         geometry = self.win.geometry
         self.assertNotEqual(geometry, workarea)
         extents = self.win.extents
-        self.assertEqual(extents, mock_Xlib.EXTENTS_NORMAL)
+        self.assertEqual(extents, Xlib_mock.EXTENTS_NORMAL)
         # set maximize
         self.win.maximize(1, vert=False)
         self.assertTrue(State.MAXIMIZED_HORZ in self.win.state)
@@ -474,7 +474,7 @@ class TestWindowState(TestMockedCore):
         self.assertNotEqual(win_geometry.width, geometry.width)
         self.assertEqual(win_geometry.height, geometry.height)
         extents = self.win.extents
-        self.assertEqual(extents, mock_Xlib.EXTENTS_NORMAL)
+        self.assertEqual(extents, Xlib_mock.EXTENTS_NORMAL)
         # unset maximize
         self.win.maximize(0, vert=False)
         self.assertFalse(State.MAXIMIZED_HORZ in self.win.state)
@@ -483,7 +483,7 @@ class TestWindowState(TestMockedCore):
         self.assertNotEqual(geometry, workarea)
         self.assertEqual(geometry, win_geometry)
         extents = self.win.extents
-        self.assertEqual(extents, mock_Xlib.EXTENTS_NORMAL)
+        self.assertEqual(extents, Xlib_mock.EXTENTS_NORMAL)
         # toggle back and forth
         self.win.maximize(2, vert=False)
         self.assertTrue(State.MAXIMIZED_HORZ in self.win.state)
@@ -528,14 +528,14 @@ class TestWindowState(TestMockedCore):
         geometry = self.win.geometry
         self.assertNotEqual(geometry, desktop_geometry)
         extents = self.win.extents
-        self.assertNotEqual(extents, mock_Xlib.EXTENTS_FULLSCREEN)
+        self.assertNotEqual(extents, Xlib_mock.EXTENTS_FULLSCREEN)
         # set fullscreen
         self.win.fullscreen(1)
         self.assertTrue(State.FULLSCREEN in self.win.state)
         geometry = self.win.geometry
         self.assertEqual(geometry, desktop_geometry)
         extents = self.win.extents
-        self.assertEqual(extents, mock_Xlib.EXTENTS_FULLSCREEN)
+        self.assertEqual(extents, Xlib_mock.EXTENTS_FULLSCREEN)
         # unset fullscreen
         self.win.fullscreen(0)
         self.assertFalse(State.FULLSCREEN in self.win.state)
@@ -543,7 +543,7 @@ class TestWindowState(TestMockedCore):
         self.assertNotEqual(geometry, desktop_geometry)
         self.assertEqual(win_geometry, geometry)
         extents = self.win.extents
-        self.assertNotEqual(extents, mock_Xlib.EXTENTS_FULLSCREEN)
+        self.assertNotEqual(extents, Xlib_mock.EXTENTS_FULLSCREEN)
         # toggle back and forth
         self.win.fullscreen(2)
         self.assertTrue(State.FULLSCREEN in self.win.state)
@@ -595,10 +595,10 @@ class TestWindowState(TestMockedCore):
 
 if __name__ == '__main__':
     main_suite = unittest.TestSuite()
-    for suite in [TestWindowManager, 
-                  TestWindowProperties, 
-                  TestWindowState, 
-                  TestWindowsNameMatcher, ]:
+    for suite in [WindowManagerTests, 
+                  WindowManagerTests_name_matcher, 
+                  WindowTests_properties, 
+                  WindowTests_state, ]:
         main_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(suite))
     unittest.TextTestRunner(verbosity=2).run(main_suite)
 

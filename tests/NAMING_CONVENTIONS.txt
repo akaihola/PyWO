@@ -1,0 +1,22 @@
+= Naming Conventions for PyWO test suite
+
+== Mocks
+
+* Module containing mock objects shoudl be called ModuleName_mock.py
+* Class, methods, function, attributes names should be the same as in the mocked module
+* Xlib_mock is still Work in Progress! Not everything from real Xlib is implemented yet. Add new methods, classes as necessary. It is here to have predictable behaviour, with known implementation of ICCCM and EWMH standards.
+
+== Tests
+
+* Directory structure of test suite should match package structure of PyWO
+* Modules with tests should match PyWO modules, and should be called ModuleName_test.py
+* TestCase class names should match names of tested objects, and should be called ClassNameTests(_test_type) for grouping different types of tests
+* tests should match tested methods, and should be called test_MethodName
+* don't write very long tests, if needed split them into separate tests called test_MethodName__details - it is easier to see what has failed without checking line numbers
+* at the end of each module keep ``if __name__ == '__main__':`` section, so tests can be run manually from the commandline without nose library
+
+== Other notes
+
+* keep autonose running when working on PyWO
+* try to add new tests for every new method/Class
+

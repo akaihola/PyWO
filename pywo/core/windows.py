@@ -269,6 +269,8 @@ class Window(XObject):
         return (geometry.x, geometry.y, 
                 geometry.width, geometry.height)
 
+    # TODO: strut - use _NET_WM_STRUT_PARTIAL with fallback to _NET_WM_STRUT
+
     @property
     def geometry(self):
         """Return window's geometry.
@@ -346,7 +348,7 @@ class Window(XObject):
         self._win.configure(x=x, y=y, width=width, height=height)
 
     def moveresize(self, geometry):
-        """like set_geometry, but using _NET_MOVERESIZE_WINDOW
+        """Works like set_geometry, but using _NET_MOVERESIZE_WINDOW
 
         This gives finer control: 
         - it allows to use gravity, so there are no problems with static windows
@@ -631,7 +633,7 @@ class WindowManager(XObject):
         geometry = self.get_property('_NET_DESKTOP_GEOMETRY').value
         return Size(geometry[0], geometry[1])
 
-    # TODO: set_desktop_size, or set_viewports(columns, rows)
+    # TODO: set_desktop_size?!?, or set_viewports(columns, rows)
 
     @property
     def desktop_layout(self):
@@ -690,6 +692,7 @@ class WindowManager(XObject):
         self.send_event(data, event_type, mask)
 
     # TODO: set_viewport(viewport) similar to set_desktop(desktop)
+    # TODO: viewport_layout
 
     def active_window_id(self):
         """Return id of active window."""

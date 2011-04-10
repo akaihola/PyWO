@@ -281,7 +281,14 @@ class Geometry(Position, Size):
         if width >= 0 and height >= 0:
             return Geometry(x, y, width, height)
 
+    
     def __eq__(self, other):
+        # NOTE: need to check type(other) for position == geometry,
+        #       and size == geometry to work correctly
+        if type(other) == Size:
+            return Size.__eq__(self, other)
+        if type(other) == Position:
+            return Position.__eq__(self, other)
         return ((self.x, self.y, self.width, self.height) ==
                 (other.x, other.y, other.width, other.height))
 

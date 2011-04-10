@@ -270,6 +270,7 @@ class XObject(object):
         key.append(cls.__KEYCODES[keycode])
         return '-'.join(key)
 
+    # TODO: check other XINERAMA methods
     # TODO: consider change of methods names
     @classmethod
     def has_xinerama(cls):

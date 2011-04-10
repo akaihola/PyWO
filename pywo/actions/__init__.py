@@ -48,6 +48,8 @@ TYPE_STATE_FILTER = filters.AND(TYPE_FILTER, STATE_FILTER)
 
 class ActionException(Exception):
 
+    """Exception raised when Action fails."""
+
     def __init__(self, msg):
         self.msg = msg
 
@@ -94,11 +96,13 @@ class Action(object):
 
     @property
     def need_section(self):
+        """Return True if Action needs section related data to be performed."""
         return 'direction' in self.args or \
                'position' in self.args or \
                'gravity' in self.args
 
     def get_kwargs(self, config, section=None, options=None):
+        """Get from given objects values needed for Action to be performed."""
         kwargs = {}
         for arg in self.args:
             for obj in [options, section, config]:

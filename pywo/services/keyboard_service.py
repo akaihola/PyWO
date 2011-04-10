@@ -24,7 +24,7 @@ import logging
 import time
 
 from pywo import actions
-from pywo.core import WindowManager, Type, Mode
+from pywo.core import WindowManager
 from pywo.core import events
 
 

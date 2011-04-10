@@ -125,7 +125,7 @@ class Mode(object):
 
 class Window(XObject):
 
-    """Window object (X Server client?)."""
+    """Window object."""
 
     # _NET_WM_DESKTOP returns this value when in STATE_STICKY
     ALL_DESKTOPS = 0xFFFFFFFF
@@ -522,7 +522,7 @@ class WindowManager(XObject):
     """Window Manager (or root window in X programming terms).
     
     WindowManager's self._win refers to the root window.
-    It is Singleton.
+    It is a Singleton.
 
     """
 
@@ -657,6 +657,7 @@ class WindowManager(XObject):
         return Geometry(workarea[0], workarea[1], 
                         workarea[2], workarea[3])
 
+    # TODO: Consider change of method name
     def nearest_screen_geometry(self, geometry):
         """Return geometry of the screen best matching the given rectangle"""
         screens_by_intersection = ((screen & geometry, screen)

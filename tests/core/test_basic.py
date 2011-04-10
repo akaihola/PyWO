@@ -39,6 +39,20 @@ class TestSize(unittest.TestCase):
         self.assertEqual(Size.parse_value(' '), None)
         self.assertRaises(ValueError, Size.parse_value, 'fasdfa')
 
+    def test_area(self):
+        self.assertEqual(Size.parse('HALF', 'FULL').area, 0.5)
+        self.assertEqual(Size.parse('HALF', '1').area, 0.5)
+        self.assertEqual(Size.parse('HALF', '1.0').area, 0.5)
+        self.assertEqual(Size.parse('HALF', 'HALF*2').area, 0.5)
+        self.assertEqual(Size.parse('HALF', 'QUARTER*2+HALF').area, 0.5)
+        self.assertEqual(Size.parse('1.0/2', '0.1*6-0.1+HALF').area, 0.5)
+        self.assertEqual(Size(10, 10).area, 100)
+        try:  # assertRaises doesn't work with properties
+            Size.parse('HALF, FULL', '1').area
+        except ValueError:  # "Size.area doesn't support multiple dimensions"
+            pass
+        else:
+            raise AssertionError
 
     def test_parse(self):
         self.assertEqual(Size.parse('', ''), None)
@@ -245,6 +259,65 @@ class TestGeometry(unittest.TestCase):
         geo.set_position(60, 110, Gravity(0.5, 0.5))
         self.assertEqual(geo.x, 10)
         self.assertEqual(geo.y, 10)
+
+    def test_intersection_no_overlap(self):
+        self.assertEqual(Geometry(0, 0, 1, 1) & Geometry(2, 0, 1, 1), None)
+
+    def test_intersection_se_nw_corners_touch(self):
+        self.assertEqual(Geometry(0, 0, 1, 1) & Geometry(1, 1, 1, 1),
+                         Geometry(1, 1, 0, 0))
+
+    def test_intersection_sw_ne_corners_touch(self):
+        self.assertEqual(Geometry(1, 0, 1, 1) & Geometry(0, 1, 1, 2),
+                         Geometry(1, 1, 0, 0))
+
+    def test_intersection_nw_se_corners_touch(self):
+        self.assertEqual(Geometry(1, 1, 1, 1) & Geometry(0, 0, 1, 1),
+                         Geometry(1, 1, 0, 0))
+
+    def test_intersection_ne_sw_corners_touch(self):
+        self.assertEqual(Geometry(0, 1, 1, 1) & Geometry(1, 0, 1, 1),
+                         Geometry(1, 1, 0, 0))
+
+    def test_intersection_e_w_sides_touch(self):
+        self.assertEqual(Geometry(0, 0, 1, 1) & Geometry(1, 0, 1, 1),
+                         Geometry(1, 0, 0, 1))
+
+    def test_intersection_w_e_sides_touch(self):
+        self.assertEqual(Geometry(1, 0, 1, 1) & Geometry(0, 0, 1, 1),
+                         Geometry(1, 0, 0, 1))
+
+    def test_intersection_s_n_sides_touch(self):
+        self.assertEqual(Geometry(0, 0, 1, 1) & Geometry(0, 1, 1, 1),
+                         Geometry(0, 1, 1, 0))
+
+    def test_intersection_n_s_sides_touch(self):
+        self.assertEqual(Geometry(0, 1, 1, 1) & Geometry(0, 0, 1, 1),
+                         Geometry(0, 1, 1, 0))
+
+    def test_intersection_se_nw_corners_overlap(self):
+        self.assertEqual(Geometry(0, 0, 2, 2) & Geometry(1, 1, 2, 2),
+                         Geometry(1, 1, 1, 1))
+
+    def test_intersection_sw_ne_corners_overlap(self):
+        self.assertEqual(Geometry(1, 0, 2, 2) & Geometry(0, 1, 2, 2),
+                         Geometry(1, 1, 1, 1))
+
+    def test_intersection_nw_se_corners_overlap(self):
+        self.assertEqual(Geometry(1, 1, 2, 2) & Geometry(0, 0, 2, 2),
+                         Geometry(1, 1, 1, 1))
+
+    def test_intersection_ne_sw_corners_overlap(self):
+        self.assertEqual(Geometry(0, 1, 2, 2) & Geometry(1, 0, 2, 2),
+                         Geometry(1, 1, 1, 1))
+
+    def test_intersection_inside(self):
+        self.assertEqual(Geometry(1, 1, 1, 1) & Geometry(0, 0, 3, 3),
+                         Geometry(1, 1, 1, 1))
+
+    def test_intersection_outside(self):
+        self.assertEqual(Geometry(0, 0, 3, 3) & Geometry(1, 1, 1, 1),
+                         Geometry(1, 1, 1, 1))
 
 
 class TestExtents(unittest.TestCase):

@@ -24,7 +24,8 @@ import logging
 import re
 
 
-__author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
+__author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>, "\
+             "Antti Kaihola"
 
 
 log = logging.getLogger(__name__)
@@ -149,6 +150,14 @@ class Size(object):
         self.width = width
         self.height = height
 
+    @property
+    def area(self):
+        """Calculate the area of a rectangle of this size."""
+        if isinstance(self.width, list) or isinstance(self.height, list):
+            raise ValueError("%s.area doesn't support multiple dimensions: %s"
+                             % (self.__class__.__name__, self))
+        return self.width * self.height
+
     @classmethod
     def parse_value(cls, size_string):
         """Parse string representing width or height.
@@ -257,6 +266,21 @@ class Geometry(Position, Size):
 
     # TODO: def set_size(self, size, gravity)
     #       int() !!!
+
+    def __and__(self, other):
+        """Return the intersection with another geometry
+
+        Returns None if the geometries don't intersect.  Returns a geometry
+        with a zero width and/or height if the geometries touch each other but
+        don't intersect.
+
+        """
+        x = max(self.x, other.x)
+        y = max(self.y, other.y)
+        width = min(self.x2, other.x2) - x
+        height = min(self.y2, other.y2) - y
+        if width >= 0 and height >= 0:
+            return Geometry(x, y, width, height)
 
     def __eq__(self, other):
         return ((self.x, self.y, self.width, self.height) ==

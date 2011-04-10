@@ -10,6 +10,7 @@ from Xlib import Xutil
 
 from tests import mock_Xlib
 from tests.test_common import TestMockedCore
+from pywo.core.basic import Geometry
 from pywo.core.xlib import XObject
 
 
@@ -54,6 +55,27 @@ class TestXObject(TestMockedCore):
         self.assertRaises(ValueError, XObject.str2modifiers, 'fsdfd')
         self.assertRaises(ValueError, XObject.str2keycode, 'Alt')
         self.assertRaises(ValueError, XObject.str2modifiers_keycode, 'Alt')
+
+    def test_has_xinerama(self):
+        self.assertEqual(XObject.has_xinerama(), True)
+
+    def test_has_no_xinerama(self):
+        self.display.extensions = []
+        self.assertEqual(XObject.has_xinerama(), False)
+
+    def test_get_xinerama_geometries(self):
+        self.display.xinerama_query_screens = lambda: mock_Xlib.ScreensQuery(
+            (0, 0, 640, 400),
+            (640, 0, 960, 200))
+        self.assertEqual(XObject.get_xinerama_geometries(),
+                         [mock_Xlib.Geometry(0, 0, 640, 400),
+                          mock_Xlib.Geometry(640, 0, 960, 200)])
+
+    def test_get_no_xinerama_geometries(self):
+        self.display.xinerama_query_screens = AttributeError
+        self.assertEqual(XObject.get_xinerama_geometries(),
+                         [mock_Xlib.Geometry(0, 0, 800, 600)])
+
 
 
 if __name__ == '__main__':

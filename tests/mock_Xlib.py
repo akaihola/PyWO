@@ -61,6 +61,7 @@ class Extents(object):
         self.top = top
         self.bottom = bottom
 
+
 # Extents constants
 EXTENTS_NORMAL = Extents(4, 4, 19, 1)
 #EXTENTS_SHADED = Extents(4, 4, 19, 1)
@@ -127,12 +128,20 @@ class ClientMessage(object):
         self.data = data
 
 
+class ScreensQuery(object):
+
+    def __init__(self, *geometries):
+        self.screens = [Geometry(*geometry) for geometry in geometries]
+
+
+
 class Display(Xlib.display.Display):
 
     """Xlib.display.Display mock."""
 
     def __init__(self, screen_width, screen_height, 
-                 desktops=1, viewports=[1,1]):
+                 desktops=1, viewports=None,
+                 extensions=None):
         Xlib.display.Display.__init__(self)
         self.screen_width = screen_width
         self.screen_height = screen_height
@@ -141,7 +150,8 @@ class Display(Xlib.display.Display):
         # stack of mapped windows
         self.windows_stack = collections.deque()
         self.root_id = Xlib.display.Display.screen(self).root.id
-        self.root = RootWindow(self, desktops, viewports)
+        self.root = RootWindow(self, desktops, viewports or [1, 1])
+        self.extensions = extensions  or []
 
     def intern_atom(self, name, only_if_exists=0):
         # Just delegate to real Display

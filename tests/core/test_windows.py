@@ -79,6 +79,20 @@ class TestWindowManager(TestMockedCore):
         self.assertEqual(self.WM.workarea_geometry, 
                          Geometry(0, 0, DESKTOP_WIDTH, DESKTOP_HEIGHT))
 
+    def test_nearest_screen_geometry(self):
+        self.display.xinerama_query_screens = lambda: mock_Xlib.ScreensQuery(
+            (0, 0, 640, 400),
+            (640, 0, 960, 200))
+        screen = self.WM.nearest_screen_geometry(Geometry(600, 300, 650, 410))
+        self.assertEqual(screen, Geometry(0, 0, 640, 400))
+
+    def test_nearest_screen_geometry_2(self):
+        self.display.xinerama_query_screens = lambda: mock_Xlib.ScreensQuery(
+            (0, 0, 640, 400),
+            (640, 0, 960, 200))
+        screen = self.WM.nearest_screen_geometry(Geometry(630, 390, 700, 500))
+        self.assertEqual(screen, Geometry(0, 0, 640, 400))
+
     def test_active_window(self):
         win = self.WM.active_window()
         self.assertEqual(win, self.win)

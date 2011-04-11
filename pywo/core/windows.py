@@ -26,7 +26,8 @@ import time
 from Xlib import X, Xutil, Xatom
 
 from pywo.core.basic import CustomTuple
-from pywo.core.basic import Gravity, Position, Size, Geometry, Extents, Layout
+from pywo.core.basic import Gravity, Position, Size, Geometry, Extents 
+from pywo.core.basic import Layout, Strut
 from pywo.core.xlib import XObject
 
 
@@ -304,7 +305,16 @@ class Window(XObject):
         Some windows (like panels, pagers, etc) can reserve space on desktop.
 
         """
-        return None # TODO: implement me!
+        strut_partial = self.__strut_partial()
+        if strut_partial:
+            # Try strut_partial first, with full info about reserved area
+            return Strut(*strut_partial)
+        strut = self.__strut()
+        if strut:
+            # Fallback to strut - only info about width/height
+            return Strut(strut[0], strut[1], strut[2], strut[3], 
+                         0, 0, 0, 0, 0, 0, 0, 0)
+        return None
 
     @property
     def geometry(self):
@@ -530,7 +540,7 @@ class Window(XObject):
 
     def debug_info(self, logger=log):
         """Print full window's info, for debug use only."""
-        log.info('-= Current Window =-')
+        logger.info('-= Current Window =-')
         win = self._win
         logger.info('ID=%s' % self.id)
         logger.info('Client_machine="%s"' % self.client_machine)
@@ -547,6 +557,7 @@ class Window(XObject):
         geometry = self._win.get_geometry()
         translated = self._translate_coords(geometry.x, geometry.y)
         logger.info('Geometry_translated=%s' % getattr(translated, '_data'))
+        logger.info('Strut=%s' % self.strut)
         logger.info('Parent=%s %s' % (self.parent_id, self.parent))
         logger.info('Normal_hints=%s' % getattr(win.get_wm_normal_hints(), 
                                                 '_data'))
@@ -690,6 +701,8 @@ class WindowManager(XObject):
         # _NET_DESKTOP_LAYOUT, orientation, columns, rows, starting_corner 
         #                      CARDINAL[4]/32
         layout = self.get_property('_NET_DESKTOP_LAYOUT')
+        if not layout:
+            return None
         orientation, cols, rows, corner = layout.value
         desktops = self.desktops
         # NOTE: needs more testing...
@@ -849,21 +862,29 @@ class WindowManager(XObject):
 
     def debug_info(self, logger=log):
         """Print full windows manager's info, for debug use only."""
-        log.info('-= Window Manager =-')
+        logger.info('-= Window Manager =-')
         logger.info('Name=%s' % self.name)
-        log.info('-= Desktops =-')
+        #logger.info('Supported=%s' %  \
+        #            [self.atom_name(atom) 
+        #             for atom in self.get_property('_NET_SUPPORTED').value])
+        logger.info('-= Desktops =-')
         logger.info('Layout=%s' % self.desktop_layout)
         logger.info('Names=%s' % self.desktop_names)
         logger.info('Total=%s' % self.desktops)
         logger.info('Current=%s' % self.desktop)
         logger.info('Size=%s' % self.desktop_size)
-        log.info('-= Viewports =-')
+        logger.info('-= Viewports =-')
         logger.info('Layout=%s' % self.viewport_layout)
         logger.info('Position=%s' % self.viewport_position)
-        log.info('-= Workarea =-')
+        logger.info('-= Workarea =-')
         logger.info('Geometry=%s' % self.workarea_geometry)
-        log.info('-= Screens =-')
+        logger.info('-= Strut =-')
+        struts = [win.strut for win in self.windows()]
+        logger.info('[%s]' %  \
+                    ', '.join([str(strut) for strut in struts if strut]))
+        logger.info('-= Screens =-')
         screens = self.screen_geometries()
         logger.info('Total=%s' % len(screens))
-        logger.info('Geometries=%s' % [str(geo) for geo in screens])
+        logger.info('Geometries=[%s]' % \
+                    ', '.join([str(geo) for geo in screens]))
 

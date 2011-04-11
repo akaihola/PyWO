@@ -331,6 +331,30 @@ class Extents(object):
         return '<Extents left=%s, right=%s, top=%s, bottom=%s>' % \
                (self.left, self.right, self.top, self.bottom)
 
+
+class Strut(object):
+
+    """Information about area reserved by window (docks, panels, pagers).
+    
+    For each desktop edge keep tuple: height/width, start_x/y, end_x/y
+
+    """
+
+    def __init__(self, left, right, top, bottom,
+                 left_start_y=0, left_end_y=0, 
+                 right_start_y=0, right_end_y=0,
+                 top_start_x=0, top_end_x=0, 
+                 bottom_start_x=0, bottom_end_x=0):
+        self.left = (left, left_start_y, left_end_y)
+        self.right = (right, right_start_y, right_end_y)
+        self.top = (top, top_start_x, top_end_x)
+        self.bottom = (bottom, bottom_start_x, bottom_end_x)
+
+    def __str__(self):
+        return '<Strut left=%s, right=%s, top=%s, bottom=%s>' % \
+               (self.left, self.right, self.top, self.bottom)
+
+
 class Layout(object):
 
     """Layout encapsulates Desktop / Viewport layout info.

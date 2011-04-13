@@ -114,10 +114,10 @@ class Action(object):
 
     def __call__(self, win, **kwargs):
         """Perform action on window and with given arguments."""
-        log.debug('%s win=%s, kwargs={%s}' % 
-                  (self, win,
-                  ', '.join(["'%s':%s" % (key, value) 
-                             for key, value in kwargs.items()])))
+        log.info('%s: win=%s, kwargs={%s}' % 
+                 (self, win,
+                 ', '.join(["'%s':%s" % (key, value) 
+                            for key, value in kwargs.items()])))
         self.check_filter(win)
         self.pre_perform(win, **kwargs)
         try:

@@ -165,7 +165,6 @@ class ModalKeyHandler(events.KeyHandler):
 
     def ungrab_keys(self, window):
         """Ungrab keys for self, or PywoKeyPressHandler."""
-        log.info('!!!!!!!!!!')
         if self.in_pywo_mode and self.use_modal_mode:
             self.escape_handler.ungrab_keys(WM)
         if self.in_pywo_mode:

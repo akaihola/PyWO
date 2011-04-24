@@ -259,22 +259,6 @@ class Window(XObject):
             #extents = (0, 0, 0, 0) # if border is not retained
         return Extents(*extents)
 
-    def __geometry(self):
-        """Return raw geometry info (translated if needed)."""
-        geometry = self._win.get_geometry()
-        if self.wm_type in Hacks.PARENT_XY:
-            # Hack for Fluxbox, Window Maker
-            parent_geo = self._win.query_tree().parent.get_geometry()
-            geometry.x = parent_geo.x
-            geometry.y = parent_geo.y
-        if self.wm_type not in Hacks.DONT_TRANSLATE_COORDS:
-            # if neeeded translate coords and multiply them by -1
-            translated = self._translate_coords(geometry.x, geometry.y)
-            return (-translated.x, -translated.y, 
-                    geometry.width, geometry.height)
-        return (geometry.x, geometry.y, 
-                geometry.width, geometry.height)
-
     def __strut(self):
         """Return raw strut info."""
         # _NET_WM_STRUT, left, right, top, bottom, CARDINAL[4]/32
@@ -316,6 +300,17 @@ class Window(XObject):
                          0, 0, 0, 0, 0, 0, 0, 0)
         return None
 
+    def __geometry(self):
+        """Return raw geometry info (translated if needed)."""
+        geometry = self._win.get_geometry()
+        if self.wm_type in Hacks.PARENT_XY:
+            # Hack for Fluxbox, Window Maker
+            parent_geo = self._win.query_tree().parent.get_geometry()
+            geometry.x = parent_geo.x
+            geometry.y = parent_geo.y
+        return (geometry.x, geometry.y, 
+                geometry.width, geometry.height)
+
     @property
     def geometry(self):
         """Return window's geometry.
@@ -328,6 +323,14 @@ class Window(XObject):
         """
         x, y, width, height = self.__geometry()
         extents = self.extents
+        if self.wm_type not in Hacks.DONT_TRANSLATE_COORDS and \
+           not extents == Extents(0, 0, 0, 0):
+            # NOTE: in Metacity for windows with no extents 
+            #       returned translated coords were invalid (0, 0)
+            # if neeeded translate coords and multiply them by -1
+            translated = self._translate_coords(x, y)
+            x = -translated.x
+            y = -translated.y
         if self.wm_type in Hacks.ADJUST_GEOMETRY:
             # Used in Compiz, KWin, E16, IceWM, Blackbox
             x -= extents.left

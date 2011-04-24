@@ -141,7 +141,8 @@ class AND(object):
 ALL_FILTER = lambda window: True # accept all windows
 
 NORMAL_TYPE = IncludeType(Type.NORMAL, Type.NONE)
-STANDARD_TYPE = ExcludeType(Type.DESKTOP, Type.SPLASH, Type.MENU, Type.TOOLBAR)
+STANDARD_TYPE = ExcludeType(Type.DESKTOP, Type.DOCK, 
+                            Type.SPLASH, Type.MENU, Type.TOOLBAR)
 NORMAL_STATE = ExcludeState(State.MODAL, State.SHADED, State.HIDDEN,
                             State.MAXIMIZED, State.FULLSCREEN)
 NORMAL = AND(NORMAL_TYPE, NORMAL_STATE)

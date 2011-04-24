@@ -73,7 +73,7 @@ class PywoKeyPressHandler(events.KeyHandler):
                     continue
                 for section in config.sections.values():
                     key = section.key
-                    if key and action not in section.ignored:
+                    if key and action.name not in section.ignored:
                         try:
                             (mod, keycode) = WM.str2modifiers_keycode(mask, key)
                         except ValueError:
@@ -117,9 +117,13 @@ class ModalKeyHandler(events.KeyHandler):
         Press ESC to go back to normal mode.
         
         """
+        if not (event.modifiers, event.keycode) in self.keys:
+            return
+        if self.in_pywo_mode:
+            self.normal_mode(event)
+            return
         log.debug('%s' % (event,))
         self.blink()
-        self.ungrab_keys(WM)
         self.pywo_handler.grab_keys(WM)
         self.escape_handler.grab_keys(WM)
         self.in_pywo_mode = True
@@ -130,7 +134,6 @@ class ModalKeyHandler(events.KeyHandler):
         self.blink()
         self.pywo_handler.ungrab_keys(WM)
         self.escape_handler.ungrab_keys(WM)
-        self.grab_keys(WM)
         self.in_pywo_mode = False
 
     def blink(self):
@@ -166,9 +169,9 @@ class ModalKeyHandler(events.KeyHandler):
     def ungrab_keys(self, window):
         """Ungrab keys for self, or PywoKeyPressHandler."""
         if self.in_pywo_mode and self.use_modal_mode:
-            self.escape_handler.ungrab_keys(WM)
+            self.escape_handler.ungrab_keys(window)
         if self.in_pywo_mode:
-            self.pywo_handler.ungrab_keys(WM)
+            self.pywo_handler.ungrab_keys(window)
         else:
             events.KeyHandler.ungrab_keys(self, window)
 

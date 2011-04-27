@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
-import unittest
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest
 
 import sys
 sys.path.insert(0, '../')
@@ -40,7 +43,7 @@ class MockedXlibTests(unittest.TestCase):
         xlib.ClientMessage = Xlib_mock.ClientMessage
         xlib.XObject._XObject__DISPLAY = display
         self.WM = core.WindowManager()
-        self.win = self.map_window()
+        self.win = self.map_window(name='win')
 
     def map_window(self, 
                    type=core.Type.NORMAL,

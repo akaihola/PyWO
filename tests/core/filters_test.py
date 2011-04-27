@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
-import unittest
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest
 
 import sys
 sys.path.insert(0, '../')
@@ -17,8 +20,8 @@ class FiltersTest(MockedXlibTests):
     def assertWindows(self, filter, windows):
         """Assert that after using given filters you get given windows."""
         filtered_windows = self.WM.windows(filter)
-        filtered_windows_ids = set([win.id for win in filtered_windows])
-        windows_ids = set([win.id for win in windows])
+        filtered_windows_ids = set((win.id, win.name) for win in filtered_windows)
+        windows_ids = set((win.id, win.name) for win in windows)
         self.assertEqual(windows_ids, filtered_windows_ids)
 
 
@@ -28,13 +31,13 @@ class IncludeExcludeTypeTests(FiltersTest):
         super(IncludeExcludeTypeTests, self).setUp()
         # map windows of all types
         self.normal_win = self.win
-        self.desktop_win = self.map_window(type=Type.DESKTOP)
-        self.dock_win = self.map_window(type=Type.DOCK)
-        self.toolbar_win = self.map_window(type=Type.TOOLBAR)
-        self.menu_win = self.map_window(type=Type.MENU)
-        self.utility_win = self.map_window(type=Type.UTILITY)
-        self.splash_win = self.map_window(type=Type.SPLASH)
-        self.dialog_win = self.map_window(type=Type.DIALOG)
+        self.desktop_win = self.map_window(type=Type.DESKTOP, name='desktop')
+        self.dock_win = self.map_window(type=Type.DOCK, name='dock')
+        self.toolbar_win = self.map_window(type=Type.TOOLBAR, name='toolbar')
+        self.menu_win = self.map_window(type=Type.MENU, name='menu')
+        self.utility_win = self.map_window(type=Type.UTILITY, name='utility')
+        self.splash_win = self.map_window(type=Type.SPLASH, name='splash')
+        self.dialog_win = self.map_window(type=Type.DIALOG, name='dialog')
 
     def test_include_type(self):
         self.assertWindows(filters.IncludeType(Type.NORMAL, Type.UTILITY), 
@@ -60,24 +63,24 @@ class IncludeExcludeStateTests(FiltersTest):
         super(IncludeExcludeStateTests, self).setUp()
         # map windows of all states
         self.no_state_win = self.win
-        self.modal_win = self.map_window(modal=True)
-        self.sticky_win = self.map_window()
+        self.modal_win = self.map_window(modal=True, name='modal')
+        self.sticky_win = self.map_window(name='sticky')
         self.sticky_win.sticky(Mode.SET)
-        self.maximized_win = self.map_window()
+        self.maximized_win = self.map_window(name='maximized')
         self.maximized_win.maximize(Mode.SET)
-        self.vert_maximized_win = self.map_window()
+        self.vert_maximized_win = self.map_window(name='vert_maximized')
         self.vert_maximized_win.maximize(Mode.SET, horz=False)
-        self.horz_maximized_win = self.map_window()
+        self.horz_maximized_win = self.map_window(name='horz_maximized')
         self.horz_maximized_win.maximize(Mode.SET, vert=False)
-        self.fullscreen_win = self.map_window()
+        self.fullscreen_win = self.map_window(name='fullscreen')
         self.fullscreen_win.fullscreen(Mode.SET)
-        self.shaded_win = self.map_window()
+        self.shaded_win = self.map_window(name='shaded')
         self.shaded_win.shade(Mode.SET)
-        self.above_win = self.map_window()
+        self.above_win = self.map_window(name='above')
         self.above_win.always_above(Mode.SET)
-        self.below_win = self.map_window()
+        self.below_win = self.map_window(name='below')
         self.below_win.always_below(Mode.SET)
-        self.iconified_win = self.map_window()
+        self.iconified_win = self.map_window(name='iconified')
         self.iconified_win.iconify(Mode.SET)
 
     def test_include_state(self):
@@ -110,8 +113,8 @@ class DesktopTests(FiltersTest):
     def setUp(self):
         super(DesktopTests, self).setUp()
         self.desktop1_win = self.win
-        self.desktop2_win = self.map_window(desktop=1)
-        self.all_desktops_win = self.map_window()
+        self.desktop2_win = self.map_window(desktop=1, name='desktop2')
+        self.all_desktops_win = self.map_window(name='all_desktops')
         self.all_desktops_win.sticky(Mode.SET)
 
     def test_current(self):
@@ -150,10 +153,13 @@ class WorkareaTests(FiltersTest):
     def setUp(self):
         super(WorkareaTests, self).setUp()
         self.desktop1_viewport1_win = self.win
-        self.desktop1_viewport2_win = self.map_window(x=DESKTOP_WIDTH + 50)
-        self.desktop2_viewport1_win = self.map_window(desktop=1)
+        self.desktop1_viewport2_win = self.map_window(x=DESKTOP_WIDTH + 50,
+                                                      name='desktop1_viewport2')
+        self.desktop2_viewport1_win = self.map_window(desktop=1,
+                                                      name='desktop2_viewport1')
         self.desktop2_viewport2_win = self.map_window(desktop=1, 
-                                                      x=DESKTOP_WIDTH + 50)
+                                                      x=DESKTOP_WIDTH + 50,
+                                                      name='desktop2_viewport2')
 
     def test_workarea(self):
         self.WM.set_desktop(0)
@@ -176,40 +182,43 @@ class CombinedFiltersTests(FiltersTest):
     def setUp(self):
         super(CombinedFiltersTests, self).setUp()
         # types
-        self.desktop_win = self.map_window(type=Type.DESKTOP)
-        self.dock_win = self.map_window(type=Type.DOCK)
-        self.toolbar_win = self.map_window(type=Type.TOOLBAR)
-        self.menu_win = self.map_window(type=Type.MENU)
-        self.utility_win = self.map_window(type=Type.UTILITY)
-        self.splash_win = self.map_window(type=Type.SPLASH)
-        self.dialog_win = self.map_window(type=Type.DIALOG)
+        self.desktop_win = self.map_window(type=Type.DESKTOP, name='desktop')
+        self.dock_win = self.map_window(type=Type.DOCK, name='dock')
+        self.toolbar_win = self.map_window(type=Type.TOOLBAR, name='toolbar')
+        self.menu_win = self.map_window(type=Type.MENU, name='menu')
+        self.utility_win = self.map_window(type=Type.UTILITY, name='utility')
+        self.splash_win = self.map_window(type=Type.SPLASH, name='splash')
+        self.dialog_win = self.map_window(type=Type.DIALOG, name='dialog')
         self.no_state_win = self.win
-        self.modal_win = self.map_window(modal=True)
+        self.modal_win = self.map_window(modal=True, name='modal')
         # states
-        self.sticky_win = self.map_window()
+        self.sticky_win = self.map_window(name='sticky')
         self.sticky_win.sticky(Mode.SET)
-        self.maximized_win = self.map_window()
+        self.maximized_win = self.map_window(name='maximized')
         self.maximized_win.maximize(Mode.SET)
-        self.vert_maximized_win = self.map_window()
+        self.vert_maximized_win = self.map_window(name='vert_maximized')
         self.vert_maximized_win.maximize(Mode.SET, horz=False)
-        self.horz_maximized_win = self.map_window()
+        self.horz_maximized_win = self.map_window(name='horz_maximized')
         self.horz_maximized_win.maximize(Mode.SET, vert=False)
-        self.fullscreen_win = self.map_window()
+        self.fullscreen_win = self.map_window(name='fullscreen')
         self.fullscreen_win.fullscreen(Mode.SET)
-        self.shaded_win = self.map_window()
+        self.shaded_win = self.map_window(name='shaded')
         self.shaded_win.shade(Mode.SET)
-        self.above_win = self.map_window()
+        self.above_win = self.map_window(name='above')
         self.above_win.always_above(Mode.SET)
-        self.below_win = self.map_window()
+        self.below_win = self.map_window(name='below')
         self.below_win.always_below(Mode.SET)
-        self.iconified_win = self.map_window()
+        self.iconified_win = self.map_window(name='iconified')
         self.iconified_win.iconify(Mode.SET)
         # desktop/viewport
         self.desktop1_viewport1_win = self.win
-        self.desktop1_viewport2_win = self.map_window(x=DESKTOP_WIDTH + 50)
-        self.desktop2_viewport1_win = self.map_window(desktop=1)
+        self.desktop1_viewport2_win = self.map_window(x=DESKTOP_WIDTH + 50,
+                                                      name='desktop1_viewport2')
+        self.desktop2_viewport1_win = self.map_window(desktop=1,
+                                                      name='desktop2_viewport1')
         self.desktop2_viewport2_win = self.map_window(desktop=1, 
-                                                      x=DESKTOP_WIDTH + 50)
+                                                      x=DESKTOP_WIDTH + 50,
+                                                      name='desktop2_viewport2')
 
     def test_normal(self):
         self.assertWindows(filters.NORMAL,

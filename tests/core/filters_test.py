@@ -50,7 +50,7 @@ class IncludeExcludeTypeTests(FiltersTest):
 
     def test_standard_type(self):
         self.assertWindows(filters.STANDARD_TYPE, 
-                           [self.normal_win, self.dock_win, 
+                           [self.normal_win, #self.dock_win, 
                             self.utility_win, self.dialog_win])
 
 
@@ -237,7 +237,7 @@ class CombinedFiltersTests(FiltersTest):
                            [self.win, 
                             self.dialog_win,
                             self.utility_win,
-                            self.dock_win,
+                            #self.dock_win,
                             self.sticky_win, 
                             self.vert_maximized_win, self.horz_maximized_win, 
                             self.above_win, self.below_win,
@@ -249,7 +249,7 @@ class CombinedFiltersTests(FiltersTest):
                            [self.win, 
                             self.dialog_win,
                             self.utility_win,
-                            self.dock_win,
+                            #self.dock_win,
                             self.sticky_win, 
                             self.vert_maximized_win, self.horz_maximized_win, 
                             self.above_win, self.below_win,

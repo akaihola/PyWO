@@ -43,7 +43,7 @@ class MockedXlibTests(unittest.TestCase):
         xlib.ClientMessage = Xlib_mock.ClientMessage
         xlib.XObject._XObject__DISPLAY = display
         self.WM = core.WindowManager()
-        self.win = self.map_window(name='win')
+        self.win = self.map_window(name=WIN_NAME)
 
     def map_window(self, 
                    type=core.Type.NORMAL,

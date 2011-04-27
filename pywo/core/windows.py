@@ -26,11 +26,12 @@ import time
 from Xlib import X, Xutil, Xatom
 
 from pywo.core.basic import CustomTuple
-from pywo.core.basic import Gravity, Position, Size, Geometry, Extents
+from pywo.core.basic import Gravity, Position, Size, Geometry, Extents 
+from pywo.core.basic import Layout, Strut
 from pywo.core.xlib import XObject
 
 
-__author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
+__author__ = "Wojciech 'KosciaK' Pietrzok, Antti Kaihola"
 
 
 log = logging.getLogger(__name__)
@@ -125,7 +126,7 @@ class Mode(object):
 
 class Window(XObject):
 
-    """Window object (X Server client?)."""
+    """Window object."""
 
     # _NET_WM_DESKTOP returns this value when in STATE_STICKY
     ALL_DESKTOPS = 0xFFFFFFFF
@@ -136,6 +137,7 @@ class Window(XObject):
     @property
     def type(self):
         """Return tuple of window's type(s)."""
+        # _NET_WM_WINDOW_TYPE, ATOM[]/32
         type = self.get_property('_NET_WM_WINDOW_TYPE')
         if not type:
             return CustomTuple([Type.NONE])
@@ -144,6 +146,7 @@ class Window(XObject):
     @property
     def state(self):
         """Return tuple of window's state(s)."""
+        # _NET_WM_STATE, ATOM[]
         state = self.get_property('_NET_WM_STATE')
         if not state:
             return CustomTuple()
@@ -170,6 +173,7 @@ class Window(XObject):
     @property
     def name(self):
         """Return window's name."""
+        # _NET_WM_NAME, UTF8_STRING
         name = self.get_property('_NET_WM_NAME')
         if not name:
             name = self._win.get_full_property(Xatom.WM_NAME, 0)
@@ -198,6 +202,7 @@ class Window(XObject):
         Returns 0xFFFFFFFF when "show on all desktops"
 
         """
+        # _NET_WM_DESKTOP desktop, CARDINAL/32
         desktop = self.get_property('_NET_WM_DESKTOP')
         if not desktop:
             return 0
@@ -216,6 +221,7 @@ class Window(XObject):
 
     def __extents(self):
         """Return raw extents info."""
+        # _NET_FRAME_EXTENTS, left, right, top, bottom, CARDINAL[4]/32
         extents = self.get_property('_NET_FRAME_EXTENTS')
         if extents:
             return extents.value
@@ -253,6 +259,47 @@ class Window(XObject):
             #extents = (0, 0, 0, 0) # if border is not retained
         return Extents(*extents)
 
+    def __strut(self):
+        """Return raw strut info."""
+        # _NET_WM_STRUT, left, right, top, bottom, CARDINAL[4]/32
+        strut = self.get_property('_NET_WM_STRUT')
+        if strut:
+            return strut.value
+        else:
+            return ()
+
+    def __strut_partial(self):
+        """Return raw strut partial info."""
+        # _NET_WM_STRUT_PARTIAL, left, right, top, bottom, 
+        #                        left_start_y, left_end_y,
+        #                        right_start_y, right_end_y, 
+        #                        top_start_x, top_end_x, 
+        #                        bottom_start_x, bottom_end_x, 
+        #                        CARDINAL[12]/32
+        strut_partial = self.get_property('_NET_WM_STRUT_PARTIAL')
+        if strut_partial:
+            return strut_partial.value
+        else:
+            return ()
+
+    @property
+    def strut(self):
+        """Return strut information - area reserved by Window.
+
+        Some windows (like panels, pagers, etc) can reserve space on desktop.
+
+        """
+        strut_partial = self.__strut_partial()
+        if strut_partial:
+            # Try strut_partial first, with full info about reserved area
+            return Strut(*strut_partial)
+        strut = self.__strut()
+        if strut:
+            # Fallback to strut - only info about width/height
+            return Strut(strut[0], strut[1], strut[2], strut[3], 
+                         0, 0, 0, 0, 0, 0, 0, 0)
+        return None
+
     def __geometry(self):
         """Return raw geometry info (translated if needed)."""
         geometry = self._win.get_geometry()
@@ -261,11 +308,6 @@ class Window(XObject):
             parent_geo = self._win.query_tree().parent.get_geometry()
             geometry.x = parent_geo.x
             geometry.y = parent_geo.y
-        if self.wm_type not in Hacks.DONT_TRANSLATE_COORDS:
-            # if neeeded translate coords and multiply them by -1
-            translated = self._translate_coords(geometry.x, geometry.y)
-            return (-translated.x, -translated.y, 
-                    geometry.width, geometry.height)
         return (geometry.x, geometry.y, 
                 geometry.width, geometry.height)
 
@@ -273,14 +315,22 @@ class Window(XObject):
     def geometry(self):
         """Return window's geometry.
 
-        (x, y) coordinates are the top-left corner of the window,
-        relative to the left-top corner of current viewport.
+        (x, y) coordinates are the top-left corner of the window.
+        Window position is relative to the left-top corner of current viewport.
         Position and size *includes* window's extents!
         Position is translated if needed.
 
         """
         x, y, width, height = self.__geometry()
         extents = self.extents
+        if self.wm_type not in Hacks.DONT_TRANSLATE_COORDS and \
+           not extents == Extents(0, 0, 0, 0):
+            # NOTE: in Metacity for windows with no extents 
+            #       returned translated coords were invalid (0, 0)
+            # if neeeded translate coords and multiply them by -1
+            translated = self._translate_coords(x, y)
+            x = -translated.x
+            y = -translated.y
         if self.wm_type in Hacks.ADJUST_GEOMETRY:
             # Used in Compiz, KWin, E16, IceWM, Blackbox
             x -= extents.left
@@ -346,7 +396,7 @@ class Window(XObject):
         self._win.configure(x=x, y=y, width=width, height=height)
 
     def moveresize(self, geometry):
-        """like set_geometry, but using _NET_MOVERESIZE_WINDOW
+        """Works like set_geometry, but using _NET_MOVERESIZE_WINDOW
 
         This gives finer control: 
         - it allows to use gravity, so there are no problems with static windows
@@ -493,11 +543,12 @@ class Window(XObject):
 
     def debug_info(self, logger=log):
         """Print full window's info, for debug use only."""
+        logger.info('-= Current Window =-')
         win = self._win
         logger.info('ID=%s' % self.id)
-        logger.info('Client_machine=%s' % self.client_machine)
-        logger.info('Name=%s' % self.name)
-        logger.info('Class=%s' % self.class_name)
+        logger.info('Client_machine="%s"' % self.client_machine)
+        logger.info('Name="%s"' % self.name)
+        logger.info('Class="%s"' % self.class_name)
         logger.info('Type=%s' % [self.atom_name(e) for e in self.type])
         logger.info('State=%s' % [self.atom_name(e) for e in self.state])
         logger.info('WM State=%s' % win.get_wm_state())
@@ -509,6 +560,7 @@ class Window(XObject):
         geometry = self._win.get_geometry()
         translated = self._translate_coords(geometry.x, geometry.y)
         logger.info('Geometry_translated=%s' % getattr(translated, '_data'))
+        logger.info('Strut=%s' % self.strut)
         logger.info('Parent=%s %s' % (self.parent_id, self.parent))
         logger.info('Normal_hints=%s' % getattr(win.get_wm_normal_hints(), 
                                                 '_data'))
@@ -522,22 +574,24 @@ class WindowManager(XObject):
     """Window Manager (or root window in X programming terms).
     
     WindowManager's self._win refers to the root window.
-    It is Singleton.
+    It is a Singleton.
+
+    Terminology used:
+    Desktop  - Window Manager may create one or more "virtual" desktops, 
+               their size may be bigger than the size of the Screen.
+    Viewport - if Desktop size is bigger than Screen size Viewport is a part of
+               Desktop that is currently visible.
+    Workarea - part of Viewport that can be used by Windows. 
+               Windows with strut defined (panels, pagers, etc) may reserve space
+               on the edges of viewport.
+               Workarea size may be bigger than Screen size.
+    Screen   - physical monitor screen. If multiple monitors screens are used,
+               and Xinerama extension is available Screen shows part of Workarea.
 
     """
 
     # Instance of the WindowManager class, make it Singleton.
     __INSTANCE = None
-
-    # Desktop orientations
-    ORIENTATION_HORZ = 0 #XObject.atom('_NET_WM_ORIENTATION_HORZ')
-    ORIENTATION_VERT = 1 #XObject.atom('_NET_WM_ORIENTATION_VERT')
-
-    # Desktop starting corners
-    TOPLEFT = 0 #XObject.atom('_NET_WM_TOPLEFT')
-    TOPRIGHT = 1 #XObject.atom('_NET_WM_TOPRIGHT')
-    BOTTOMRIGHT = 2 #XObject.atom('_NET_WM_BOTTOMRIGHT')
-    BOTTOMLEFT = 3 #XObject.atom('_NET_WM_BOTTOMLEFT')
 
     def __new__(cls):
         if cls.__INSTANCE:
@@ -555,6 +609,7 @@ class WindowManager(XObject):
         '' is returned if window manager doesn't support EWMH.
 
         """
+        # _NET_SUPPORTING_WM_CHECK, WINDOW/32
         win_id = self.get_property('_NET_SUPPORTING_WM_CHECK')
         if not win_id:
             return ''
@@ -587,7 +642,11 @@ class WindowManager(XObject):
 
     @property
     def desktops(self):
-        """Return number of desktops."""
+        """Return number of desktops.
+        
+        Number of desktops may differ from desktop_layout.cols*rows
+        
+        """
         # _NET_NUMBER_OF_DESKTOPS, CARDINAL/32
         number = self.get_property('_NET_NUMBER_OF_DESKTOPS')
         if not number:
@@ -596,7 +655,13 @@ class WindowManager(XObject):
 
     @property
     def desktop_names(self):
-        """Return list of desktop names."""
+        """Return list of desktop names.
+
+        Not all Window Managers support desktop names, in this case 
+        empty list is returned.
+        Length of list of names may differ from number of desktops!
+
+        """
         # _NET_DESKTOP_NAMES, UTF8_STRING[]
         names = self.get_property('_NET_DESKTOP_NAMES')
         if not names:
@@ -613,13 +678,13 @@ class WindowManager(XObject):
         desktop = self.get_property('_NET_CURRENT_DESKTOP')
         return desktop.value[0]
 
-    def set_desktop(self, desktop_id):
+    def set_desktop(self, num):
         """Change current desktop."""
-        desktop_id = int(desktop_id)
-        if desktop_id < 0:
-            desktop_id = 0
+        num = int(num)
+        if num < 0:
+            num = 0
         event_type = self.atom('_NET_CURRENT_DESKTOP')
-        data = [desktop_id, 
+        data = [num, 
                 0, 0, 0, 0]
         mask = X.PropertyChangeMask
         self.send_event(data, event_type, mask)
@@ -631,7 +696,7 @@ class WindowManager(XObject):
         geometry = self.get_property('_NET_DESKTOP_GEOMETRY').value
         return Size(geometry[0], geometry[1])
 
-    # TODO: set_desktop_size, or set_viewports(columns, rows)
+    # TODO: set_desktop_size?!?, or set_viewports(columns, rows)
 
     @property
     def desktop_layout(self):
@@ -639,23 +704,14 @@ class WindowManager(XObject):
         # _NET_DESKTOP_LAYOUT, orientation, columns, rows, starting_corner 
         #                      CARDINAL[4]/32
         layout = self.get_property('_NET_DESKTOP_LAYOUT')
+        if not layout:
+            return None
         orientation, cols, rows, corner = layout.value
         desktops = self.desktops
         # NOTE: needs more testing...
         cols = cols or (desktops / rows + min([1, desktops % rows]))
         rows = rows or (desktops / cols + min([1, desktops % cols]))
-        return orientation, cols, rows, corner
-
-    @property
-    def workarea_geometry(self):
-        """Return geometry of current workarea (desktop without panels)."""
-        # _NET_WORKAREA, x, y, width, height CARDINAL[][4]/32
-        workarea = self.get_property('_NET_WORKAREA').value
-        # NOTE: this will return geometry for first, not current!
-        #       what about all workareas, not only the current one?
-        # TODO: multi monitor support by returning workarea for current monitor?
-        return Geometry(workarea[0], workarea[1], 
-                        workarea[2], workarea[3])
+        return Layout(cols, rows, orientation, corner)
 
     def nearest_screen_geometry(self, geometry):
         """Return geometry of the screen best matching the given rectangle"""
@@ -669,9 +725,9 @@ class WindowManager(XObject):
 
     @property
     def viewport_position(self):
-        """Return position of current viewport. 
+        """Return position of current viewport.
 
-        If desktop is large it might be divided into several viewports.
+        Position is relative to desktop.
 
         """
         # _NET_DESKTOP_VIEWPORT x, y, CARDINAL[][2]/32
@@ -680,7 +736,7 @@ class WindowManager(XObject):
         return Position(viewport[0], viewport[1])
 
     def set_viewport_position(self, x, y):
-        """Change current viewport."""
+        """Change current viewport position."""
         event_type = self.atom('_NET_DESKTOP_VIEWPORT')
         data = [x, 
                 y, 
@@ -689,6 +745,50 @@ class WindowManager(XObject):
         self.send_event(data, event_type, mask)
 
     # TODO: set_viewport(viewport) similar to set_desktop(desktop)
+
+    @property
+    def viewport_layout(self):
+        """Return viewports layout, as set by pager.
+
+        Some WindowManagers use scrolling instead of pagination, 
+        so it is possible to set viewport to any position inside desktop.
+
+        """
+        desktop_size = self.desktop_size
+        workarea_size = self.workarea_geometry
+        cols = desktop_size.height / workarea_size.height
+        rows = desktop_size.width / workarea_size.width
+        return Layout(cols, rows)
+
+    @property
+    def workarea_geometry(self):
+        """Return geometry of current workarea (desktop without panels).
+        
+        Position is relative to current viewport.
+        
+        """
+        # _NET_WORKAREA, x, y, width, height CARDINAL[][4]/32
+        workarea = self.get_property('_NET_WORKAREA').value
+        # NOTE: this will return geometry for first, not current!
+        #       what about all workareas, not only the current one?
+        # TODO: multi monitor support by returning workarea for current monitor?
+        return Geometry(workarea[0], workarea[1], 
+                        workarea[2], workarea[3])
+
+    # TODO: Maybe add Window.current_screen()?
+    def nearest_screen_geometry(self, geometry):
+        """Return geometry of the screen best matching the given rectangle.
+        
+        Position is relative to desktop.
+        
+        """
+        screens_by_intersection = ((screen & geometry, screen)
+                                   for screen in self.screen_geometries())
+        screens_by_area = ((intersection.area, screen)
+                           for intersection, screen in screens_by_intersection
+                           if intersection)
+        largest_area, screen = sorted(screens_by_area)[-1]
+        return screen & self.workarea_geometry
 
     def active_window_id(self):
         """Return id of active window."""
@@ -775,12 +875,29 @@ class WindowManager(XObject):
 
     def debug_info(self, logger=log):
         """Print full windows manager's info, for debug use only."""
-        logger.info('WindowManager=%s' % self.name)
-        logger.info('Desktops=%s, current=%s' % (self.desktops, self.desktop))
-        logger.info('Names=[%s]' % ', '.join(self.desktop_names))
-        logger.info('Layout: orientation=%s, cols=%s, rows=%s, corner=%s' % \
-                    self.desktop_layout)
-        logger.info('Desktop=%s' % self.desktop_size)
-        logger.info('Viewport=%s' % self.viewport_position)
-        logger.info('Workarea=%s' % self.workarea_geometry)
+        logger.info('-= Window Manager =-')
+        logger.info('Name=%s' % self.name)
+        #logger.info('Supported=%s' %  \
+        #            [self.atom_name(atom) 
+        #             for atom in self.get_property('_NET_SUPPORTED').value])
+        logger.info('-= Desktops =-')
+        logger.info('Layout=%s' % self.desktop_layout)
+        logger.info('Names=%s' % self.desktop_names)
+        logger.info('Total=%s' % self.desktops)
+        logger.info('Current=%s' % self.desktop)
+        logger.info('Size=%s' % self.desktop_size)
+        logger.info('-= Viewports =-')
+        logger.info('Layout=%s' % self.viewport_layout)
+        logger.info('Position=%s' % self.viewport_position)
+        logger.info('-= Workarea =-')
+        logger.info('Geometry=%s' % self.workarea_geometry)
+        logger.info('-= Strut =-')
+        struts = [win.strut for win in self.windows()]
+        logger.info('[%s]' %  \
+                    ', '.join([str(strut) for strut in struts if strut]))
+        logger.info('-= Screens =-')
+        screens = self.screen_geometries()
+        logger.info('Total=%s' % len(screens))
+        logger.info('Geometries=[%s]' % \
+                    ', '.join([str(geo) for geo in screens]))
 

@@ -6,8 +6,8 @@ import sys
 sys.path.insert(0, '../')
 sys.path.insert(0, './')
 
-from tests.test_common import TestMockedCore
-from tests.test_common import DESKTOP_WIDTH, DESKTOP_HEIGHT
+from tests.common_test import MockedXlibTests
+from tests.common_test import DESKTOP_WIDTH, DESKTOP_HEIGHT
 
 from pywo import core
 from pywo.actions import resizer
@@ -24,10 +24,10 @@ BOTTOM = core.Gravity.parse('S')
 BOTTOM_RIGHT = core.Gravity.parse('SE')
 
 
-class TestExpandWindow(TestMockedCore):
+class ExpandWindowTests(MockedXlibTests):
 
     def setUp(self):
-        TestMockedCore.setUp(self)
+        MockedXlibTests.setUp(self)
         self.resize = resizer.expand_window
 
     def test_empty_desktop(self):
@@ -97,10 +97,10 @@ class TestExpandWindow(TestMockedCore):
         self.assertEqual(resized.y2, DESKTOP_HEIGHT)
 
 
-class TestShrinkWindow(TestMockedCore):
+class ShrinkWindowTests(MockedXlibTests):
 
     def setUp(self):
-        TestMockedCore.setUp(self)
+        MockedXlibTests.setUp(self)
         self.resize = resizer.shrink_window
 
     def test_empty_desktop(self):
@@ -127,8 +127,8 @@ class TestShrinkWindow(TestMockedCore):
 
 if __name__ == '__main__':
     main_suite = unittest.TestSuite()
-    for suite in [TestExpandWindow, 
-                  TestShrinkWindow]:
+    for suite in [ExpandWindowTests, 
+                  ShrinkWindowTests]:
         main_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(suite))
     unittest.TextTestRunner(verbosity=2).run(main_suite)
 

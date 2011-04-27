@@ -29,11 +29,11 @@ extents, gravity, etc).
 
 import logging
 
-from pywo.core.basic import Gravity, Size, Position, Geometry, Extents
+from pywo.core.basic import Gravity, Size, Position, Geometry, Extents, Layout
 from pywo.core.windows import Type, State, Mode, Window, WindowManager
 
 
-__author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
+__author__ = "Wojciech 'KosciaK' Pietrzok"
 
 
 log = logging.getLogger(__name__)

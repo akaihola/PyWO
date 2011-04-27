@@ -31,7 +31,7 @@ Check /examples/plugins/services for an example of third-party services plugin.
 import logging
 
 
-__author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
+__author__ = "Wojciech 'KosciaK' Pietrzok"
 
 
 log = logging.getLogger(__name__)

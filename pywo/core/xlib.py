@@ -22,7 +22,7 @@
 
 import logging
 
-# NOTE: without this import python-xlib is not thread-safe!
+# NOTE: without import Xlib.threaded python-xlib is not thread-safe!
 from Xlib import threaded
 from Xlib import X, XK, error
 from Xlib.display import Display
@@ -32,7 +32,7 @@ from pywo.core.basic import CustomTuple, Geometry
 from pywo.core.dispatch import EventDispatcher
 
 
-__author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
+__author__ = "Wojciech 'KosciaK' Pietrzok, Antti Kaihola"
 
 
 log = logging.getLogger(__name__)
@@ -269,6 +269,34 @@ class XObject(object):
 
         key.append(cls.__KEYCODES[keycode])
         return '-'.join(key)
+
+    # TODO: check other XINERAMA methods
+    @classmethod
+    def has_extension(cls, extension):
+        """Return True if given extension is available."""
+        return cls.__DISPLAY.has_extension(extension)
+
+    @classmethod
+    def has_xinerama(cls):
+        """Return True if the Xinerama extension is available."""
+        return cls.has_extension('XINERAMA')
+
+    @classmethod
+    def screen_geometries(cls):
+        """Return list of screen geometries. 
+        
+        If Xinerama extension is not avaialbe fallback to non-Xinerama.
+        
+        """
+        try:
+            geometries = []
+            for screen in cls.__DISPLAY.xinerama_query_screens().screens:
+                geometries.append(Geometry(screen.x, screen.y,
+                                           screen.width, screen.height))
+            return geometries
+        except AttributeError:
+            root = cls.__DISPLAY.root
+            return [Geometry(0, 0, root.screen_width, root.screen_height)]
 
     @classmethod
     def has_xinerama(cls):

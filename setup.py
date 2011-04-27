@@ -8,7 +8,7 @@ import pywo
 
 setup(
     name='PyWO',
-    version=pywo.__version__
+    version=pywo.__version__,
     author="Wojciech 'KosciaK' Pietrzok",
     author_email='kosciak@kosciak.net',
     description='PyWO allows you to easily organize windows on the desktop using keyboard shortcuts.',

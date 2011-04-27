@@ -9,7 +9,7 @@ sys.path.insert(0, './')
 from pywo.core import Gravity, Size, Position, Geometry, Extents
 
 
-class TestSize(unittest.TestCase):
+class SizeTests(unittest.TestCase):
 
     def setUp(self):
         self.HALF_FULL = Size(0.5, 1.0)
@@ -39,7 +39,6 @@ class TestSize(unittest.TestCase):
         self.assertEqual(Size.parse_value(' '), None)
         self.assertRaises(ValueError, Size.parse_value, 'fasdfa')
 
-
     def test_parse(self):
         self.assertEqual(Size.parse('', ''), None)
         self.assertEqual(Size.parse('', 'FULL'), None)
@@ -53,7 +52,6 @@ class TestSize(unittest.TestCase):
         self.assertEqual(Size.parse('HALF, FULL', '1'), Size([0.5, 1], 1))
         self.assertRaises(ValueError, Size.parse, 'tttgf', '0')
 
-
     def test_area(self):
         self.assertEqual(Size.parse('HALF', 'FULL').area, 0.5)
         self.assertEqual(Size.parse('HALF', '1').area, 0.5)
@@ -61,6 +59,7 @@ class TestSize(unittest.TestCase):
         self.assertEqual(Size.parse('HALF', 'HALF*2').area, 0.5)
         self.assertEqual(Size.parse('HALF', 'QUARTER*2+HALF').area, 0.5)
         self.assertEqual(Size.parse('1.0/2', '0.1*6-0.1+HALF').area, 0.5)
+        self.assertEqual(Size(10, 10).area, 100)
         try:  # assertRaises doesn't work with properties
             Size.parse('HALF, FULL', '1').area
         except ValueError:  # "Size.area doesn't support multiple dimensions"
@@ -69,7 +68,7 @@ class TestSize(unittest.TestCase):
             raise AssertionError
 
 
-class TestPostion(unittest.TestCase):
+class PostionTests(unittest.TestCase):
 
     def test_equal(self):
         self.assertEqual(Position(1, 1), Position(1.0, 1.0))
@@ -77,9 +76,7 @@ class TestPostion(unittest.TestCase):
         self.assertNotEqual(Position(1, 1), Position(2, 1))
 
 
-class TestGravity(unittest.TestCase):
-
-    # TODO: check changes in Gravity!
+class GravityTests(unittest.TestCase):
 
     def setUp(self):
         self.TOP = Gravity(0.5, 0)
@@ -97,7 +94,7 @@ class TestGravity(unittest.TestCase):
         self.assertEqual(Gravity(1.0, 0.0), self.TOP_RIGHT)
         self.assertEqual(Gravity(0.5, 0.5), self.MIDDLE)
 
-    def test_is_direction(self):
+    def test_is_direction__top(self):
         self.assertTrue(self.TOP.is_top)
         self.assertTrue(not self.TOP.is_bottom)
         self.assertTrue(not self.TOP.is_left)
@@ -105,6 +102,7 @@ class TestGravity(unittest.TestCase):
         self.assertTrue(not self.TOP.is_middle)
         self.assertTrue(not self.TOP.is_diagonal)
 
+    def test_is_direction__bottom(self):
         self.assertTrue(not self.BOTTOM.is_top)
         self.assertTrue(self.BOTTOM.is_bottom)
         self.assertTrue(not self.BOTTOM.is_left)
@@ -112,6 +110,7 @@ class TestGravity(unittest.TestCase):
         self.assertTrue(not self.BOTTOM.is_middle)
         self.assertTrue(not self.BOTTOM.is_diagonal)
 
+    def test_is_direction__left(self):
         self.assertTrue(not self.LEFT.is_top)
         self.assertTrue(not self.LEFT.is_bottom)
         self.assertTrue(self.LEFT.is_left)
@@ -119,6 +118,7 @@ class TestGravity(unittest.TestCase):
         self.assertTrue(not self.LEFT.is_middle)
         self.assertTrue(not self.LEFT.is_diagonal)
 
+    def test_is_direction__right(self):
         self.assertTrue(not self.RIGHT.is_top)
         self.assertTrue(not self.RIGHT.is_bottom)
         self.assertTrue(not self.RIGHT.is_left)
@@ -126,6 +126,7 @@ class TestGravity(unittest.TestCase):
         self.assertTrue(not self.RIGHT.is_middle)
         self.assertTrue(not self.RIGHT.is_diagonal)
 
+    def test_is_direction__middle(self):
         self.assertTrue(self.MIDDLE.is_top)
         self.assertTrue(self.MIDDLE.is_bottom)
         self.assertTrue(self.MIDDLE.is_left)
@@ -133,6 +134,7 @@ class TestGravity(unittest.TestCase):
         self.assertTrue(self.MIDDLE.is_middle)
         self.assertTrue(not self.MIDDLE.is_diagonal)
 
+    def test_is_direction__middle_left(self):
         self.assertTrue(not self.BOTTOM_LEFT.is_top)
         self.assertTrue(self.BOTTOM_LEFT.is_bottom)
         self.assertTrue(self.BOTTOM_LEFT.is_left)
@@ -140,6 +142,7 @@ class TestGravity(unittest.TestCase):
         self.assertTrue(not self.BOTTOM_LEFT.is_middle)
         self.assertTrue(self.BOTTOM_LEFT.is_diagonal)
 
+    def test_is_direction__top_right(self):
         self.assertTrue(self.TOP_RIGHT.is_top)
         self.assertTrue(not self.TOP_RIGHT.is_bottom)
         self.assertTrue(not self.TOP_RIGHT.is_left)
@@ -147,32 +150,54 @@ class TestGravity(unittest.TestCase):
         self.assertTrue(not self.TOP_RIGHT.is_middle)
         self.assertTrue(self.TOP_RIGHT.is_diagonal)
 
-    def test_invert(self):
+    def test_invert__top(self):
         self.assertNotEqual(self.TOP.invert(), self.TOP)
         self.assertEqual(self.TOP.invert(), self.BOTTOM)
+        self.assertEqual(self.TOP.invert(vertical=False), self.TOP)
+        self.assertEqual(self.TOP.invert(horizontal=False), self.BOTTOM)
+
+    def test_invert__bottom(self):
         self.assertNotEqual(self.BOTTOM.invert(), self.BOTTOM)
         self.assertEqual(self.BOTTOM.invert(), self.TOP)
+        self.assertEqual(self.BOTTOM.invert(vertical=False), self.BOTTOM)
+        self.assertEqual(self.BOTTOM.invert(horizontal=False), self.TOP)
 
+    def test_invert__left(self):
         self.assertNotEqual(self.LEFT.invert(), self.LEFT)
         self.assertEqual(self.LEFT.invert(), self.RIGHT)
+        self.assertEqual(self.LEFT.invert(vertical=False), self.RIGHT)
+        self.assertEqual(self.LEFT.invert(horizontal=False), self.LEFT)
+
+    def test_invert__right(self):
         self.assertNotEqual(self.RIGHT.invert(), self.RIGHT)
         self.assertEqual(self.RIGHT.invert(), self.LEFT)
+        self.assertEqual(self.RIGHT.invert(vertical=False), self.LEFT)
+        self.assertEqual(self.RIGHT.invert(horizontal=False), self.RIGHT)
 
-        self.assertEqual(self.BOTTOM_LEFT.invert(), self.TOP_RIGHT)
-        self.assertNotEqual(self.BOTTOM_LEFT.invert(), self.BOTTOM_LEFT)
-        self.assertEqual(self.TOP_RIGHT.invert(), self.BOTTOM_LEFT)
-        self.assertNotEqual(self.TOP_RIGHT.invert(), self.TOP_RIGHT)
-
+    def test_invert__middle(self):
         self.assertEqual(self.MIDDLE.invert(), self.MIDDLE)
         self.assertEqual(self.MIDDLE.invert(vertical=False), self.MIDDLE)
         self.assertEqual(self.MIDDLE.invert(horizontal=False), self.MIDDLE)
 
+    def test_invert__bottom_left(self):
+        self.assertEqual(self.BOTTOM_LEFT.invert(), self.TOP_RIGHT)
+        self.assertNotEqual(self.BOTTOM_LEFT.invert(), self.BOTTOM_LEFT)
         self.assertEqual(self.BOTTOM_LEFT.invert(vertical=False), 
                          self.BOTTOM_RIGHT)
         self.assertEqual(self.BOTTOM_LEFT.invert(horizontal=False), 
                          self.TOP_LEFT)
         self.assertEqual(self.BOTTOM_LEFT.invert(vertical=False, horizontal=False), 
                          self.BOTTOM_LEFT)
+
+    def test_invert__top_right(self):
+        self.assertEqual(self.TOP_RIGHT.invert(), self.BOTTOM_LEFT)
+        self.assertNotEqual(self.TOP_RIGHT.invert(), self.TOP_RIGHT)
+        self.assertEqual(self.TOP_RIGHT.invert(vertical=False), 
+                         self.TOP_LEFT)
+        self.assertEqual(self.TOP_RIGHT.invert(horizontal=False), 
+                         self.BOTTOM_RIGHT)
+        self.assertEqual(self.TOP_RIGHT.invert(vertical=False, horizontal=False), 
+                         self.TOP_RIGHT)
 
     def test_parse(self):
         self.assertEqual(Gravity.parse(''), None)
@@ -197,7 +222,7 @@ class TestGravity(unittest.TestCase):
         self.assertRaises(ValueError, Gravity.parse, '1,2,3')
 
 
-class TestGeometry(unittest.TestCase):
+class GeometryTests(unittest.TestCase):
     
     def test_constructor(self):
         geo = Geometry(100, 150, 20, 30)
@@ -220,11 +245,11 @@ class TestGeometry(unittest.TestCase):
         geo = Geometry(0, 0, 100, 200)
         self.assertEqual(geo.x, 0)
         self.assertEqual(geo.y, 0)
-        # set geometry
+        # set postion
         geo.set_position(10, 10)
         self.assertEqual(geo.x, 10)
         self.assertEqual(geo.y, 10)
-        # relative to gravity
+        # set position relative to gravity
         geo.set_position(10, 10, Gravity(0, 0))
         self.assertEqual(geo.x, 10)
         self.assertEqual(geo.y, 10)
@@ -295,7 +320,7 @@ class TestGeometry(unittest.TestCase):
                          Geometry(1, 1, 1, 1))
 
 
-class TestExtents(unittest.TestCase):
+class ExtentsTests(unittest.TestCase):
 
     def test_vertical_horizontal(self):
         extents = Extents(10, 20, 17, 13)
@@ -305,11 +330,11 @@ class TestExtents(unittest.TestCase):
 
 if __name__ == '__main__':
     main_suite = unittest.TestSuite()
-    for suite in [TestSize, 
-                  TestPostion, 
-                  TestGravity, 
-                  TestGeometry, 
-                  TestExtents]:
+    for suite in [SizeTests, 
+                  PostionTests, 
+                  GravityTests, 
+                  GeometryTests, 
+                  ExtentsTests]:
         main_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(suite))
     unittest.TextTestRunner(verbosity=2).run(main_suite)
 

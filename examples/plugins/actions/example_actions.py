@@ -25,7 +25,7 @@ import logging
 from pywo import actions
 
 
-__author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
+__author__ = "Wojciech 'KosciaK' Pietrzok"
 
 
 # NOTE: Use logger in 'pywo.actions.*' hierarchy!

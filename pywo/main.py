@@ -33,7 +33,7 @@ from pywo.core import filters
 from pywo.services import daemon
 
 
-__author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
+__author__ = "Wojciech 'KosciaK' Pietrzok"
 
 
 log = logging.getLogger('pywo')

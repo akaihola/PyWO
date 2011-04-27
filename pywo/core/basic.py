@@ -24,7 +24,7 @@ import logging
 import re
 
 
-__author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
+__author__ = "Wojciech 'KosciaK' Pietrzok, Antti Kaihola"
 
 
 log = logging.getLogger(__name__)
@@ -148,6 +148,14 @@ class Size(object):
     def __init__(self, width, height):
         self.width = width
         self.height = height
+
+    @property
+    def area(self):
+        """Calculate the area of a rectangle of this size."""
+        if isinstance(self.width, list) or isinstance(self.height, list):
+            raise ValueError("%s.area doesn't support multiple dimensions: %s"
+                             % (self.__class__.__name__, self))
+        return self.width * self.height
 
     @classmethod
     def parse_value(cls, size_string):
@@ -276,12 +284,19 @@ class Geometry(Position, Size):
         """
         x = max(self.x, other.x)
         y = max(self.y, other.y)
-        w = min(self.x2, other.x2) - x
-        h = min(self.y2, other.y2) - y
-        if w >= 0 and h >= 0:
-            return Geometry(x, y, w, h)
+        width = min(self.x2, other.x2) - x
+        height = min(self.y2, other.y2) - y
+        if width >= 0 and height >= 0:
+            return Geometry(x, y, width, height)
 
+    
     def __eq__(self, other):
+        # NOTE: need to check type(other) for position == geometry,
+        #       and size == geometry to work correctly
+        if type(other) == Size:
+            return Size.__eq__(self, other)
+        if type(other) == Position:
+            return Position.__eq__(self, other)
         return ((self.x, self.y, self.width, self.height) ==
                 (other.x, other.y, other.width, other.height))
 
@@ -323,4 +338,72 @@ class Extents(object):
     def __str__(self):
         return '<Extents left=%s, right=%s, top=%s, bottom=%s>' % \
                (self.left, self.right, self.top, self.bottom)
+
+
+class Strut(object):
+
+    """Information about area reserved by window (docks, panels, pagers).
+    
+    For each desktop edge keep tuple: height/width, start_x/y, end_x/y
+
+    """
+
+    def __init__(self, left, right, top, bottom,
+                 left_start_y=0, left_end_y=0, 
+                 right_start_y=0, right_end_y=0,
+                 top_start_x=0, top_end_x=0, 
+                 bottom_start_x=0, bottom_end_x=0):
+        self.left = (left, left_start_y, left_end_y)
+        self.right = (right, right_start_y, right_end_y)
+        self.top = (top, top_start_x, top_end_x)
+        self.bottom = (bottom, bottom_start_x, bottom_end_x)
+
+    def __str__(self):
+        return '<Strut left=%s, right=%s, top=%s, bottom=%s>' % \
+               (self.left, self.right, self.top, self.bottom)
+
+
+class Layout(object):
+
+    """Layout encapsulates Desktop / Viewport layout info.
+    
+    Examples:
+    cols = 3, rows=2, orientation=ORIENTATION_HORZ, corner=CORNER_TOPLEFT
+    0 1 2
+    3 4 5
+
+    cols = 3, rows=2, orientation=ORIENTATION_VERT, corner=CORNER_TOPLEFT
+    0 2 4
+    1 3 5
+
+    cols = 3, rows=2, orientation=ORIENTATION_HORZ, corner=CORNER_TOPRIGHT
+    2 1 0
+    5 3 4
+    
+    """
+
+    # Orientations
+    ORIENTATION_HORZ = 0 #XObject.atom('_NET_WM_ORIENTATION_HORZ')
+    ORIENTATION_VERT = 1 #XObject.atom('_NET_WM_ORIENTATION_VERT')
+
+    # Starting corners
+    CORNER_TOPLEFT = 0 #XObject.atom('_NET_WM_TOPLEFT')
+    CORNER_TOPRIGHT = 1 #XObject.atom('_NET_WM_TOPRIGHT')
+    CORNER_BOTTOMRIGHT = 2 #XObject.atom('_NET_WM_BOTTOMRIGHT')
+    CORNER_BOTTOMLEFT = 3 #XObject.atom('_NET_WM_BOTTOMLEFT')
+
+    def __init__(self, cols, rows, 
+                 orientation=ORIENTATION_HORZ, corner=CORNER_TOPLEFT):
+        self.cols = cols
+        self.rows = rows
+        self.orientation = orientation
+        self.corner = corner
+
+    def __eq__(self, other):
+        return ((self.cols, self.rows, self.orientation, self.corner) ==
+                (other.cols, other.rows, other.orientation, other.corner))
+
+    def __str__(self):
+        return '<Layout cols=%s, rows=%s, orientation=%s, corner=%s>' % \
+               (self.cols, self.rows, self.orientation, self.corner)
 

@@ -26,7 +26,7 @@ from pywo.actions import register, TYPE_FILTER, TYPE_STATE_FILTER
 from pywo.core import WindowManager, State, Mode
 
 
-__author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
+__author__ = "Wojciech 'KosciaK' Pietrzok"
 
 
 log = logging.getLogger(__name__)

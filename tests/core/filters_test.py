@@ -6,13 +6,13 @@ import sys
 sys.path.insert(0, '../')
 sys.path.insert(0, './')
 
-from tests.test_common import TestMockedCore
-from tests.test_common import DESKTOPS, DESKTOP_WIDTH, DESKTOP_HEIGHT, VIEWPORTS
+from tests.common_test import MockedXlibTests
+from tests.common_test import DESKTOPS, DESKTOP_WIDTH, DESKTOP_HEIGHT, VIEWPORTS
 from pywo.core import Geometry, State, Type, Mode, Window
 from pywo.core import filters
 
 
-class TestFilters(TestMockedCore):
+class FiltersTest(MockedXlibTests):
 
     def assertWindows(self, filter, windows):
         """Assert that after using given filters you get given windows."""
@@ -22,10 +22,10 @@ class TestFilters(TestMockedCore):
         self.assertEqual(windows_ids, filtered_windows_ids)
 
 
-class TestTypeFilters(TestFilters):
+class IncludeExcludeTypeTests(FiltersTest):
 
     def setUp(self):
-        super(TestTypeFilters, self).setUp()
+        super(IncludeExcludeTypeTests, self).setUp()
         # map windows of all types
         self.normal_win = self.win
         self.desktop_win = self.map_window(type=Type.DESKTOP)
@@ -54,10 +54,10 @@ class TestTypeFilters(TestFilters):
                             self.utility_win, self.dialog_win])
 
 
-class TestStateFilters(TestFilters):
+class IncludeExcludeStateTests(FiltersTest):
 
     def setUp(self):
-        super(TestStateFilters, self).setUp()
+        super(IncludeExcludeStateTests, self).setUp()
         # map windows of all states
         self.no_state_win = self.win
         self.modal_win = self.map_window(modal=True)
@@ -105,10 +105,10 @@ class TestStateFilters(TestFilters):
                             self.above_win, self.below_win])
 
 
-class TestDesktopFilter(TestFilters):
+class DesktopTests(FiltersTest):
 
     def setUp(self):
-        super(TestDesktopFilter, self).setUp()
+        super(DesktopTests, self).setUp()
         self.desktop1_win = self.win
         self.desktop2_win = self.map_window(desktop=1)
         self.all_desktops_win = self.map_window()
@@ -145,10 +145,10 @@ class TestDesktopFilter(TestFilters):
                            [self.all_desktops_win])
 
 
-class TestWorkareaFilter(TestFilters):
+class WorkareaTests(FiltersTest):
 
     def setUp(self):
-        super(TestWorkareaFilter, self).setUp()
+        super(WorkareaTests, self).setUp()
         self.desktop1_viewport1_win = self.win
         self.desktop1_viewport2_win = self.map_window(x=DESKTOP_WIDTH + 50)
         self.desktop2_viewport1_win = self.map_window(desktop=1)
@@ -165,16 +165,16 @@ class TestWorkareaFilter(TestFilters):
         self.WM.set_desktop(0)
         self.assertWindows(filters.Workarea(),
                            [self.desktop1_viewport1_win])
-        # TODO: not implemented yet in mock_Xlib
+        # TODO: not implemented yet in Xlib_mock
         #self.WM.set_viewport_position(DESKTOP_WIDTH, 0)
         #self.assertWindows(filters.Workarea(),
         #                   [self.desktop2_viewport2_win])
 
 
-class TestCombinedFilters(TestFilters):
+class CombinedFiltersTests(FiltersTest):
 
     def setUp(self):
-        super(TestCombinedFilters, self).setUp()
+        super(CombinedFiltersTests, self).setUp()
         # types
         self.desktop_win = self.map_window(type=Type.DESKTOP)
         self.dock_win = self.map_window(type=Type.DOCK)
@@ -258,11 +258,11 @@ class TestCombinedFilters(TestFilters):
 
 if __name__ == '__main__':
     main_suite = unittest.TestSuite()
-    for suite in [TestTypeFilters, 
-                  TestStateFilters, 
-                  TestDesktopFilter, 
-                  TestWorkareaFilter, 
-                  TestCombinedFilters, ]:
+    for suite in [IncludeExcludeTypeTests, 
+                  IncludeExcludeStateTests, 
+                  DesktopTests, 
+                  WorkareaTests, 
+                  CombinedFiltersTests, ]:
         main_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(suite))
     unittest.TextTestRunner(verbosity=2).run(main_suite)
 

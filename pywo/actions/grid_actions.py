@@ -28,7 +28,7 @@ from pywo.actions import Action, TYPE_FILTER
 from pywo.actions.resizer import expand_window
 
 
-__author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
+__author__ = "Wojciech 'KosciaK' Pietrzok"
 
 
 log = logging.getLogger(__name__)
@@ -95,7 +95,7 @@ class GeometryCycler(object):
 
     def __init__(self, win, position, gravity, size, width, height, cycle):
         self.win_id = win.id
-        self.args = (position, gravity, size, width, height) # TOD: remove me!?
+        self.args = (position, gravity, size, width, height) # TODO: remove me!?
         self.gravity = gravity
         workarea = WM.nearest_screen_geometry(win.geometry)
         self.position = absolute_position(workarea, position)

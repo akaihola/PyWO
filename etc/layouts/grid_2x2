@@ -32,6 +32,7 @@ widths = HALF
 heights = FULL
 
 [middle]
+ignore_actions = shrink
 direction = MIDDLE
 position = MIDDLE
 gravity = MIDDLE

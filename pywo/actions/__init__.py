@@ -34,7 +34,7 @@ from pywo.core import filters
 from pywo.actions import manager
 
 
-__author__ = "Wojciech 'KosciaK' Pietrzok <kosciak@kosciak.net>"
+__author__ = "Wojciech 'KosciaK' Pietrzok"
 
 
 log = logging.getLogger(__name__)
@@ -47,6 +47,8 @@ TYPE_STATE_FILTER = filters.AND(TYPE_FILTER, STATE_FILTER)
 
 
 class ActionException(Exception):
+
+    """Exception raised when Action fails."""
 
     def __init__(self, msg):
         self.msg = msg
@@ -94,11 +96,13 @@ class Action(object):
 
     @property
     def need_section(self):
+        """Return True if Action needs section related data to be performed."""
         return 'direction' in self.args or \
                'position' in self.args or \
                'gravity' in self.args
 
     def get_kwargs(self, config, section=None, options=None):
+        """Get from given objects values needed for Action to be performed."""
         kwargs = {}
         for arg in self.args:
             for obj in [options, section, config]:
@@ -110,10 +114,10 @@ class Action(object):
 
     def __call__(self, win, **kwargs):
         """Perform action on window and with given arguments."""
-        log.debug('%s win=%s, kwargs={%s}' % 
-                  (self, win,
-                  ', '.join(["'%s':%s" % (key, value) 
-                             for key, value in kwargs.items()])))
+        log.info('%s: win=%s, kwargs={%s}' % 
+                 (self, win,
+                 ', '.join(["'%s':%s" % (key, value) 
+                            for key, value in kwargs.items()])))
         self.check_filter(win)
         self.pre_perform(win, **kwargs)
         try:
@@ -180,16 +184,15 @@ def register(name, filter=filters.ALL_FILTER, unshade=False):
 @register(name='debug')
 def _debug_info(win):
     """Print debug info about Window Manager, and current Window."""
-    log.info('-= Window Manager =-')
     WindowManager().debug_info(log)
-    log.info('-= Current Window =-')
     win.debug_info(log)
-    log.info('-= Move with same geometry =-')
-    geo =  win.geometry
-    win.set_geometry(geo)
+    log.info('-= Move using same geometry =-')
+    old_geometry =  win.geometry
+    win.set_geometry(old_geometry)
     win.sync()
+    log.info('Old geometry=%s' % old_geometry)
     log.info('New geometry=%s' % win.geometry)
-    log.info('-= End of debug =-')
+    log.info('-= End of debug output =-')
 
 
 

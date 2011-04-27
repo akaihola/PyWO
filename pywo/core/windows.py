@@ -713,16 +713,6 @@ class WindowManager(XObject):
         rows = rows or (desktops / cols + min([1, desktops % cols]))
         return Layout(cols, rows, orientation, corner)
 
-    def nearest_screen_geometry(self, geometry):
-        """Return geometry of the screen best matching the given rectangle"""
-        screens_by_intersection = ((screen & geometry, screen)
-                                   for screen in self.get_xinerama_geometries())
-        screens_by_area = ((intersection.area, screen)
-                           for intersection, screen in screens_by_intersection
-                           if intersection)
-        largest_area, screen = sorted(screens_by_area)[-1]
-        return screen & self.workarea_geometry
-
     @property
     def viewport_position(self):
         """Return position of current viewport.

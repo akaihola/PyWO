@@ -80,7 +80,8 @@ class Hacks(object):
                                    Type.ENLIGHTMENT, 
                                    Type.ICEWM, 
                                    Type.BLACKBOX])
-    PARENT_XY = CustomTuple([Type.FLUXBOX, 
+    PARENT_XY = CustomTuple([Type.FLUXBOX,
+                             Type.OPENBOX,
                              Type.WINDOW_MAKER])
     CALCULATE_EXTENTS = CustomTuple([Type.BLACKBOX, 
                                      Type.ICEWM,

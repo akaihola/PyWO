@@ -305,10 +305,14 @@ class Extents(object):
     """Extents encapsulate Window extents (decorations)."""
 
     def __init__(self, left, right, top, bottom):
-        self.top = top
-        self.bottom = bottom
-        self.left = left
-        self.right = right
+        self.top = top or 0
+        self.bottom = bottom or 0
+        self.left = left or 0
+        self.right = right or 0
+        if left is None and right is None and top is None and bottom is None:
+            self.__borderless = True
+        else:
+            self.__borderless = False
 
     @property
     def horizontal(self):
@@ -326,6 +330,11 @@ class Extents(object):
 
     def __ne__(self, other):
         return not self == other
+
+    def __nonzero__(self):
+        return not self.__borderless
+        #return self.top != 0 or self.bottom != 0 or \
+        #       self.left != 0 or self.right != 0
 
     def __repr__(self):
         return '<Extents left=%s, right=%s, top=%s, bottom=%s>' % \

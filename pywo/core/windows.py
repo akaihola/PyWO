@@ -237,10 +237,12 @@ class Window(XObject):
             win = self._win
             parent = win.query_tree().parent
             if parent.id == self._root_id:
-                return (0, 0, 0, 0)
+                return Extents(None, None, None, None)
             if win.get_geometry().width == parent.get_geometry().width and \
                win.get_geometry().height == parent.get_geometry().height:
                 win, parent = parent, parent.query_tree().parent
+            if parent.id == self._root_id:
+                return Extents(None, None, None, None)
             win_geo = win.get_geometry()
             parent_geo = parent.get_geometry()
             border_widths = win_geo.border_width + parent_geo.border_width

@@ -308,6 +308,13 @@ class Window(XObject):
             parent_geo = self._win.query_tree().parent.get_geometry()
             geometry.x = parent_geo.x
             geometry.y = parent_geo.y
+        if self.wm_type not in Hacks.DONT_TRANSLATE_COORDS:
+            # NOTE: in Metacity for windows with no extents 
+            #       returned translated coords were invalid (0, 0)
+            # if neeeded translate coords and multiply them by -1
+            translated = self._translate_coords(geometry.x, geometry.y)
+            geometry.x = -translated.x
+            geometry.y = -translated.y
         return (geometry.x, geometry.y, 
                 geometry.width, geometry.height)
 
@@ -322,15 +329,8 @@ class Window(XObject):
 
         """
         x, y, width, height = self.__geometry()
+        #print x, y, width, height
         extents = self.extents
-        if self.wm_type not in Hacks.DONT_TRANSLATE_COORDS and \
-           not extents == Extents(0, 0, 0, 0):
-            # NOTE: in Metacity for windows with no extents 
-            #       returned translated coords were invalid (0, 0)
-            # if neeeded translate coords and multiply them by -1
-            translated = self._translate_coords(x, y)
-            x = -translated.x
-            y = -translated.y
         if self.wm_type in Hacks.ADJUST_GEOMETRY:
             # Used in Compiz, KWin, E16, IceWM, Blackbox
             x -= extents.left
@@ -538,7 +538,7 @@ class Window(XObject):
     def __ne__(self, other):
         return not self.id == other.id
 
-    def __str__(self):
+    def __repr__(self):
         return '<Window id=%s>' % (self.id,)
 
     def debug_info(self, logger=log):
@@ -860,7 +860,7 @@ class WindowManager(XObject):
         """Unregister all event handlers for all windows."""
         self._unregister_all()
 
-    def __str__(self):
+    def __repr__(self):
         return '<WindowManager id=%s>' % (self.id,)
 
     def debug_info(self, logger=log):

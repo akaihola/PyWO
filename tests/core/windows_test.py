@@ -27,7 +27,6 @@ class WindowManagerTests(MockedXlibTests):
         self.assertEqual(self.WM.name, 'mock-wm')
 
     def test_type(self):
-        self.WM.update_type()
         self.assertEqual(self.WM.type, (Type.UNKNOWN, ))
         self.assertEqual(self.WM.wm_type, (Type.UNKNOWN, ))
         self.assertEqual(self.win.wm_type, (Type.UNKNOWN, ))

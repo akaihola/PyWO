@@ -124,7 +124,7 @@ class Gravity(object):
     def __ne__(self, other):
         return not self == other
 
-    def __str__(self):
+    def __repr__(self):
         return '<Gravity x=%.2f, y=%.2f>' % (self.x, self.y)
 
 
@@ -200,7 +200,7 @@ class Size(object):
     def __ne__(self, other):
         return not self == other
 
-    def __str__(self):
+    def __repr__(self):
         return '<Size width=%s, height=%s>' % (self.width, self.height)
 
 
@@ -224,7 +224,7 @@ class Position(object):
     def __ne__(self, other):
         return not self == other
 
-    def __str__(self):
+    def __repr__(self):
         return '<Position x=%s, y=%s>' % (self.x, self.y)
 
 
@@ -295,7 +295,7 @@ class Geometry(Position, Size):
     def __ne__(self, other):
         return not self == other
 
-    def __str__(self):
+    def __repr__(self):
         return '<Geometry x=%s, y=%s, width=%s, height=%s, x2=%s, y2=%s>' % \
                (self.x, self.y, self.width, self.height, self.x2, self.y2)
 
@@ -327,7 +327,7 @@ class Extents(object):
     def __ne__(self, other):
         return not self == other
 
-    def __str__(self):
+    def __repr__(self):
         return '<Extents left=%s, right=%s, top=%s, bottom=%s>' % \
                (self.left, self.right, self.top, self.bottom)
 
@@ -350,7 +350,7 @@ class Strut(object):
         self.top = (top, top_start_x, top_end_x)
         self.bottom = (bottom, bottom_start_x, bottom_end_x)
 
-    def __str__(self):
+    def __repr__(self):
         return '<Strut left=%s, right=%s, top=%s, bottom=%s>' % \
                (self.left, self.right, self.top, self.bottom)
 
@@ -395,7 +395,7 @@ class Layout(object):
         return ((self.cols, self.rows, self.orientation, self.corner) ==
                 (other.cols, other.rows, other.orientation, other.corner))
 
-    def __str__(self):
+    def __repr__(self):
         return '<Layout cols=%s, rows=%s, orientation=%s, corner=%s>' % \
                (self.cols, self.rows, self.orientation, self.corner)
 

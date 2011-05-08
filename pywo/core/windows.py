@@ -219,6 +219,47 @@ class Window(XObject):
         mask = X.PropertyChangeMask
         self.send_event(data, event_type, mask)
 
+    def __strut(self):
+        """Return raw strut info."""
+        # _NET_WM_STRUT, left, right, top, bottom, CARDINAL[4]/32
+        strut = self.get_property('_NET_WM_STRUT')
+        if strut:
+            return strut.value
+        else:
+            return ()
+
+    def __strut_partial(self):
+        """Return raw strut partial info."""
+        # _NET_WM_STRUT_PARTIAL, left, right, top, bottom, 
+        #                        left_start_y, left_end_y,
+        #                        right_start_y, right_end_y, 
+        #                        top_start_x, top_end_x, 
+        #                        bottom_start_x, bottom_end_x, 
+        #                        CARDINAL[12]/32
+        strut_partial = self.get_property('_NET_WM_STRUT_PARTIAL')
+        if strut_partial:
+            return strut_partial.value
+        else:
+            return ()
+
+    @property
+    def strut(self):
+        """Return strut information - area reserved by Window.
+
+        Some windows (like panels, pagers, etc) can reserve space on desktop.
+
+        """
+        strut_partial = self.__strut_partial()
+        if strut_partial:
+            # Try strut_partial first, with full info about reserved area
+            return Strut(*strut_partial)
+        strut = self.__strut()
+        if strut:
+            # Fallback to strut - only info about width/height
+            return Strut(strut[0], strut[1], strut[2], strut[3], 
+                         0, 0, 0, 0, 0, 0, 0, 0)
+        return None
+
     def __extents(self):
         """Return raw extents info."""
         # _NET_FRAME_EXTENTS, left, right, top, bottom, CARDINAL[4]/32
@@ -260,47 +301,6 @@ class Window(XObject):
             extents = (1, 1, 1, 1) # works for retain border
             #extents = (0, 0, 0, 0) # if border is not retained
         return Extents(*extents)
-
-    def __strut(self):
-        """Return raw strut info."""
-        # _NET_WM_STRUT, left, right, top, bottom, CARDINAL[4]/32
-        strut = self.get_property('_NET_WM_STRUT')
-        if strut:
-            return strut.value
-        else:
-            return ()
-
-    def __strut_partial(self):
-        """Return raw strut partial info."""
-        # _NET_WM_STRUT_PARTIAL, left, right, top, bottom, 
-        #                        left_start_y, left_end_y,
-        #                        right_start_y, right_end_y, 
-        #                        top_start_x, top_end_x, 
-        #                        bottom_start_x, bottom_end_x, 
-        #                        CARDINAL[12]/32
-        strut_partial = self.get_property('_NET_WM_STRUT_PARTIAL')
-        if strut_partial:
-            return strut_partial.value
-        else:
-            return ()
-
-    @property
-    def strut(self):
-        """Return strut information - area reserved by Window.
-
-        Some windows (like panels, pagers, etc) can reserve space on desktop.
-
-        """
-        strut_partial = self.__strut_partial()
-        if strut_partial:
-            # Try strut_partial first, with full info about reserved area
-            return Strut(*strut_partial)
-        strut = self.__strut()
-        if strut:
-            # Fallback to strut - only info about width/height
-            return Strut(strut[0], strut[1], strut[2], strut[3], 
-                         0, 0, 0, 0, 0, 0, 0, 0)
-        return None
 
     def __geometry(self):
         """Return raw geometry info (translated if needed)."""

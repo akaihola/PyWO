@@ -76,7 +76,7 @@ class WindowManagerTests(MockedXlibTests):
 
     def test_viewport_layout(self):
         self.assertEqual(self.WM.viewport_layout, 
-                         Layout(VIEWPORTS[1], VIEWPORTS[0]))
+                         Layout(VIEWPORTS[0], VIEWPORTS[1]))
 
     def test_workarea_geometry(self):
         # No panels!

@@ -737,7 +737,15 @@ class WindowManager(XObject):
         mask = X.PropertyChangeMask
         self.send_event(data, event_type, mask)
 
-    # TODO: set_viewport(viewport) similar to set_desktop(desktop)
+    def set_viewport(self, viewport):
+        """Change current viewport (similar to set_desktop())."""
+        if viewport < 0:
+            viewport = 0
+        desktop_size = self.desktop_size
+        layout = self.viewport_layout
+        x = desktop_size.width / layout.cols * (viewport % layout.cols)
+        y = desktop_size.height / layout.rows * (viewport / layout.cols)
+        self.set_viewport_position(x, y)
 
     @property
     def viewport_layout(self):
@@ -749,8 +757,8 @@ class WindowManager(XObject):
         """
         desktop_size = self.desktop_size
         workarea_size = self.workarea_geometry
-        cols = desktop_size.height / workarea_size.height
-        rows = desktop_size.width / workarea_size.width
+        cols = desktop_size.width / workarea_size.width
+        rows = desktop_size.height / workarea_size.height
         return Layout(cols, rows)
 
     @property

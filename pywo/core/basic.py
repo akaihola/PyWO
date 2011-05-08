@@ -280,7 +280,8 @@ class Geometry(Position, Size):
         height = min(self.y2, other.y2) - y
         if width >= 0 and height >= 0:
             return Geometry(x, y, width, height)
-
+        else:
+            return None
     
     def __eq__(self, other):
         # NOTE: need to check type(other) for position == geometry,

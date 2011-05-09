@@ -144,8 +144,8 @@ class Config(object):
             key = self.keys.pop(section, None)
             try:
                 self.sections[section.lower()] = _Section(self, section, key)
-            except Exception, e:
-                log.exception('Invalid section %s: %s', (section, e))
+            except Exception, exc:
+                log.exception('Invalid section %s: %s', (section, exc))
             self._config.remove_section(section)
 
         log.debug('Loaded configuration file')

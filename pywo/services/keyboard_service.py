@@ -57,10 +57,10 @@ class PywoKeyPressHandler(events.KeyHandler):
             window = WM.active_window()
             kwargs = action.get_kwargs(self.config, section)
             action(window, **kwargs)
-        except actions.ActionException, e:
-            log.error(e)
-        except Exception, err:
-            log.exception(err)
+        except actions.ActionException, exc:
+            log.error(exc)
+        except Exception, exc:
+            log.exception(exc)
     
     def set_config(self, config):
         """Set key mappings from config."""

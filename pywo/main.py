@@ -106,8 +106,8 @@ def run():
     elif args or options.action:
         try:
             actions.perform(options, args, config)
-        except actions.ActionException, e:
-            commandline.print_error(e)
+        except actions.ActionException, exc:
+            commandline.print_error(exc)
     else:
         commandline.print_help()
 

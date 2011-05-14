@@ -61,8 +61,8 @@ def setup(config):
     for service in manager.get_all():
         try:
             service.setup(config)
-        except Exception, e:
-            log.exception('Exception %s while %s setup' % (e, service))
+        except Exception, exc:
+            log.exception('Exception %s while %s setup' % (exc, service))
             failed.append(service)
     for service in failed:
         manager.remove(service)
@@ -74,8 +74,8 @@ def start():
     for service in manager.get_all():
         try:
             service.start()
-        except Exception, e:
-            log.exception('Exception %s while %s start' % (e, service))
+        except Exception, exc:
+            log.exception('Exception %s while %s start' % (exc, service))
             failed.append(service)
     for service in failed:
         manager.remove(service)
@@ -97,8 +97,8 @@ def stop():
     for service in manager.get_all():
         try:
             service.stop()
-        except Exception, e:
-            log.exception('Exception %s while %s stop' % (e, service))
+        except Exception, exc:
+            log.exception('Exception %s while %s stop' % (exc, service))
     WM.unregister_all() # unregister all remaining EventHandlers
 
 

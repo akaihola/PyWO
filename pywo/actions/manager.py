@@ -54,9 +54,9 @@ def load_local():
             log.debug("Importing <module '%s'>" % module_name)
             try:
                 __import__(module_name)
-            except Exception, e:
+            except Exception, exc:
                 log.exception('Exception %s while importing <module %s>' % \
-                              (e, module_name))
+                              (exc, module_name))
 
 
 def load_plugins():
@@ -70,9 +70,9 @@ def load_plugins():
         log.debug('Loading plugin %s' % entry_point.name)
         try:
             entry_point.load()
-        except Exception, e:
+        except Exception, exc:
             log.exception('Exception %e while loading %s' % \
-                          (e, entry_point.name))
+                          (exc, entry_point.name))
 
 
 def load():

@@ -75,7 +75,7 @@ def absolute_size(win, workarea, size, width, height):
         heights = set([min([height * workarea.height, workarea.height]) 
                       for height in heights])
     except TypeError:
-        heights = [min([heights * workarea.width, workarea.height])]
+        heights = [min([heights * workarea.height, workarea.height])]
     return Size(sorted(widths), sorted(heights))
 
 

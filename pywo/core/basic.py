@@ -124,7 +124,7 @@ class Gravity(object):
     def __ne__(self, other):
         return not self == other
 
-    def __str__(self):
+    def __repr__(self):
         return '<Gravity x=%.2f, y=%.2f>' % (self.x, self.y)
 
 
@@ -200,7 +200,7 @@ class Size(object):
     def __ne__(self, other):
         return not self == other
 
-    def __str__(self):
+    def __repr__(self):
         return '<Size width=%s, height=%s>' % (self.width, self.height)
 
 
@@ -224,7 +224,7 @@ class Position(object):
     def __ne__(self, other):
         return not self == other
 
-    def __str__(self):
+    def __repr__(self):
         return '<Position x=%s, y=%s>' % (self.x, self.y)
 
 
@@ -280,7 +280,8 @@ class Geometry(Position, Size):
         height = min(self.y2, other.y2) - y
         if width >= 0 and height >= 0:
             return Geometry(x, y, width, height)
-
+        else:
+            return None
     
     def __eq__(self, other):
         # NOTE: need to check type(other) for position == geometry,
@@ -295,7 +296,7 @@ class Geometry(Position, Size):
     def __ne__(self, other):
         return not self == other
 
-    def __str__(self):
+    def __repr__(self):
         return '<Geometry x=%s, y=%s, width=%s, height=%s, x2=%s, y2=%s>' % \
                (self.x, self.y, self.width, self.height, self.x2, self.y2)
 
@@ -305,10 +306,14 @@ class Extents(object):
     """Extents encapsulate Window extents (decorations)."""
 
     def __init__(self, left, right, top, bottom):
-        self.top = top
-        self.bottom = bottom
-        self.left = left
-        self.right = right
+        self.top = top or 0
+        self.bottom = bottom or 0
+        self.left = left or 0
+        self.right = right or 0
+        if left is None and right is None and top is None and bottom is None:
+            self.__borderless = True
+        else:
+            self.__borderless = False
 
     @property
     def horizontal(self):
@@ -327,7 +332,12 @@ class Extents(object):
     def __ne__(self, other):
         return not self == other
 
-    def __str__(self):
+    def __nonzero__(self):
+        return not self.__borderless
+        #return self.top != 0 or self.bottom != 0 or \
+        #       self.left != 0 or self.right != 0
+
+    def __repr__(self):
         return '<Extents left=%s, right=%s, top=%s, bottom=%s>' % \
                (self.left, self.right, self.top, self.bottom)
 
@@ -350,7 +360,7 @@ class Strut(object):
         self.top = (top, top_start_x, top_end_x)
         self.bottom = (bottom, bottom_start_x, bottom_end_x)
 
-    def __str__(self):
+    def __repr__(self):
         return '<Strut left=%s, right=%s, top=%s, bottom=%s>' % \
                (self.left, self.right, self.top, self.bottom)
 
@@ -395,7 +405,7 @@ class Layout(object):
         return ((self.cols, self.rows, self.orientation, self.corner) ==
                 (other.cols, other.rows, other.orientation, other.corner))
 
-    def __str__(self):
+    def __repr__(self):
         return '<Layout cols=%s, rows=%s, orientation=%s, corner=%s>' % \
                (self.cols, self.rows, self.orientation, self.corner)
 

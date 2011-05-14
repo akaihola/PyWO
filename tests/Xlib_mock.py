@@ -12,6 +12,7 @@ for them.
 """
 
 
+import copy
 import collections
 import random
 
@@ -39,6 +40,9 @@ class Geometry(object):
         self.height = height
         self.depth = depth
         self.border_width = border_width
+
+    def copy(self):
+        return copy.copy(self)
 
 
 class TranslateCoords(object):
@@ -351,7 +355,7 @@ class Window(AbstractWindow):
         return WM_State(*self._prop('WM_STATE'))
 
     def get_geometry(self):
-        return self.current_geometry
+        return self.current_geometry.copy()
 
     def translate_coords(self, src_window, x, y):
         # Now it works like in Metacity

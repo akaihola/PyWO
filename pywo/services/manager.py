@@ -50,9 +50,9 @@ def load_local(config):
         try:
             __import__(module_name)
             __SERVICES.add(sys.modules[module_name])
-        except Exception, e:
+        except Exception, exc:
             log.exception('Exception %s while importing <module %s>' % \
-                          (e, module_name))
+                          (exc, module_name))
 
 
 def load_plugins(config):
@@ -69,9 +69,9 @@ def load_plugins(config):
         log.debug('Loading plugin %s' % entry_point.name)
         try:
             plugin = entry_point.load()
-        except Exception, e:
+        except Exception, exc:
             log.exception('Exception %e while loading %s' % \
-                          (e, entry_point.name))
+                          (exc, entry_point.name))
             continue
         if isinstance(plugin, type) and \
            (issubclass(plugin, Service) or \

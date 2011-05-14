@@ -299,22 +299,6 @@ class XObject(object):
             return [Geometry(0, 0, root.screen_width, root.screen_height)]
 
     @classmethod
-    def has_xinerama(cls):
-        """Return True if the XINERAMA extension is available"""
-        return cls.__DISPLAY.has_extension('XINERAMA')
-
-    @classmethod
-    def get_xinerama_geometries(cls):
-        """Return geometries for xinerama screens with fallback to non-xinerama"""
-        try:
-            return [
-                Geometry(screen.x, screen.y, screen.width, screen.height)
-                for screen in cls.__DISPLAY.xinerama_query_screens().screens]
-        except AttributeError:
-            root = cls.__DISPLAY.root
-            return [Geometry(0, 0, root.screen_width, root.screen_height)]
-
-    @classmethod
     def flush(cls):
         """Flush request queue to X Server."""
         cls.__DISPLAY.flush()

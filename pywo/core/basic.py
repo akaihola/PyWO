@@ -194,14 +194,6 @@ class Size(object):
             return Size(width, height)
         return None
 
-    @property
-    def area(self):
-        """Calculate the area of a rectangle of this size"""
-        if isinstance(self.width, list) or isinstance(self.height, list):
-            raise ValueError("%s.area doesn't support multiple dimensions: %s"
-                             % (self.__class__.__name__, self))
-        return self.width * self.height
-
     def __eq__(self, other):
         return ((self.width, self.height) == (other.width, other.height))
 

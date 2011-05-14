@@ -583,7 +583,3 @@ class RootWindow(AbstractWindow):
 
 # Use Xvfb to run different window managers headless for tests
 
-
-class ScreensQuery(object):
-    def __init__(self, *geometries):
-        self.screens = [Geometry(*geometry) for geometry in geometries]

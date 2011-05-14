@@ -220,46 +220,6 @@ class Window(XObject):
         mask = X.PropertyChangeMask
         self.send_event(data, event_type, mask)
 
-    def __extents(self):
-        """Return raw extents info."""
-        # _NET_FRAME_EXTENTS, left, right, top, bottom, CARDINAL[4]/32
-        extents = self.get_property('_NET_FRAME_EXTENTS')
-        if extents:
-            return extents.value
-        else: 
-            return ()
-
-    @property
-    def extents(self):
-        """Return window's extents (decorations)."""
-        extents = self.__extents()
-        if not extents and self.wm_type in Hacks.CALCULATE_EXTENTS:
-            # Hack for Blackbox, IceWM, Sawfish, Window Maker
-            win = self._win
-            parent = win.query_tree().parent
-            if parent.id == self._root_id:
-                return (0, 0, 0, 0)
-            if win.get_geometry().width == parent.get_geometry().width and \
-               win.get_geometry().height == parent.get_geometry().height:
-                win, parent = parent, parent.query_tree().parent
-            win_geo = win.get_geometry()
-            parent_geo = parent.get_geometry()
-            border_widths = win_geo.border_width + parent_geo.border_width
-            parent_border = parent_geo.border_width*2
-            left = win_geo.x + border_widths
-            top = win_geo.y + border_widths
-            right = parent_geo.width - win_geo.width - left + parent_border
-            bottom = parent_geo.height - win_geo.height - top + parent_border
-            extents = (left, right, top, bottom)
-        elif not extents:
-            extents = (0, 0, 0, 0)
-        elif Type.OPENBOX in self.wm_type and \
-             State.OB_UNDECORATED in self.state:
-            # TODO: recognize 'retain border when undecorated' setting
-            extents = (1, 1, 1, 1) # works for retain border
-            #extents = (0, 0, 0, 0) # if border is not retained
-        return Extents(*extents)
-
     def __strut(self):
         """Return raw strut info."""
         # _NET_WM_STRUT, left, right, top, bottom, CARDINAL[4]/32
@@ -301,6 +261,48 @@ class Window(XObject):
                          0, 0, 0, 0, 0, 0, 0, 0)
         return None
 
+    def __extents(self):
+        """Return raw extents info."""
+        # _NET_FRAME_EXTENTS, left, right, top, bottom, CARDINAL[4]/32
+        extents = self.get_property('_NET_FRAME_EXTENTS')
+        if extents:
+            return extents.value
+        else: 
+            return ()
+
+    @property
+    def extents(self):
+        """Return window's extents (decorations)."""
+        extents = self.__extents()
+        if not extents and self.wm_type in Hacks.CALCULATE_EXTENTS:
+            # Hack for Blackbox, IceWM, Sawfish, Window Maker
+            win = self._win
+            parent = win.query_tree().parent
+            if parent.id == self._root_id:
+                return Extents(None, None, None, None)
+            if win.get_geometry().width == parent.get_geometry().width and \
+               win.get_geometry().height == parent.get_geometry().height:
+                win, parent = parent, parent.query_tree().parent
+            if parent.id == self._root_id:
+                return Extents(None, None, None, None)
+            win_geo = win.get_geometry()
+            parent_geo = parent.get_geometry()
+            border_widths = win_geo.border_width + parent_geo.border_width
+            parent_border = parent_geo.border_width*2
+            left = win_geo.x + border_widths
+            top = win_geo.y + border_widths
+            right = parent_geo.width - win_geo.width - left + parent_border
+            bottom = parent_geo.height - win_geo.height - top + parent_border
+            extents = (left, right, top, bottom)
+        elif not extents:
+            extents = (None, None, None, None)
+        elif Type.OPENBOX in self.wm_type and \
+             State.OB_UNDECORATED in self.state:
+            # TODO: recognize 'retain border when undecorated' setting
+            extents = (1, 1, 1, 1) # works for retain border
+            #extents = (0, 0, 0, 0) # if border is not retained
+        return Extents(*extents)
+
     def __geometry(self):
         """Return raw geometry info (translated if needed)."""
         geometry = self._win.get_geometry()
@@ -323,9 +325,10 @@ class Window(XObject):
 
         """
         x, y, width, height = self.__geometry()
+        #print x, y, width, height
         extents = self.extents
         if self.wm_type not in Hacks.DONT_TRANSLATE_COORDS and \
-           not extents == Extents(0, 0, 0, 0):
+           not (Type.METACITY in self.wm_type and not extents):
             # NOTE: in Metacity for windows with no extents 
             #       returned translated coords were invalid (0, 0)
             # if neeeded translate coords and multiply them by -1
@@ -539,7 +542,7 @@ class Window(XObject):
     def __ne__(self, other):
         return not self.id == other.id
 
-    def __str__(self):
+    def __repr__(self):
         return '<Window id=%s>' % (self.id,)
 
     def debug_info(self, logger=log):
@@ -735,7 +738,15 @@ class WindowManager(XObject):
         mask = X.PropertyChangeMask
         self.send_event(data, event_type, mask)
 
-    # TODO: set_viewport(viewport) similar to set_desktop(desktop)
+    def set_viewport(self, viewport):
+        """Change current viewport (similar to set_desktop())."""
+        if viewport < 0:
+            viewport = 0
+        desktop_size = self.desktop_size
+        layout = self.viewport_layout
+        x = desktop_size.width / layout.cols * (viewport % layout.cols)
+        y = desktop_size.height / layout.rows * (viewport / layout.cols)
+        self.set_viewport_position(x, y)
 
     @property
     def viewport_layout(self):
@@ -747,8 +758,8 @@ class WindowManager(XObject):
         """
         desktop_size = self.desktop_size
         workarea_size = self.workarea_geometry
-        cols = desktop_size.height / workarea_size.height
-        rows = desktop_size.width / workarea_size.width
+        cols = desktop_size.width / workarea_size.width
+        rows = desktop_size.height / workarea_size.height
         return Layout(cols, rows)
 
     @property
@@ -861,7 +872,7 @@ class WindowManager(XObject):
         """Unregister all event handlers for all windows."""
         self._unregister_all()
 
-    def __str__(self):
+    def __repr__(self):
         return '<WindowManager id=%s>' % (self.id,)
 
     def debug_info(self, logger=log):
